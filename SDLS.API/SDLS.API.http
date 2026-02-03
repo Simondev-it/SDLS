@@ -1,0 +1,6 @@
+@SDLS.API_HostAddress = http://localhost:5251
+
+GET {{SDLS.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
