@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SDLS.Services.Interfaces
 {
-    public class IQuestionService
+    public interface IQuestionService
     {
     }
 }
