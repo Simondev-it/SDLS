@@ -1,4 +1,11 @@
 
+using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Models;
+using SDLS.Repositories.Interfaces;
+using SDLS.Repositories.Repositories;
+using SDLS.Services.Interfaces;
+using SDLS.Services.Services;
+
 namespace SDLS.API
 {
     public class Program
@@ -6,6 +13,17 @@ namespace SDLS.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddDbContext<SdlsDbContext>(options =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+                options.UseNpgsql(connectionString);
+            });
+
+            builder.Services.AddScoped<IQuestionService, QuestionService>();
+            builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
             // Add services to the container.
 
