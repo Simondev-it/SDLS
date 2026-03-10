@@ -1,37 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("notification")]
 public partial class Notification
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("title")]
-    [StringLength(200)]
     public string Title { get; set; } = null!;
 
-    [Column("content")]
-    public string? Content { get; set; }
+    public string Content { get; set; } = null!;
 
-    [Column("image")]
     public string? Image { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("Notification")]
-    public virtual ICollection<Usernotification> Usernotifications { get; set; } = new List<Usernotification>();
+    public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();
 }

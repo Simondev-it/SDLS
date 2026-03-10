@@ -1,34 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("reportcategory")]
-public partial class Reportcategory
+public partial class ReportCategory
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("name")]
-    [StringLength(100)]
     public string Name { get; set; } = null!;
 
-    [Column("description")]
     public string? Description { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("Reportcategory")]
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 }

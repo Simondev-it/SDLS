@@ -1,116 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("User")]
-[Index("Email", Name = "User_email_key", IsUnique = true)]
-[Index("Username", Name = "User_username_key", IsUnique = true)]
-[Index("Email", Name = "idx_user_email")]
-[Index("Roleid", Name = "idx_user_role_id")]
-[Index("Username", Name = "idx_user_username")]
 public partial class User
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("roleid")]
-    public Guid? Roleid { get; set; }
+    public Guid RoleId { get; set; }
 
-    [Column("username")]
-    [StringLength(100)]
-    public string Username { get; set; } = null!;
-
-    [Column("password")]
-    [StringLength(255)]
-    public string Password { get; set; } = null!;
-
-    [Column("name")]
-    [StringLength(200)]
-    public string? Name { get; set; }
-
-    [Column("email")]
-    [StringLength(255)]
     public string? Email { get; set; }
 
-    [Column("avatar")]
+    public string Password { get; set; } = null!;
+
+    public string? Name { get; set; }
+
     public string? Avatar { get; set; }
 
-    [Column("phone")]
-    [StringLength(20)]
     public string? Phone { get; set; }
 
-    [Column("gender")]
-    [StringLength(20)]
     public string? Gender { get; set; }
 
-    [Column("role")]
-    [StringLength(50)]
-    public string? Role { get; set; }
-
-    [Column("address")]
-    public string? Address { get; set; }
-
-    [Column("point")]
-    public int? Point { get; set; }
-
-    [Column("description")]
     public string? Description { get; set; }
 
-    [Column("dateofbirth")]
-    public DateOnly? Dateofbirth { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
-    [Column("licensetype")]
-    [StringLength(50)]
-    public string? Licensetype { get; set; }
+    public string? LicenseType { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("User")]
-    public virtual ICollection<Eventsession> Eventsessions { get; set; } = new List<Eventsession>();
+    public virtual ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
 
-    [InverseProperty("User")]
+    public virtual ICollection<ExamSession> ExamSessions { get; set; } = new List<ExamSession>();
+
     public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Examsession> Examsessions { get; set; } = new List<Examsession>();
+    public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Forumcomment> Forumcomments { get; set; } = new List<Forumcomment>();
+    public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Forumpost> Forumposts { get; set; } = new List<Forumpost>();
+    public virtual ICollection<LearningProgress> LearningProgresses { get; set; } = new List<LearningProgress>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Learningprogress> Learningprogresses { get; set; } = new List<Learningprogress>();
+    public virtual ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
 
-    [InverseProperty("User")]
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    [InverseProperty("User")]
+    public virtual ICollection<PostReact> PostReacts { get; set; } = new List<PostReact>();
+
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
-    [ForeignKey("Roleid")]
-    [InverseProperty("Users")]
-    public virtual Role? RoleNavigation { get; set; }
+    public virtual ICollection<Resolve> Resolves { get; set; } = new List<Resolve>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Savedquestion> Savedquestions { get; set; } = new List<Savedquestion>();
+    public virtual Role Role { get; set; } = null!;
 
-    [InverseProperty("User")]
-    public virtual ICollection<Simulationsession> Simulationsessions { get; set; } = new List<Simulationsession>();
+    public virtual ICollection<SavedQuestion> SavedQuestions { get; set; } = new List<SavedQuestion>();
 
-    [InverseProperty("User")]
-    public virtual ICollection<Usernotification> Usernotifications { get; set; } = new List<Usernotification>();
+    public virtual ICollection<SavedTrafficSign> SavedTrafficSigns { get; set; } = new List<SavedTrafficSign>();
+
+    public virtual ICollection<SimulationSession> SimulationSessions { get; set; } = new List<SimulationSession>();
+
+    public virtual ICollection<UserLicense> UserLicenses { get; set; } = new List<UserLicense>();
+
+    public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();
 }

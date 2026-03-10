@@ -3,13 +3,15 @@ using System.Collections.Generic;
 
 namespace SDLS.Model.Models;
 
-public partial class SimulationCategory
+public partial class PostImage
 {
     public Guid Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public Guid ForumPostId { get; set; }
 
-    public string? Description { get; set; }
+    public string? Name { get; set; }
+
+    public string? Url { get; set; }
 
     public DateTime? CreateAt { get; set; }
 
@@ -17,5 +19,5 @@ public partial class SimulationCategory
 
     public int? Status { get; set; }
 
-    public virtual ICollection<SimulationScenario> SimulationScenarios { get; set; } = new List<SimulationScenario>();
+    public virtual ForumPost ForumPost { get; set; } = null!;
 }
