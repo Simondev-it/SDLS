@@ -3,17 +3,15 @@ using System.Collections.Generic;
 
 namespace SDLS.Model.Models;
 
-public partial class Resolve
+public partial class PostReact
 {
     public Guid Id { get; set; }
 
-    public Guid ReportId { get; set; }
+    public Guid ForumPostId { get; set; }
 
     public Guid UserId { get; set; }
 
-    public string Title { get; set; } = null!;
-
-    public string Content { get; set; } = null!;
+    public string ReactType { get; set; } = null!;
 
     public DateTime? CreateAt { get; set; }
 
@@ -21,7 +19,7 @@ public partial class Resolve
 
     public int? Status { get; set; }
 
-    public virtual Report Report { get; set; } = null!;
+    public virtual ForumPost ForumPost { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }

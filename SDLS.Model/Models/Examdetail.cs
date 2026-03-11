@@ -1,41 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("examdetail")]
-public partial class Examdetail
+public partial class ExamDetail
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("examsessionid")]
-    public Guid? Examsessionid { get; set; }
+    public Guid AnswerId { get; set; }
 
-    [Column("questionid")]
-    public Guid? Questionid { get; set; }
+    public Guid ExamSessionId { get; set; }
 
-    [Column("useranswerid")]
-    public Guid? Useranswerid { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
-
-    [Column("status")]
     public int? Status { get; set; }
 
-    [ForeignKey("Examsessionid")]
-    [InverseProperty("Examdetails")]
-    public virtual Examsession? Examsession { get; set; }
+    public virtual Answer Answer { get; set; } = null!;
 
-    [ForeignKey("Questionid")]
-    [InverseProperty("Examdetails")]
-    public virtual Question? Question { get; set; }
+    public virtual ExamSession ExamSession { get; set; } = null!;
 }

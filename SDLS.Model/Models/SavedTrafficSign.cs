@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace SDLS.Model.Models;
 
-public partial class SimulationCategory
+public partial class SavedTrafficSign
 {
     public Guid Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public Guid TrafficSignId { get; set; }
 
-    public string? Description { get; set; }
+    public Guid UserId { get; set; }
 
     public DateTime? CreateAt { get; set; }
 
@@ -17,5 +17,7 @@ public partial class SimulationCategory
 
     public int? Status { get; set; }
 
-    public virtual ICollection<SimulationScenario> SimulationScenarios { get; set; } = new List<SimulationScenario>();
+    public virtual TrafficSign TrafficSign { get; set; } = null!;
+
+    public virtual User User { get; set; } = null!;
 }

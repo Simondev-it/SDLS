@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SDLS.Model.Models;
 
-public partial class SimulationCategory
+public partial class QuestionTopic
 {
     public Guid Id { get; set; }
 
@@ -17,5 +17,5 @@ public partial class SimulationCategory
 
     public int? Status { get; set; }
 
-    public virtual ICollection<SimulationScenario> SimulationScenarios { get; set; } = new List<SimulationScenario>();
+    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
 }

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 
 namespace SDLS.Model.Models;
 
-public partial class SimulationCategory
+public partial class Vehicle
 {
     public Guid Id { get; set; }
+
+    public Guid DrivingLicenseId { get; set; }
 
     public string Name { get; set; } = null!;
 
@@ -17,5 +19,5 @@ public partial class SimulationCategory
 
     public int? Status { get; set; }
 
-    public virtual ICollection<SimulationScenario> SimulationScenarios { get; set; } = new List<SimulationScenario>();
+    public virtual DrivingLicense DrivingLicense { get; set; } = null!;
 }

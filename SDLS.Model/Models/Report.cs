@@ -1,67 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("report")]
-[Index("Questionid", Name = "idx_report_question")]
-[Index("Userid", Name = "idx_report_user")]
 public partial class Report
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("questionid")]
-    public Guid? Questionid { get; set; }
+    public Guid? SimulationId { get; set; }
 
-    [Column("reportcategoryid")]
-    public Guid? Reportcategoryid { get; set; }
+    public Guid? ForumPostId { get; set; }
 
-    [Column("simulationid")]
-    public Guid? Simulationid { get; set; }
+    public Guid? ForumCommentId { get; set; }
 
-    [Column("userid")]
-    public Guid? Userid { get; set; }
+    public Guid? QuestionId { get; set; }
 
-    [Column("title")]
-    [StringLength(200)]
-    public string? Title { get; set; }
+    public Guid ReportCategoryId { get; set; }
 
-    [Column("content")]
-    public string? Content { get; set; }
+    public Guid UserId { get; set; }
 
-    [Column("image")]
+    public string Title { get; set; } = null!;
+
+    public string Content { get; set; } = null!;
+
     public string? Image { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [ForeignKey("Questionid")]
-    [InverseProperty("Reports")]
+    public virtual ForumComment? ForumComment { get; set; }
+
+    public virtual ForumPost? ForumPost { get; set; }
+
     public virtual Question? Question { get; set; }
 
-    [ForeignKey("Reportcategoryid")]
-    [InverseProperty("Reports")]
-    public virtual Reportcategory? Reportcategory { get; set; }
+    public virtual ReportCategory ReportCategory { get; set; } = null!;
 
-    [InverseProperty("Report")]
     public virtual ICollection<Resolve> Resolves { get; set; } = new List<Resolve>();
 
-    [ForeignKey("Simulationid")]
-    [InverseProperty("Reports")]
-    public virtual Simulationscenario? Simulation { get; set; }
+    public virtual SimulationScenario? Simulation { get; set; }
 
-    [ForeignKey("Userid")]
-    [InverseProperty("Reports")]
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }

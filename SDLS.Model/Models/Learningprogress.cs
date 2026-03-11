@@ -1,38 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("learningprogress")]
-public partial class Learningprogress
+public partial class LearningProgress
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("userid")]
-    public Guid? Userid { get; set; }
+    public Guid QuestionId { get; set; }
 
-    [Column("questionid")]
-    public Guid? Questionid { get; set; }
+    public Guid UserId { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [ForeignKey("Questionid")]
-    [InverseProperty("Learningprogresses")]
-    public virtual Question? Question { get; set; }
+    public virtual Question Question { get; set; } = null!;
 
-    [ForeignKey("Userid")]
-    [InverseProperty("Learningprogresses")]
-    public virtual User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 }
