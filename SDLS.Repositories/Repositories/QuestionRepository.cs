@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
-using SDLS.Repositories.Interfaces;
+using SDLS.Repositories.Base;
+using SDLS.Repositories.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
-    public class QuestionRepository : IQuestionRepository
+    public class QuestionRepository : IQuestionRepository, GenericRepository<Question>
     {
         private readonly SdlsDbContext _context;
 

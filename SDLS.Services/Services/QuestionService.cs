@@ -1,7 +1,7 @@
 ﻿using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
-using SDLS.Repositories.Interfaces;
+using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,6 @@ namespace SDLS.Services.Services
             return new QuestionDTO
             {
                 Id = question.Id,
-                Questioncategoryid = question.Questioncategoryid,
                 Questiondifficultylevelid = question.Questiondifficultylevelid,
                 Content = question.Content,
                 Image = question.Image,

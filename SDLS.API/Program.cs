@@ -1,7 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
-using SDLS.Repositories.Interfaces;
+using SDLS.Repositories.Interface;
 using SDLS.Repositories.Repositories;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Services;
