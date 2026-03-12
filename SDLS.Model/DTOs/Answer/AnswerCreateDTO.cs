@@ -9,6 +9,6 @@ namespace SDLS.Model.DTOs.Answer
     public class AnswerCreateDTO
     {
         public string Content { get; set; } = null!;
-        public bool? Iscorrect { get; set; }
+        public bool Iscorrect { get; set; }
     }
 }

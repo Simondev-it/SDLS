@@ -1,4 +1,5 @@
-﻿using SDLS.Model.DTOs.Answer;
+﻿using AutoMapper;
+using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
@@ -14,84 +15,56 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _repository;
+        private readonly IMapper _mapper;
 
-        public QuestionService(IQuestionRepository repository)
+        public QuestionService(IQuestionRepository repository, IMapper mapper)
         {
             _repository = repository;
+            _mapper = mapper;
         }
 
-        private QuestionDTO MapToDTO(Question question)
+
+        public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
         {
-            return new QuestionDTO
-            {
-                Id = question.Id,
-                Questiondifficultylevelid = question.Questiondifficultylevelid,
-                Content = question.Content,
-                Image = question.Image,
-                Explanation = question.Explanation,
-                Issingleanswer = question.Issingleanswer,
-                Createat = question.Createat,
-                Updateat = question.Updateat,
-                Status = question.Status,
-                Answers = question.Answers.Select(a => new AnswerDTO
-                {
-                    Id = a.Id,
-                    Content = a.Content,
-                    Iscorrect = a.Iscorrect
-                }).ToList()
-            };
-        }
-
-        private Question MapCreateDTOToEntity(QuestionCreateDTO dto)
-        {
-            var question = new Question
-            {
-                Id = Guid.NewGuid(),
-                Questioncategoryid = dto.Questioncategoryid,
-                Questiondifficultylevelid = dto.Questiondifficultylevelid,
-                Content = dto.Content,
-                Image = dto.Image,
-                Explanation = dto.Explanation,
-                Issingleanswer = dto.Issingleanswer,
-                Createat = DateTime.UtcNow,
-                Updateat = DateTime.UtcNow,
-                Status = dto.Status
-            };
-
-            foreach (var answerDto in dto.Answers)
-            {
-                question.Answers.Add(new Answer
-                {
-                    Id = Guid.NewGuid(),
-                    Questionid = question.Id,
-                    Content = answerDto.Content,
-                    Iscorrect = answerDto.Iscorrect,
-                    Createat = DateTime.UtcNow,
-                    Updateat = DateTime.UtcNow,
-                    Status = question.Status // Assuming same status
-                });
-            }
-
-            return question;
+            var questions = await _repository.GetAllAsync();
+            return _mapper.Map<List<QuestionDTO>>(questions);
         }
 
         public async Task<QuestionDTO> GetByIdAsync(Guid id)
         {
             var question = await _repository.GetByIdAsync(id);
-            return question != null ? MapToDTO(question) : null;
+            if (question == null)
+                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với ID {id}");
+
+            return _mapper.Map<QuestionDTO>(question);
         }
 
-        public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
-        {
-            var questions = await _repository.GetAllAsync();
-            return questions.Select(MapToDTO);
-        }
 
         public async Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto)
         {
-            var question = MapCreateDTOToEntity(dto);
-            await _repository.AddAsync(question);
-            return MapToDTO(question);
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (!dto.Answers.Any(a => a.Iscorrect))
+                throw new InvalidOperationException("Phải có ít nhất một đáp án đúng");
+
+            var question = _mapper.Map<Question>(dto);
+
+            question.Id = Guid.NewGuid();
+            question.CreateAt = DateTime.UtcNow;
+            question.UpdateAt = DateTime.UtcNow;
+            question.Status = 1; // active
+
+            // Gán QuestionId cho các answer
+            foreach (var answer in question.Answers)
+            {
+                answer.Id = Guid.NewGuid();
+                answer.QuestionId = question.Id;
+                answer.CreateAt = DateTime.UtcNow;
+            }
+
+            await _questionRepo.CreateWithAnswersAsync(question);
+
+            var created = await _questionRepo.GetByIdWithAnswersAsync(question.Id);
+            return _mapper.Map<QuestionDTO>(created);
         }
 
         public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
