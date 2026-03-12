@@ -14,7 +14,7 @@ namespace SDLS.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<SdlsDbContext>(options =>
+            builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -24,6 +24,8 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+
+            builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
             // Add services to the container.
 

@@ -17,13 +17,14 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers)
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
         public async Task<IEnumerable<Question>> GetAllAsync()
         {
             return await _context.Questions
                 .Include(q => q.Answers)
+                .Where(q => q.Status == 1)
                 .ToListAsync();
         }
 

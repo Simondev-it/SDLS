@@ -14,118 +14,105 @@ namespace SDLS.Services.Services
 {
     public class QuestionService : IQuestionService
     {
-        private readonly IQuestionRepository _repository;
+        private readonly IQuestionRepository _questionRepository;
+        private readonly IAnswerRepository _answerRepository;
         private readonly IMapper _mapper;
 
-        public QuestionService(IQuestionRepository repository, IMapper mapper)
+        public QuestionService(IQuestionRepository questionRepository, IAnswerRepository answerRepository, IMapper mapper)
         {
-            _repository = repository;
+            _questionRepository = questionRepository;
+            _answerRepository = answerRepository;
             _mapper = mapper;
         }
 
 
         public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
         {
-            var questions = await _repository.GetAllAsync();
+            var questions = await _questionRepository.GetAllAsync();
             return _mapper.Map<List<QuestionDTO>>(questions);
         }
 
         public async Task<QuestionDTO> GetByIdAsync(Guid id)
         {
-            var question = await _repository.GetByIdAsync(id);
+            var question = await _questionRepository.GetByIdAsync(id);
             if (question == null)
-                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với ID {id}");
+                throw new KeyNotFoundException($"Not found with ID {id}");
 
             return _mapper.Map<QuestionDTO>(question);
         }
 
 
-        public async Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto)
+        public async Task<bool> CreateAsync(QuestionCreateDTO dto)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.Answers == null || !dto.Answers.Any())
+                throw new ArgumentException("Question must have at least 1 answer");
+
             if (!dto.Answers.Any(a => a.Iscorrect))
-                throw new InvalidOperationException("Phải có ít nhất một đáp án đúng");
+                throw new ArgumentException("At least one answer must be correct");
 
             var question = _mapper.Map<Question>(dto);
 
             question.Id = Guid.NewGuid();
             question.CreateAt = DateTime.UtcNow;
             question.UpdateAt = DateTime.UtcNow;
-            question.Status = 1; // active
+            question.Status = 1;
 
-            // Gán QuestionId cho các answer
+            
             foreach (var answer in question.Answers)
             {
                 answer.Id = Guid.NewGuid();
                 answer.QuestionId = question.Id;
                 answer.CreateAt = DateTime.UtcNow;
+                answer.Status = 1;
             }
 
-            await _questionRepo.CreateWithAnswersAsync(question);
+            await _questionRepository.AddAsync(question);
+            
 
-            var created = await _questionRepo.GetByIdWithAnswersAsync(question.Id);
-            return _mapper.Map<QuestionDTO>(created);
+            return true;
         }
 
-        public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto)
         {
-            var existingQuestion = await _repository.GetByIdAsync(id);
-            if (existingQuestion == null) return null;
+            var existing = await _questionRepository.GetByIdAsync(id);
+            if (existing == null)
+                throw new KeyNotFoundException("Question not found");
 
-            existingQuestion.Questioncategoryid = dto.Questioncategoryid ?? existingQuestion.Questioncategoryid;
-            existingQuestion.Questiondifficultylevelid = dto.Questiondifficultylevelid ?? existingQuestion.Questiondifficultylevelid;
-            existingQuestion.Content = dto.Content;
-            existingQuestion.Image = dto.Image ?? existingQuestion.Image;
-            existingQuestion.Explanation = dto.Explanation ?? existingQuestion.Explanation;
-            existingQuestion.Issingleanswer = dto.Issingleanswer ?? existingQuestion.Issingleanswer;
-            existingQuestion.Updateat = DateTime.UtcNow;
-            existingQuestion.Status = dto.Status ?? existingQuestion.Status;
+            // Validation
+            if (!dto.Answers.Any(a => a.Iscorrect))
+                throw new ArgumentException("At least one answer must be correct");
 
-            // Handle Answers: Update existing, add new, remove deleted (assuming all provided)
-            var existingAnswerIds = existingQuestion.Answers.Select(a => a.Id).ToHashSet();
-            var updatedAnswerIds = new HashSet<Guid>();
+            // Map các field cơ bản (không map Answers)
+            _mapper.Map(dto, existing);
+
+            existing.UpdateAt = DateTime.UtcNow;
+
+            // Xử lý Answers: cách đơn giản nhất là xóa hết cũ → thêm mới
+            // (an toàn, dễ implement, phù hợp nếu không cần giữ history answer)
+
+            existing.Answers.Clear(); // EF sẽ xóa các record cũ trong DB khi SaveChanges
 
             foreach (var answerDto in dto.Answers)
             {
-                if (answerDto.Id.HasValue && existingAnswerIds.Contains(answerDto.Id.Value))
-                {
-                    var existingAnswer = existingQuestion.Answers.First(a => a.Id == answerDto.Id.Value);
-                    existingAnswer.Content = answerDto.Content;
-                    existingAnswer.Iscorrect = answerDto.Iscorrect;
-                    existingAnswer.Updateat = DateTime.UtcNow;
-                    updatedAnswerIds.Add(answerDto.Id.Value);
-                }
-                else
-                {
-                    // New answer
-                    var newAnswer = new Answer
-                    {
-                        Id = Guid.NewGuid(),
-                        Questionid = existingQuestion.Id,
-                        Content = answerDto.Content,
-                        Iscorrect = answerDto.Iscorrect,
-                        Createat = DateTime.UtcNow,
-                        Updateat = DateTime.UtcNow,
-                        Status = existingQuestion.Status
-                    };
-                    existingQuestion.Answers.Add(newAnswer);
-                }
+                var newAnswer = _mapper.Map<Answer>(answerDto);
+                newAnswer.Id = Guid.NewGuid();
+                newAnswer.QuestionId = existing.Id;
+                newAnswer.CreateAt = DateTime.UtcNow;
+                newAnswer.Status = 1;
+
+                existing.Answers.Add(newAnswer);
             }
 
-            // Remove answers not in updated list
-            var answersToRemove = existingQuestion.Answers.Where(a => a.Id != Guid.Empty && !updatedAnswerIds.Contains(a.Id)).ToList();
-            foreach (var answer in answersToRemove)
-            {
-                existingQuestion.Answers.Remove(answer);
-            }
+            await _questionRepository.UpdateAsync(existing);
+            // await _unitOfWork.SaveChangesAsync();
 
-            await _repository.UpdateAsync(existingQuestion);
-            return MapToDTO(existingQuestion);
+            return true;
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            await _repository.DeleteAsync(id);
+            await _questionRepository.DeleteAsync(id);
+            return true;
         }
     }
 }
