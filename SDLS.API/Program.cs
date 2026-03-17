@@ -1,5 +1,8 @@
 
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Repositories;
@@ -20,6 +23,11 @@ namespace SDLS.API
                     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
                 options.UseNpgsql(connectionString);
+            });
+
+            builder.Services.AddAutoMapper(config =>
+            {
+                config.AddProfile<MappingProfile>();
             });
 
             builder.Services.AddScoped<IQuestionService, QuestionService>();
