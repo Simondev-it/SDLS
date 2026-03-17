@@ -9,7 +9,8 @@ namespace SDLS.Repositories.Interface.ImageInterfaces
 {
     public interface ILessonImageRepository
     {
-        Task<ILessonImageRepository> GetLessonImageByIdAsync();
+        Task<LessonImage> GetByIdAsync();
+        Task<LessonImage> GetByLessonIdAsync();
         Task<IEnumerable<LessonImage>> GetAllAsync();
         Task AddAsync(LessonImage image);
         Task DeleteAsync(Guid id);

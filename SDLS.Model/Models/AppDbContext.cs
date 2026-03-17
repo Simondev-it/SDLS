@@ -37,6 +37,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<LearningProgress> LearningProgresses { get; set; }
 
+    public virtual DbSet<LessonImage> LessonImages { get; set; }
+
     public virtual DbSet<LessonProgress> LessonProgresses { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }

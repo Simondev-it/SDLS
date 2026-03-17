@@ -15,5 +15,6 @@ namespace SDLS.Model.Models
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
         public int? Status { get; set; }
+        public virtual QuestionLesson QuestionLesson { get; set; } = null!;
     }
 }
