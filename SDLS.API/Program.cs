@@ -1,7 +1,10 @@
 
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
-using SDLS.Repositories.Interfaces;
+using SDLS.Repositories.Interface;
 using SDLS.Repositories.Repositories;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Services;
@@ -14,7 +17,7 @@ namespace SDLS.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<SdlsDbContext>(options =>
+            builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -22,8 +25,15 @@ namespace SDLS.API
                 options.UseNpgsql(connectionString);
             });
 
+            builder.Services.AddAutoMapper(config =>
+            {
+                config.AddProfile<MappingProfile>();
+            });
+
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+
+            builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
             // Add services to the container.
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SDLS.Repositories.Interfaces
+namespace SDLS.Repositories.Interface
 {
     public interface IQuestionRepository
     {

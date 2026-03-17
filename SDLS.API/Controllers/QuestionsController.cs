@@ -35,11 +35,11 @@ namespace SDLS.API.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
