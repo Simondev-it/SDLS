@@ -44,20 +44,20 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(QuestionCreateDTO dto)
         {
+            // 1. Validation cơ bản
             if (dto.Answers == null || !dto.Answers.Any())
                 throw new ArgumentException("Question must have at least 1 answer");
 
             if (!dto.Answers.Any(a => a.Iscorrect))
                 throw new ArgumentException("At least one answer must be correct");
 
+            // 2. Map DTO sang Entity
             var question = _mapper.Map<Question>(dto);
-
             question.Id = Guid.NewGuid();
             question.CreateAt = DateTime.UtcNow;
-            question.UpdateAt = DateTime.UtcNow;
             question.Status = 1;
 
-            
+            // 4. Xử lý Answers (EF sẽ tự động Insert nhờ Navigation Property)
             foreach (var answer in question.Answers)
             {
                 answer.Id = Guid.NewGuid();
@@ -67,30 +67,27 @@ namespace SDLS.Services.Services
             }
 
             await _questionRepository.AddAsync(question);
-            
 
             return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto)
         {
+            // 1. Lấy Question cũ bao gồm cả Answers
             var existing = await _questionRepository.GetByIdAsync(id);
-            if (existing == null)
-                throw new KeyNotFoundException("Question not found");
+            if (existing == null) throw new KeyNotFoundException("Question not found");
 
-            // Validation
-            if (!dto.Answers.Any(a => a.Iscorrect))
-                throw new ArgumentException("At least one answer must be correct");
-
-            // Map các field cơ bản (không map Answers)
+            // 2. Cập nhật thông tin cơ bản
             _mapper.Map(dto, existing);
-
             existing.UpdateAt = DateTime.UtcNow;
 
-            // Xử lý Answers: cách đơn giản nhất là xóa hết cũ → thêm mới
-            // (an toàn, dễ implement, phù hợp nếu không cần giữ history answer)
+            // 3. Xử lý Logic LinkedList (Tránh vòng lặp vô tận: A -> B -> A)
+            if (existing.ParentId == existing.Id)
+                throw new ArgumentException("A question cannot be its own parent.");
 
-            existing.Answers.Clear(); // EF sẽ xóa các record cũ trong DB khi SaveChanges
+            // 4. Cập nhật Answers (Xóa cũ thêm mới)
+            // Để EF hiểu việc xóa, bạn cần đảm bảo Answers là một Tracking Collection
+            existing.Answers.Clear();
 
             foreach (var answerDto in dto.Answers)
             {
@@ -99,13 +96,10 @@ namespace SDLS.Services.Services
                 newAnswer.QuestionId = existing.Id;
                 newAnswer.CreateAt = DateTime.UtcNow;
                 newAnswer.Status = 1;
-
                 existing.Answers.Add(newAnswer);
             }
 
             await _questionRepository.UpdateAsync(existing);
-            // await _unitOfWork.SaveChangesAsync();
-
             return true;
         }
 

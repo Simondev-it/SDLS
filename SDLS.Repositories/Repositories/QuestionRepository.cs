@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
@@ -46,6 +47,11 @@ namespace SDLS.Repositories.Repositories
                 question.Status = 0; 
                 this.Update(question);
             }
+        }
+
+        public async Task<Question?> GetChildQuestionAsync(Guid parentId)
+        {
+            return this.GetById(parentId)?.InverseParent.FirstOrDefault(q => q.Status == 1);
         }
     }
 }

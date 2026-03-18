@@ -1,4 +1,5 @@
-﻿using SDLS.Model.Models;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using SDLS.Model.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,7 @@ namespace SDLS.Repositories.Interface
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
         Task DeleteAsync(Guid id);
+        Task<Question?> GetChildQuestionAsync(Guid parentId);
+        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }
