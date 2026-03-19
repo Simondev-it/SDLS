@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
@@ -26,11 +27,49 @@ namespace SDLS.Services.Services
         }
 
 
-        public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
+        public async Task<PagedResult<QuestionDTO>> GetAllAsync(
+            Guid? lessonId = null,
+            Guid? topicId = null,
+            int page = 1,
+            int pageSize = 20)
         {
-            var questions = await _questionRepository.GetAllAsync();
-            return _mapper.Map<List<QuestionDTO>>(questions);
+            if (!lessonId.HasValue)
+                throw new ArgumentException("LessonId is required");
+
+            var allQuestions = await _questionRepository.GetAllByLessonAsync(lessonId.Value);
+
+            var orderedList = BuildOrderedLinkedList(allQuestions);
+
+            if (topicId.HasValue)
+                orderedList = orderedList.Where(q => q.QuestionTopicId == topicId.Value).ToList();
+
+            var total = orderedList.Count;
+
+            // Lấy phần cần paginate (vẫn là entity)
+            var pagedEntities = orderedList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Map sang DTO
+            var pagedDtos = _mapper.Map<List<QuestionDTO>>(pagedEntities);
+
+            // Gán Position vào DTO (không động vào entity)
+            for (int i = 0; i < pagedDtos.Count; i++)
+            {
+                pagedDtos[i].Position = (page - 1) * pageSize + i + 1;
+            }
+
+            return new PagedResult<QuestionDTO>
+            {
+                Items = pagedDtos,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
         }
+
 
         public async Task<QuestionDTO> GetByIdAsync(Guid id)
         {
@@ -44,20 +83,18 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(QuestionCreateDTO dto)
         {
-            // 1. Validation cơ bản
+            // Validation cơ bản
             if (dto.Answers == null || !dto.Answers.Any())
                 throw new ArgumentException("Question must have at least 1 answer");
 
             if (!dto.Answers.Any(a => a.Iscorrect))
                 throw new ArgumentException("At least one answer must be correct");
 
-            // 2. Map DTO sang Entity
             var question = _mapper.Map<Question>(dto);
             question.Id = Guid.NewGuid();
             question.CreateAt = DateTime.UtcNow;
             question.Status = 1;
 
-            // 4. Xử lý Answers (EF sẽ tự động Insert nhờ Navigation Property)
             foreach (var answer in question.Answers)
             {
                 answer.Id = Guid.NewGuid();
@@ -73,15 +110,13 @@ namespace SDLS.Services.Services
 
         public async Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto)
         {
-            // 1. Lấy Question cũ bao gồm cả Answers
             var existing = await _questionRepository.GetByIdAsync(id);
             if (existing == null) throw new KeyNotFoundException("Question not found");
 
-            // 2. Cập nhật thông tin cơ bản
             _mapper.Map(dto, existing);
             existing.UpdateAt = DateTime.UtcNow;
 
-            // 3. Xử lý Logic LinkedList (Tránh vòng lặp vô tận: A -> B -> A)
+            // Xử lý Logic LinkedList (Tránh vòng lặp vô tận: A -> B -> A)
             if (existing.ParentId == existing.Id)
                 throw new ArgumentException("A question cannot be its own parent.");
 
@@ -107,6 +142,27 @@ namespace SDLS.Services.Services
         {
             await _questionRepository.DeleteAsync(id);
             return true;
+        }
+
+        private List<Question> BuildOrderedLinkedList(List<Question> all)
+        {
+            var dict = all.ToDictionary(q => q.Id);
+            var roots = all.Where(q => q.ParentId == null).ToList();
+
+            var result = new List<Question>();
+
+            foreach (var root in roots)   // thường chỉ có 1 root
+            {
+                var current = root;
+                while (current != null)
+                {
+                    result.Add(current);
+                    // Tìm next (chỉ có 1 next vì singly linked list)
+                    current = all.FirstOrDefault(q => q.ParentId == current.Id);
+                }
+            }
+
+            return result;
         }
     }
 }

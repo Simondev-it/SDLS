@@ -25,8 +25,34 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers)
+                .Include(q => q.InverseParent)
                 .Where(q => q.Status == 1)
                 .ToListAsync();
+        }
+
+        public async Task<List<Question>> GetAllOrderedAsync()
+        {
+            // Lấy tất cả root (ParentId = null)
+            var roots = await _context.Questions
+                .Include(q => q.Answers)
+                .Include(q => q.InverseParent)   // để traverse next
+                .Where(q => q.ParentId == null && q.Status == 1)
+                .ToListAsync();
+
+            var orderedList = new List<Question>();
+
+            foreach (var root in roots)
+            {
+                var current = root;
+                while (current != null)
+                {
+                    orderedList.Add(current);
+                    // Chỉ lấy 1 next (enforce singly linked list)
+                    current = current.InverseParent.FirstOrDefault(q => q.Status == 1);
+                }
+            }
+
+            return orderedList;
         }
 
         public async Task AddAsync(Question question)
@@ -52,6 +78,24 @@ namespace SDLS.Repositories.Repositories
         public async Task<Question?> GetChildQuestionAsync(Guid parentId)
         {
             return this.GetById(parentId)?.InverseParent.FirstOrDefault(q => q.Status == 1);
+        }
+
+        public async Task<List<Question>> GetAllByLessonAsync(Guid lessonId)
+        {
+            return await _context.Questions
+                .Include(q => q.Answers)
+                .Include(q => q.InverseParent)   // cần để traverse next
+                .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
+                .AsNoTracking()                  // tăng tốc
+                .ToListAsync();
+        }
+
+        public async Task<Question?> GetByIdWithLinksAsync(Guid id)
+        {
+            return await _context.Questions
+                .Include(q => q.Answers)
+                .Include(q => q.InverseParent)
+                .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
     }
 }

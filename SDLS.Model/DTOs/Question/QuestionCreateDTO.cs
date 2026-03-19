@@ -16,6 +16,7 @@ namespace SDLS.Model.DTOs.Question
         public Guid QuestionCategoryId { get; set; }
 
         public Guid? ParentId { get; set; }
+        public int Position { get; set; } = 1;
 
         public string Content { get; set; } = null!;
 

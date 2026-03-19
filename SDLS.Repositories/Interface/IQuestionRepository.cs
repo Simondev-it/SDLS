@@ -12,10 +12,12 @@ namespace SDLS.Repositories.Interface
     {
         Task<Question> GetByIdAsync(Guid id);
         Task<IEnumerable<Question>> GetAllAsync();
+        Task<List<Question>> GetAllOrderedAsync();
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
         Task DeleteAsync(Guid id);
         Task<Question?> GetChildQuestionAsync(Guid parentId);
-        Task<IDbContextTransaction> BeginTransactionAsync();
+        Task<List<Question>> GetAllByLessonAsync(Guid lessonId);
+        Task<Question?> GetByIdWithLinksAsync(Guid id);
     }
 }

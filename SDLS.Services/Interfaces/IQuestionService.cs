@@ -1,4 +1,5 @@
-﻿using SDLS.Model.DTOs.Question;
+﻿using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.Question;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,11 @@ namespace SDLS.Services.Interfaces
 {
     public interface IQuestionService
     {
-        Task<IEnumerable<QuestionDTO>> GetAllAsync();
+        Task<PagedResult<QuestionDTO>> GetAllAsync(
+            Guid? lessonId = null,
+            Guid? topicId = null,
+            int page = 1,
+            int pageSize = 20);
         Task<QuestionDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(QuestionCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto);
