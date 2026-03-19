@@ -30,31 +30,6 @@ namespace SDLS.Repositories.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Question>> GetAllOrderedAsync()
-        {
-            // Lấy tất cả root (ParentId = null)
-            var roots = await _context.Questions
-                .Include(q => q.Answers)
-                .Include(q => q.InverseParent)   // để traverse next
-                .Where(q => q.ParentId == null && q.Status == 1)
-                .ToListAsync();
-
-            var orderedList = new List<Question>();
-
-            foreach (var root in roots)
-            {
-                var current = root;
-                while (current != null)
-                {
-                    orderedList.Add(current);
-                    // Chỉ lấy 1 next (enforce singly linked list)
-                    current = current.InverseParent.FirstOrDefault(q => q.Status == 1);
-                }
-            }
-
-            return orderedList;
-        }
-
         public async Task AddAsync(Question question)
         {
             this.Create(question);

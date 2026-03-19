@@ -13,6 +13,7 @@ namespace SDLS.Services.Interfaces
         Task<PagedResult<QuestionDTO>> GetAllAsync(
             Guid? lessonId = null,
             Guid? topicId = null,
+            Guid? QuestionCategoryId = null,
             int page = 1,
             int pageSize = 20);
         Task<QuestionDTO> GetByIdAsync(Guid id);

@@ -30,18 +30,26 @@ namespace SDLS.Services.Services
         public async Task<PagedResult<QuestionDTO>> GetAllAsync(
             Guid? lessonId = null,
             Guid? topicId = null,
+            Guid? QuestionCategoryId = null,
             int page = 1,
             int pageSize = 20)
         {
-            if (!lessonId.HasValue)
-                throw new ArgumentException("LessonId is required");
+            //if (!lessonId.HasValue)
+            //    throw new ArgumentException("LessonId is required");
 
-            var allQuestions = await _questionRepository.GetAllByLessonAsync(lessonId.Value);
+            //var allQuestions = await _questionRepository.GetAllByLessonAsync(lessonId.Value);
+            var allQuestions = await _questionRepository.GetAllAsync();
 
             var orderedList = BuildOrderedLinkedList(allQuestions);
 
+            if (lessonId.HasValue)
+                orderedList = orderedList.Where(q => q.QuestionLessonId == lessonId.Value).ToList();
+
             if (topicId.HasValue)
                 orderedList = orderedList.Where(q => q.QuestionTopicId == topicId.Value).ToList();
+
+            if (QuestionCategoryId.HasValue)
+                orderedList = orderedList.Where(q => q.QuestionCategoryId == QuestionCategoryId.Value).ToList();
 
             var total = orderedList.Count;
 
@@ -144,7 +152,7 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        private List<Question> BuildOrderedLinkedList(List<Question> all)
+        private List<Question> BuildOrderedLinkedList(IEnumerable<Question> all)
         {
             var dict = all.ToDictionary(q => q.Id);
             var roots = all.Where(q => q.ParentId == null).ToList();
