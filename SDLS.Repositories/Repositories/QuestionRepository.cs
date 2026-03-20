@@ -98,5 +98,23 @@ namespace SDLS.Repositories.Repositories
                 .Include(q => q.InverseParent)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
+
+        public async Task UpdateParentIdAsync(Guid questionId, Guid? newParentId)
+        {
+            await _context.Questions
+                .Where(q => q.Id == questionId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(q => q.ParentId, newParentId)
+                    .SetProperty(q => q.UpdateAt, DateTime.UtcNow.ToLocalTime()));
+        }
+
+        public async Task<List<Question>> GetLessonQuestionsForReorderAsync(Guid lessonId)
+        {
+            return await _context.Questions
+                .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
+                .Select(q => new Question { Id = q.Id, ParentId = q.ParentId }) // chỉ lấy 2 field
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }
