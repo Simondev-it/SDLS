@@ -48,6 +48,9 @@ namespace SDLS.API
             builder.Services.AddScoped<ILessonImageService, LessonImageService>();
             builder.Services.AddScoped<IStorageService, StorageService>();
 
+            builder.Services.AddScoped<ILearningProgressRepository, LearningProgressRepository>();
+            builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
