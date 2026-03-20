@@ -46,7 +46,6 @@ namespace SDLS.Repositories.Repositories
         //_context.Update(question); 
         public async Task UpdateAsync(Question question)
         {
-            
             await _context.SaveChangesAsync();
         }
 
