@@ -1,5 +1,4 @@
-﻿using SDLS.Model.DTOs.Answer;
-using SDLS.Model.DTOs.Answer.ExamQuestion;
+﻿using SDLS.Model.DTOs.Answer.ExamQuestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace SDLS.Model.DTOs.Exam
 {
-    public class ExamDTO
+    public class ExamCreateDTO
     {
-        public Guid Id { get; set; }
         public Guid UserId { get; set; }
 
         public string Title { get; set; } = null!;
