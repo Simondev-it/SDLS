@@ -36,9 +36,14 @@ namespace SDLS.Services.Services
 
         public async Task<LearningProgressDTO> CreateAsync(LearningProgressCreateDTO dto)
         {
-            // Validation
+            // Validation cơ bản
             if (dto.QuestionId == Guid.Empty || dto.UserId == Guid.Empty)
                 throw new ArgumentException("QuestionId và UserId không được rỗng");
+
+            // Kiểm tra trùng lặp: đã có LearningProgress cho user + question chưa?
+            var existing = await _repository.GetByUserAndQuestionAsync(dto.UserId, dto.QuestionId);
+            if (existing != null && existing.Any())
+                throw new InvalidOperationException("LearningProgress cho UserId và QuestionId này đã tồn tại.");
 
             var entity = _mapper.Map<LearningProgress>(dto);
             entity.Id = Guid.NewGuid();
@@ -55,6 +60,16 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return null;
+
+            // Kiểm tra nếu thay đổi UserId hoặc QuestionId → tránh trùng lặp
+            bool isChangingKeys = existing.UserId != dto.UserId || existing.QuestionId != dto.QuestionId;
+
+            if (isChangingKeys)
+            {
+                var conflict = await _repository.GetByUserAndQuestionAsync(dto.UserId, dto.QuestionId);
+                if (conflict != null && conflict.Any(lp => lp.Id != id)) // loại trừ chính bản thân
+                    throw new InvalidOperationException("Cặp UserId và QuestionId mới đã tồn tại ở record khác.");
+            }
 
             // Update fields
             existing.QuestionId = dto.QuestionId;

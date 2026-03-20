@@ -31,14 +31,14 @@ namespace SDLS.Repositories.Repositories
 
         public async Task AddAsync(LearningProgress entity)
         {
-            PrepareCreate(entity);
-            await SaveAsync();
+            //PrepareCreate(entity);
+            //await SaveAsync();
+            this.CreateAsync(entity);
         }
 
         public async Task UpdateAsync(LearningProgress entity)
         {
-            PrepareUpdate(entity);
-            await SaveAsync();
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
@@ -46,10 +46,7 @@ namespace SDLS.Repositories.Repositories
             var lp = await GetByIdAsync(id);
             if (lp != null)
             {
-                lp.Status = 0;
-                lp.UpdateAt = DateTime.UtcNow.ToLocalTime();
-                PrepareUpdate(lp);
-                await SaveAsync();
+                this.RemoveAsync(lp);
             }
         }
 
