@@ -1,6 +1,4 @@
 ﻿using SDLS.Model.DTOs.Answer.ExamQuestion;
-using System;
-using System.Collections.Generic;
 
 namespace SDLS.Model.DTOs.Exam
 {
@@ -12,7 +10,6 @@ namespace SDLS.Model.DTOs.Exam
         public int? Duration { get; set; }
         public int? PassScore { get; set; }
         public bool IsRandom { get; set; }
-        public int? Status { get; set; }
 
         public List<ExamQuestionCreateDTO> ExamQuestions { get; set; } = new();
     }

@@ -2,6 +2,8 @@
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Answer.ExamQuestion;
 using SDLS.Model.DTOs.Exam;
+using SDLS.Model.DTOs.ExamDetail;
+using SDLS.Model.DTOs.ExamSession;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.DTOs.Question;
@@ -35,6 +37,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ExamQuestionDTO, ExamQuestion>().ReverseMap();
             CreateMap<ExamQuestionCreateDTO, ExamQuestion>().ReverseMap();
             CreateMap<ExamQuestionUpdateDTO, ExamQuestion>().ReverseMap();
+
+            CreateMap<ExamSessionDTO, ExamSession>().ReverseMap();
+            CreateMap<ExamSessionCreateDTO, ExamSession>().ReverseMap();
+            CreateMap<ExamSessionUpdateDTO, ExamSession>().ReverseMap();
+
+            CreateMap<ExamDetailDTO, ExamDetail>().ReverseMap();
+            CreateMap<ExamDetailCreateDTO, ExamDetail>().ReverseMap();
+            CreateMap<ExamDetailUpdateDTO, ExamDetail>().ReverseMap();
 
             CreateMap<LearningProgressCreateDTO, LearningProgress>().ReverseMap();
             CreateMap<LearningProgressUpdateDTO, LearningProgress>().ReverseMap()

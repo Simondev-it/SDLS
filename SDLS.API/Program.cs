@@ -51,6 +51,9 @@ namespace SDLS.API
             builder.Services.AddScoped<ILearningProgressRepository, LearningProgressRepository>();
             builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
 
+            builder.Services.AddScoped<IExamSessionRepository, ExamSessionRepository>();
+            builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

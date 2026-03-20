@@ -36,11 +36,9 @@ namespace SDLS.Services.Services
 
         public async Task<LearningProgressDTO> CreateAsync(LearningProgressCreateDTO dto)
         {
-            // Validation cơ bản
             if (dto.QuestionId == Guid.Empty || dto.UserId == Guid.Empty)
                 throw new ArgumentException("QuestionId và UserId không được rỗng");
 
-            // Kiểm tra trùng lặp: đã có LearningProgress cho user + question chưa?
             var existing = await _repository.GetByUserAndQuestionAsync(dto.UserId, dto.QuestionId);
             if (existing != null && existing.Any())
                 throw new InvalidOperationException("LearningProgress cho UserId và QuestionId này đã tồn tại.");
@@ -49,7 +47,7 @@ namespace SDLS.Services.Services
             entity.Id = Guid.NewGuid();
             entity.CreateAt = DateTime.UtcNow.ToLocalTime();
             entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
-            entity.Status = dto.Status ?? 1;
+            entity.Status = 1;
 
             await _repository.AddAsync(entity);
 
