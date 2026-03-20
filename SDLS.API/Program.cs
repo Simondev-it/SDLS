@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
+using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Services;
@@ -34,6 +35,10 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
             builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
+            builder.Services.AddScoped<ILessonImageRepository, LessonImageRepository>();
+
+            builder.Services.AddScoped<ILessonImageService, LessonImageService>();
+            builder.Services.AddScoped<IStorageService, StorageService>();
 
             // Add services to the container.
 
@@ -41,6 +46,20 @@ namespace SDLS.API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            //Add supabase 
+            var supabaseUrl = builder.Configuration["Supabase:Url"];
+            var supabaseServiceRoleKey = builder.Configuration["Supabase:ServiceRoleKey"];
+            var supabaseKey = string.IsNullOrWhiteSpace(supabaseServiceRoleKey)
+                ? builder.Configuration["Supabase:Key"]
+                : supabaseServiceRoleKey;
+
+            if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey))
+            {
+                throw new InvalidOperationException("Supabase configuration is missing. Set Supabase:Url and Supabase:ServiceRoleKey (or Supabase:Key).");
+            }
+
+            builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
             var app = builder.Build();
 
