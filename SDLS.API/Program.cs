@@ -42,6 +42,11 @@ namespace SDLS.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //Add supabase 
+            var supabaseUrl = builder.Configuration["Supabase:Url"];
+            var supabaseKey = builder.Configuration["Supabase:Key"];    
+            builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
