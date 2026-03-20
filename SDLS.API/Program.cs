@@ -49,7 +49,16 @@ namespace SDLS.API
 
             //Add supabase 
             var supabaseUrl = builder.Configuration["Supabase:Url"];
-            var supabaseKey = builder.Configuration["Supabase:Key"];    
+            var supabaseServiceRoleKey = builder.Configuration["Supabase:ServiceRoleKey"];
+            var supabaseKey = string.IsNullOrWhiteSpace(supabaseServiceRoleKey)
+                ? builder.Configuration["Supabase:Key"]
+                : supabaseServiceRoleKey;
+
+            if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey))
+            {
+                throw new InvalidOperationException("Supabase configuration is missing. Set Supabase:Url and Supabase:ServiceRoleKey (or Supabase:Key).");
+            }
+
             builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
             var app = builder.Build();

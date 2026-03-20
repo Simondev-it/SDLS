@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using SDLS.Model.Enumerations;
 using SDLS.Services.Interfaces;
+using Supabase.Storage.Exceptions;
 
 namespace SDLS.Services.Services
 {
@@ -82,7 +83,17 @@ namespace SDLS.Services.Services
             };
 
             var storage = _supabaseClient.Storage.From(bucket);
-            await storage.Upload(bytes, filePath, options);
+            try
+            {
+                await storage.Upload(bytes, filePath, options);
+            }
+            catch (SupabaseStorageException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to upload image to Supabase storage bucket '{bucket}' at path '{filePath}'. " +
+                    "This is usually caused by Storage RLS policy restrictions. For backend uploads, use Supabase service role key in configuration ('Supabase:ServiceRoleKey') or adjust bucket policies.",
+                    ex);
+            }
 
             return storage.GetPublicUrl(filePath);
         }
@@ -98,9 +109,19 @@ namespace SDLS.Services.Services
             var (bucket, _) = cfg;
             var path = ExtractPathFromUrl(fileUrl, bucket);
 
-            await _supabaseClient.Storage
-                .From(bucket)
-                .Remove(new List<string> { path });
+            try
+            {
+                await _supabaseClient.Storage
+                    .From(bucket)
+                    .Remove(new List<string> { path });
+            }
+            catch (SupabaseStorageException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to delete image from Supabase storage bucket '{bucket}' at path '{path}'. " +
+                    "Check Storage RLS policies or service role key configuration.",
+                    ex);
+            }
 
             return true;
         }
