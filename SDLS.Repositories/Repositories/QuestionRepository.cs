@@ -70,12 +70,9 @@ namespace SDLS.Repositories.Repositories
             var question = this.GetById(id);
             if (question != null)
             {
-                //question.Status = 0; 
-                //this.Update(question);
+                question.Status = 0;
+                this.Update(question);
 
-                _context.Answers.Where(a => a.QuestionId == id).ExecuteDelete(); // xóa cứng các câu trả lời liên quan
-                _context.Questions.Remove(question); // xóa cứng
-                await _context.SaveChangesAsync();
             }
         }
 
