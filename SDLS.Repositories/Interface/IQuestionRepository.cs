@@ -11,6 +11,7 @@ namespace SDLS.Repositories.Interface
     public interface IQuestionRepository
     {
         Task<Question> GetByIdAsync(Guid id);
+        Task<Question> GetByIdForUpdateAsync(Guid id);
         Task<IEnumerable<Question>> GetAllAsync();
         //Task<List<Question>> GetAllOrderedAsync();
         Task AddAsync(Question question);
@@ -19,5 +20,7 @@ namespace SDLS.Repositories.Interface
         Task<Question?> GetChildQuestionAsync(Guid parentId);
         Task<List<Question>> GetAllByLessonAsync(Guid lessonId);
         Task<Question?> GetByIdWithLinksAsync(Guid id);
+        Task DeleteAnswersByQuestionIdAsync(Guid questionId);
+        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

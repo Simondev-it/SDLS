@@ -11,7 +11,7 @@ namespace SDLS.Model.DTOs
         public List<T> Items { get; set; } = new();
         public int TotalCount { get; set; }
         public int Page { get; set; }
-        public int PageSize { get; set; }
+        public int PageSize { get; set; } // Số lượng item: nhiều - 6, trung bình - 10, ít - 15
         public int TotalPages { get; set; }
     }
 }

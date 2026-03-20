@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SDLS.Model.DTOs.Question
 {
-    public class QuestionCreateDTO
+    public class QuestionUpdateDTO
     {
         public Guid QuestionLessonId { get; set; }
 
@@ -25,6 +25,6 @@ namespace SDLS.Model.DTOs.Question
         public string? Explanation { get; set; }
 
         public string? Type { get; set; }
-        public List<AnswerCreateDTO> Answers { get; set; } = new List<AnswerCreateDTO>();
+        public List<AnswerUpdateDTO> Answers { get; set; } = new List<AnswerUpdateDTO>();
     }
 }

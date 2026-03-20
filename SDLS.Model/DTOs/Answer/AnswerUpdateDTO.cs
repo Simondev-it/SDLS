@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace SDLS.Model.DTOs.Answer
 {
-    public class AnswerDTO
+    public class AnswerUpdateDTO
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
+        public Guid QuestionId { get; set; }
         public string Content { get; set; } = null!;
-        public bool? Iscorrect { get; set; }
-        public int ? Status { get; set; }
+        public bool Iscorrect { get; set; }
+        public int? Status { get; set; }
     }
 }

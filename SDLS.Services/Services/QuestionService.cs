@@ -30,12 +30,8 @@ namespace SDLS.Services.Services
             Guid? topicId = null,
             Guid? QuestionCategoryId = null,
             int page = 1,
-            int pageSize = 20)
+            int pageSize = 10)
         {
-            //if (!lessonId.HasValue)
-            //    throw new ArgumentException("LessonId is required");
-
-            //var allQuestions = await _questionRepository.GetAllByLessonAsync(lessonId.Value);
             var allQuestions = await _questionRepository.GetAllAsync();
 
             var orderedList = BuildOrderedLinkedList(allQuestions);
@@ -89,19 +85,21 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(QuestionCreateDTO dto)
         {
-            if (!dto.Answers.Any() || !dto.Answers.Any(a => a.Iscorrect))
-                throw new ArgumentException("Phải có ít nhất 1 đáp án đúng");
+            // Validation
+            if (dto.Answers == null || !dto.Answers.Any())
+                throw new ArgumentException("Question must have at least 1 answer");
 
-            var all = await _questionRepository.GetAllByLessonAsync(dto.QuestionLessonId);
-            var ordered = BuildOrderedLinkedList(all);
+            if (!dto.Answers.Any(a => a.Iscorrect))
+                throw new ArgumentException("At least one answer must be correct");
 
+            // Map DTO → Entity
             var newQuestion = _mapper.Map<Question>(dto);
             newQuestion.Id = Guid.NewGuid();
             newQuestion.CreateAt = DateTime.UtcNow.ToLocalTime();
             newQuestion.UpdateAt = DateTime.UtcNow.ToLocalTime();
             newQuestion.Status = 1;
 
-            // Map answers
+            // Xử lý Answers
             foreach (var ans in newQuestion.Answers)
             {
                 ans.Id = Guid.NewGuid();
@@ -110,38 +108,72 @@ namespace SDLS.Services.Services
                 ans.Status = 1;
             }
 
-            // === CHÈN VÀO VỊ TRÍ ===
-            InsertAtPosition(newQuestion, dto.Position, ordered);
-
+            // Lưu (EF sẽ insert Question + Answers cascade)
             await _questionRepository.AddAsync(newQuestion);
 
             return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
-            var existing = await _questionRepository.GetByIdAsync(id);
-            if (existing == null) throw new KeyNotFoundException("Question not found");
+            var existing = await _questionRepository.GetByIdForUpdateAsync(id);
+            if (existing == null)
+                throw new KeyNotFoundException("Không tìm thấy câu hỏi");
 
-            _mapper.Map(dto, existing);
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            var now = DateTime.UtcNow.ToLocalTime();
 
-            // Xử lý Logic LinkedList (Tránh vòng lặp vô tận: A -> B -> A)
-            if (existing.ParentId == existing.Id)
-                throw new ArgumentException("A question cannot be its own parent.");
+            // Update thông tin Question
+            existing.QuestionLessonId = dto.QuestionLessonId;
+            existing.QuestionTopicId = dto.QuestionTopicId;
+            existing.QuestionCategoryId = dto.QuestionCategoryId;
+            existing.ParentId = dto.ParentId;
+            existing.Content = dto.Content;
+            existing.Image = dto.Image;
+            existing.Explanation = dto.Explanation;
+            existing.Type = dto.Type;
+            existing.UpdateAt = now;
 
-            // 4. Cập nhật Answers (Xóa cũ thêm mới)
-            // Để EF hiểu việc xóa, bạn cần đảm bảo Answers là một Tracking Collection
-            existing.Answers.Clear();
-
-            foreach (var answerDto in dto.Answers)
+            if (dto.Answers != null)
             {
-                var newAnswer = _mapper.Map<Answer>(answerDto);
-                newAnswer.Id = Guid.NewGuid();
-                newAnswer.QuestionId = existing.Id;
-                newAnswer.CreateAt = DateTime.UtcNow.ToLocalTime();
-                newAnswer.Status = 1;
-                existing.Answers.Add(newAnswer);
+                var existingAnswersById = existing.Answers.ToDictionary(a => a.Id, a => a);
+
+                foreach (var answerDto in dto.Answers)
+                {
+                    // Validate QuestionId truyền lên phải khớp question đang update
+                    if (answerDto.QuestionId != id)
+                        throw new ArgumentException($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
+
+                    if (answerDto.Id.HasValue)
+                    {
+                        // Có Id => chỉ update answer đã tồn tại
+                        if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
+                            throw new KeyNotFoundException($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
+
+                        if (answer.QuestionId != answerDto.QuestionId)
+                            throw new ArgumentException($"Answer Id {answerDto.Id.Value} không thuộc Question {id}");
+
+                        answer.Content = answerDto.Content;
+                        answer.IsCorrect = answerDto.Iscorrect;
+                        answer.UpdateAt = now;
+                        answer.Status = answerDto.Status ?? answer.Status ?? 1;
+                    }
+                    else
+                    {
+                        // Id null => tạo answer mới
+                        var newAnswer = new Answer
+                        {
+                            //Id = Guid.NewGuid(),
+                            QuestionId = id,
+                            Content = answerDto.Content,
+                            IsCorrect = answerDto.Iscorrect,
+                            CreateAt = now,
+                            UpdateAt = now,
+                            Status = answerDto.Status ?? 1
+                        };
+
+                        existing.Answers.Add(newAnswer);
+                    }
+                }
             }
 
             await _questionRepository.UpdateAsync(existing);
@@ -159,19 +191,36 @@ namespace SDLS.Services.Services
 
         private List<Question> BuildOrderedLinkedList(IEnumerable<Question> all)
         {
-            var dict = all.ToDictionary(q => q.Id);
-            var roots = all.Where(q => q.ParentId == null).ToList();
+            var allList = all.ToList();
+            var visited = new HashSet<Guid>();
+            
+            // Dùng Dictionary nhóm theo ParentId để tra cứu O(1) tăng cực độ hiệu năng
+            var childrenMap = allList
+                .Where(q => q.ParentId.HasValue)
+                .GroupBy(q => q.ParentId.Value)
+                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
 
+            var roots = allList.Where(q => q.ParentId == null).ToList();
             var result = new List<Question>();
 
-            foreach (var root in roots)   // thường chỉ có 1 root
+            foreach (var root in roots)
             {
                 var current = root;
-                while (current != null)
+
+                while (current != null && !visited.Contains(current.Id))
                 {
                     result.Add(current);
-                    // Tìm next (chỉ có 1 next vì singly linked list)
-                    current = all.FirstOrDefault(q => q.ParentId == current.Id);
+                    visited.Add(current.Id);
+
+                    // Tra cứu trực tiếp từ Dictionary thay vì FirstOrDefault trên danh sách gốc
+                    if (childrenMap.TryGetValue(current.Id, out var child))
+                    {
+                        current = child;
+                    }
+                    else
+                    {
+                        current = null;
+                    }
                 }
             }
 
@@ -202,8 +251,24 @@ namespace SDLS.Services.Services
 
         private void MoveToNewPosition(Question question, int newPosition, List<Question> ordered)
         {
-            // Xóa tạm khỏi list (để tránh lặp)
-            ordered.Remove(question);
+            // Trong UpdateAsync, dữ liệu lấy từ DB có thể khác instance nên phải so sánh bằng ID
+            var currentIndex = ordered.FindIndex(q => q.Id == question.Id);
+            
+            if (currentIndex >= 0)
+            {
+                // Phải nối lại các node trước khi dời (A -> B -> C), gỡ B ra thì A phải trỏ nối vào C
+                var prevNode = currentIndex > 0 ? ordered[currentIndex - 1] : null;
+                var nextNode = currentIndex + 1 < ordered.Count ? ordered[currentIndex + 1] : null;
+
+                if (nextNode != null)
+                {
+                    nextNode.ParentId = prevNode?.Id;
+                }
+
+                ordered.RemoveAt(currentIndex);
+            }
+
+            // Chèn Node vào chỗ mới
             InsertAtPosition(question, newPosition, ordered);
         }
     }

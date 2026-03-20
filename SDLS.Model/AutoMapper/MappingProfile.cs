@@ -17,6 +17,7 @@ namespace SDLS.Model.AutoMapper
         {
             CreateMap<QuestionDTO, Question>().ReverseMap();
             CreateMap<QuestionCreateDTO, Question>().ReverseMap();
+            CreateMap<QuestionUpdateDTO, Question>().ReverseMap();
 
             CreateMap<AnswerDTO, Answer>().ReverseMap();
             CreateMap<AnswerCreateDTO, Answer>().ReverseMap();

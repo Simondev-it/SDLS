@@ -46,7 +46,7 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionCreateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
