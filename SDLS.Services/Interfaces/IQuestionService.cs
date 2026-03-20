@@ -2,8 +2,6 @@
 using SDLS.Model.DTOs.Question;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SDLS.Services.Interfaces
@@ -14,8 +12,11 @@ namespace SDLS.Services.Interfaces
             Guid? lessonId = null,
             Guid? topicId = null,
             Guid? QuestionCategoryId = null,
+            List<Guid>? tagIds = null,
+            string? searchContent = null,
             int page = 1,
             int pageSize = 20);
+
         Task<QuestionDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(QuestionCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto);

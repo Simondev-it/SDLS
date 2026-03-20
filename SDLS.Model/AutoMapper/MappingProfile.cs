@@ -4,6 +4,7 @@ using SDLS.Model.DTOs.Answer.ExamQuestion;
 using SDLS.Model.DTOs.Exam;
 using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.DTOs.Question;
+using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Models;
 
 namespace SDLS.Model.AutoMapper
@@ -19,6 +20,10 @@ namespace SDLS.Model.AutoMapper
             CreateMap<AnswerDTO, Answer>().ReverseMap();
             CreateMap<AnswerCreateDTO, Answer>().ReverseMap();
 
+            CreateMap<QuestionTagDTO, QuestionTag>().ReverseMap();
+            CreateMap<QuestionTagCreateDTO, QuestionTag>().ReverseMap();
+            CreateMap<QuestionTagUpdateDTO, QuestionTag>().ReverseMap();
+
             CreateMap<LessonImageDTO, LessonImage>().ReverseMap();
             CreateMap<LessonImageCreateDTO, LessonImage>().ReverseMap();
 
@@ -26,9 +31,7 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ExamCreateDTO, Exam>().ReverseMap();
             CreateMap<ExamUpdateDTO, Exam>().ReverseMap();
 
-            CreateMap<ExamQuestionDTO, ExamQuestion>()
-                .ForMember(d => d.Question, opt => opt.MapFrom(s => s.Question))
-                .ReverseMap();
+            CreateMap<ExamQuestionDTO, ExamQuestion>().ReverseMap();
             CreateMap<ExamQuestionCreateDTO, ExamQuestion>().ReverseMap();
             CreateMap<ExamQuestionUpdateDTO, ExamQuestion>().ReverseMap();
         }

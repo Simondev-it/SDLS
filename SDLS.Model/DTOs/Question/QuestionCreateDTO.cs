@@ -1,4 +1,5 @@
 ﻿using SDLS.Model.DTOs.Answer;
+using SDLS.Model.DTOs.QuestionTag;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace SDLS.Model.DTOs.Question
         public string? Explanation { get; set; }
 
         public string? Type { get; set; }
-        public List<AnswerCreateDTO> Answers { get; set; } = new List<AnswerCreateDTO>();
+        public List<AnswerCreateDTO> Answers { get; set; } = new();
+        public List<QuestionTagCreateDTO> QuestionTags { get; set; } = new();
     }
 }

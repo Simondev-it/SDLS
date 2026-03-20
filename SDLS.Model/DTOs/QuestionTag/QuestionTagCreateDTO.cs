@@ -8,8 +8,6 @@ namespace SDLS.Model.DTOs.QuestionTag
 {
     public class QuestionTagCreateDTO
     {
-        public Guid QuestionId { get; set; }
-
         public Guid TagId { get; set; }
     }
 }

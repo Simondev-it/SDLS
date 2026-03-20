@@ -18,6 +18,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
+                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
@@ -26,6 +27,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers)
+                .Include(q => q.QuestionTags)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
@@ -33,6 +35,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
+                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
                 .Include(q => q.InverseParent)
                 .Where(q => q.Status == 1)
                 .AsNoTracking()
@@ -115,6 +118,62 @@ namespace SDLS.Repositories.Repositories
                 .Select(q => new Question { Id = q.Id, ParentId = q.ParentId }) // chỉ lấy 2 field
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public async Task<List<Question>> GetFilteredForListAsync(
+            Guid? lessonId = null,
+            Guid? topicId = null,
+            Guid? questionCategoryId = null,
+            List<Guid>? tagIds = null,
+            string? searchContent = null)
+        {
+            var normalizedTagIds = tagIds?
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList() ?? new List<Guid>();
+
+            var query = _context.Questions
+                .Where(q => q.Status == 1);
+
+            if (lessonId.HasValue)
+                query = query.Where(q => q.QuestionLessonId == lessonId.Value);
+
+            if (topicId.HasValue)
+                query = query.Where(q => q.QuestionTopicId == topicId.Value);
+
+            if (questionCategoryId.HasValue)
+                query = query.Where(q => q.QuestionCategoryId == questionCategoryId.Value);
+
+            if (!string.IsNullOrWhiteSpace(searchContent))
+            {
+                var keyword = searchContent.Trim();
+                query = query.Where(q => q.Content != null && EF.Functions.ILike(q.Content, $"%{keyword}%"));
+            }
+
+            // AND logic: question phải có đủ tất cả tagIds
+            if (normalizedTagIds.Count > 0)
+            {
+                var requiredTagCount = normalizedTagIds.Count;
+
+                query = query.Where(q =>
+                    q.QuestionTags
+                        .Where(qt => qt.Status == 1 && normalizedTagIds.Contains(qt.TagId))
+                        .Select(qt => qt.TagId)
+                        .Distinct()
+                        .Count() == requiredTagCount);
+            }
+
+            return await query
+                .Include(q => q.Answers.Where(a => a.Status == 1))
+                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public void RemoveQuestionTags(IEnumerable<QuestionTag> questionTags)
+        {
+            _context.QuestionTags.RemoveRange(questionTags);
         }
     }
 }

@@ -29,23 +29,22 @@ namespace SDLS.Services.Services
             Guid? lessonId = null,
             Guid? topicId = null,
             Guid? QuestionCategoryId = null,
+            List<Guid>? tagIds = null,
+            string? searchContent = null,
             int page = 1,
             int pageSize = 10)
         {
-            var allQuestions = await _questionRepository.GetAllAsync();
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 10 : pageSize;
 
-            var filtered = allQuestions.AsEnumerable();
+            var filteredQuestions = await _questionRepository.GetFilteredForListAsync(
+                lessonId,
+                topicId,
+                QuestionCategoryId,
+                tagIds,
+                searchContent);
 
-            if (lessonId.HasValue)
-                filtered = filtered.Where(q => q.QuestionLessonId == lessonId.Value);
-
-            if (topicId.HasValue)
-                filtered = filtered.Where(q => q.QuestionTopicId == topicId.Value);
-
-            if (QuestionCategoryId.HasValue)
-                filtered = filtered.Where(q => q.QuestionCategoryId == QuestionCategoryId.Value);
-
-            var orderedList = BuildOrderedLinkedList(filtered);
+            var orderedList = BuildOrderedLinkedList(filteredQuestions);
             var total = orderedList.Count;
 
             var pagedEntities = orderedList
@@ -105,17 +104,22 @@ namespace SDLS.Services.Services
                 ans.Status = 1;
             }
 
-            // Build order theo lesson để chèn đúng vị trí
+            foreach (var questionTag in newQuestion.QuestionTags)
+            {
+                questionTag.QuestionId = newQuestion.Id;
+                questionTag.CreateAt = now;
+                questionTag.UpdateAt = now;
+                questionTag.Status = 1;
+            }
+
             var lessonQuestions = await _questionRepository.GetAllByLessonAsync(dto.QuestionLessonId);
             var ordered = BuildOrderedLinkedList(lessonQuestions);
 
             var position = NormalizePosition(dto.Position, ordered.Count);
             ResolveInsertNeighbors(ordered, position, out var prevId, out var nextId);
 
-            // Node mới trỏ tới node kế tiếp
             newQuestion.ParentId = nextId;
 
-            // Node trước đó trỏ tới node mới
             if (prevId.HasValue)
             {
                 var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
@@ -180,6 +184,33 @@ namespace SDLS.Services.Services
 
                         existing.Answers.Add(newAnswer);
                     }
+                }
+            }
+
+            if (dto.QuestionTags != null)
+            {
+                // 1) Hard delete toàn bộ tag cũ của question
+                _questionRepository.RemoveQuestionTags(existing.QuestionTags.ToList());
+
+                // 2) Thêm lại tag mới (distinct để tránh trùng unique questionId + tagId)
+                var newTagIds = dto.QuestionTags
+                    .Select(qt => qt.TagId)
+                    .Where(tagId => tagId != Guid.Empty)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var tagId in newTagIds)
+                {
+                    var newQuestionTag = new QuestionTag
+                    {
+                        QuestionId = id,
+                        TagId = tagId,
+                        CreateAt = now,
+                        UpdateAt = now,
+                        Status = 1
+                    };
+
+                    existing.QuestionTags.Add(newQuestionTag);
                 }
             }
 
