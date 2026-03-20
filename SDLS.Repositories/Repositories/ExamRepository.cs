@@ -5,7 +5,6 @@ using SDLS.Repositories.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
@@ -15,38 +14,47 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<Exam>> GetAllAsync()
         {
             return await _context.Exams
-                .Where(q => q.Status == 1 && q.IsRandom == false)
+                .Where(e => e.Status == 1 && e.IsRandom == false)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<Exam> GetByIdAsync(Guid id)
+        public async Task<Exam?> GetByIdAsync(Guid id)
         {
             return await _context.Exams
-                .Include(q => q.ExamQuestions)
-                .Where(q => q.Status == 1)
+                .Include(e => e.ExamQuestions.Where(eq => eq.Status == 1))
+                .Where(e => e.Status == 1)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<Exam?> GetByIdForUpdateAsync(Guid id)
+        {
+            return await _context.Exams
+                .Include(e => e.ExamQuestions)
+                .FirstOrDefaultAsync(e => e.Id == id && e.Status == 1);
         }
 
         public async Task AddAsync(Exam exam)
         {
-            this.Create(exam);
+            await _context.Exams.AddAsync(exam);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Exam exam)
         {
-            this.Update(exam);
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            var exam = this.GetById(id);
-            if (exam != null)
-            {
-                exam.Status = 0;
-                this.Update(exam);
-            }
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Id == id && e.Status == 1);
+            if (exam == null)
+                return;
+
+            exam.Status = 0;
+            exam.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
         }
     }
 }

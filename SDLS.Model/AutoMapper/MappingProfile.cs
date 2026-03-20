@@ -1,13 +1,9 @@
 ﻿using AutoMapper;
 using SDLS.Model.DTOs.Answer;
+using SDLS.Model.DTOs.Answer.ExamQuestion;
+using SDLS.Model.DTOs.Exam;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 
 namespace SDLS.Model.AutoMapper
 {
@@ -21,6 +17,14 @@ namespace SDLS.Model.AutoMapper
 
             CreateMap<AnswerDTO, Answer>().ReverseMap();
             CreateMap<AnswerCreateDTO, Answer>().ReverseMap();
+
+            CreateMap<ExamDTO, Exam>().ReverseMap();
+            CreateMap<ExamCreateDTO, Exam>().ReverseMap();
+            CreateMap<ExamUpdateDTO, Exam>().ReverseMap();
+
+            CreateMap<ExamQuestionDTO, ExamQuestion>().ReverseMap();
+            CreateMap<ExamQuestionCreateDTO, ExamQuestion>().ReverseMap();
+            CreateMap<ExamQuestionUpdateDTO, ExamQuestion>().ReverseMap();
         }
     }
 }
