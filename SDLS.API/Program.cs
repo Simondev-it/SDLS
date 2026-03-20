@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
+using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Services;
@@ -34,6 +35,10 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
             builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
+            builder.Services.AddScoped<ILessonImageRepository, LessonImageRepository>();
+
+            builder.Services.AddScoped<ILessonImageService, LessonImageService>();
+            builder.Services.AddScoped<IStorageService, StorageService>();
 
             // Add services to the container.
 
