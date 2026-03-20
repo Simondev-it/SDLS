@@ -21,11 +21,24 @@ namespace SDLS.Repositories.Repositories
 
         public async Task<Exam?> GetByIdAsync(Guid id)
         {
-            return await _context.Exams
+            var exam = await _context.Exams
                 .Include(e => e.ExamQuestions.Where(eq => eq.Status == 1))
+                .ThenInclude(eq => eq.Question)
+                .ThenInclude(q => q.Answers.Where(a => a.Status == 1))
                 .Where(e => e.Status == 1)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (exam == null)
+                return null;
+
+            foreach (var eq in exam.ExamQuestions)
+            {
+                if (eq.Question != null && eq.Question.Status != 1)
+                    eq.Question = null;
+            }
+
+            return exam;
         }
 
         public async Task<Exam?> GetByIdForUpdateAsync(Guid id)
