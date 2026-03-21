@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using System;
 using System.Collections.Generic;
@@ -148,5 +149,11 @@ namespace SDLS.Repositories.Base
         }
 
         #endregion Separating asign entity and save operators
+
+        // Transaction support
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }
     }
 }

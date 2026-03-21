@@ -1,4 +1,3 @@
-
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +22,13 @@ namespace SDLS.API
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-                options.UseNpgsql(connectionString);
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorCodesToAdd: null);
+                });
             });
 
             builder.Services.AddAutoMapper(config =>
@@ -34,16 +39,28 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
+            builder.Services.AddScoped<IExamService, ExamService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+
             builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
             builder.Services.AddScoped<ILessonImageRepository, LessonImageRepository>();
 
             builder.Services.AddScoped<ILessonImageService, LessonImageService>();
             builder.Services.AddScoped<IStorageService, StorageService>();
 
-            // Add services to the container.
+            builder.Services.AddScoped<ILearningProgressRepository, LearningProgressRepository>();
+            builder.Services.AddScoped<ILearningProgressService, LearningProgressService>();
+
+            builder.Services.AddScoped<IExamSessionRepository, ExamSessionRepository>();
+            builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
+
+            builder.Services.AddScoped<IQuestionChapterRepository, QuestionChapterRepository>();
+            builder.Services.AddScoped<IQuestionChapterService, QuestionChapterService>();
+
+            builder.Services.AddScoped<IQuestionLessonRepository, QuestionLessonRepository>();
+            builder.Services.AddScoped<IQuestionLessonService, QuestionLessonService>();
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -63,7 +80,6 @@ namespace SDLS.API
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -71,9 +87,7 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
 
             app.MapControllers();
 

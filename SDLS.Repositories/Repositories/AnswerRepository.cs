@@ -23,12 +23,7 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
-            var answer = this.GetById(id);
-            if (answer != null)
-            {
-                answer.Status = 0;
-                this.Update(answer);
-            }
+            this.Remove(this.GetById(id));
         }
     }
 }

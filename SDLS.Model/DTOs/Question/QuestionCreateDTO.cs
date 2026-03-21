@@ -1,29 +1,42 @@
 ﻿using SDLS.Model.DTOs.Answer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SDLS.Model.DTOs.QuestionTag;
+using SDLS.Model.Validations;
+using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Question
 {
     public class QuestionCreateDTO
     {
+        [NotEmptyGuid]
         public Guid QuestionLessonId { get; set; }
 
+        [NotEmptyGuid]
         public Guid QuestionTopicId { get; set; }
 
+        [NotEmptyGuid]
         public Guid QuestionCategoryId { get; set; }
 
         public Guid? ParentId { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public int? Position { get; set; }
+
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
+        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
+        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Image { get; set; }
 
+        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Explanation { get; set; }
 
+        [StringLength(20, ErrorMessage = "Vượt quá độ dài tối đa 20 ký tự.")]
         public string? Type { get; set; }
-        public List<AnswerCreateDTO> Answers { get; set; } = new List<AnswerCreateDTO>();
+
+        [MinLength(1, ErrorMessage = "Trường này là bắt buộc.")]
+        public List<AnswerCreateDTO> Answers { get; set; } = new();
+
+        public List<QuestionTagCreateDTO> QuestionTags { get; set; } = new();
     }
 }

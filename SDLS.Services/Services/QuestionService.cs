@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
@@ -15,22 +16,59 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly IAnswerRepository _answerRepository;
         private readonly IMapper _mapper;
 
-        public QuestionService(IQuestionRepository questionRepository, IAnswerRepository answerRepository, IMapper mapper)
+        public QuestionService(IQuestionRepository questionRepository, IMapper mapper)
         {
             _questionRepository = questionRepository;
-            _answerRepository = answerRepository;
             _mapper = mapper;
         }
 
 
-        public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
+        public async Task<PagedResult<QuestionDTO>> GetAllAsync(
+            Guid? lessonId = null,
+            Guid? topicId = null,
+            Guid? QuestionCategoryId = null,
+            List<Guid>? tagIds = null,
+            string? searchContent = null,
+            int page = 1,
+            int pageSize = 10)
         {
-            var questions = await _questionRepository.GetAllAsync();
-            return _mapper.Map<List<QuestionDTO>>(questions);
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 10 : pageSize;
+
+            var filteredQuestions = await _questionRepository.GetFilteredForListAsync(
+                lessonId,
+                topicId,
+                QuestionCategoryId,
+                tagIds,
+                searchContent);
+
+            var orderedList = BuildOrderedLinkedList(filteredQuestions);
+            var total = orderedList.Count;
+
+            var pagedEntities = orderedList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var pagedDtos = _mapper.Map<List<QuestionDTO>>(pagedEntities);
+
+            for (int i = 0; i < pagedDtos.Count; i++)
+            {
+                pagedDtos[i].Position = (page - 1) * pageSize + i + 1;
+            }
+
+            return new PagedResult<QuestionDTO>
+            {
+                Items = pagedDtos,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
         }
+
 
         public async Task<QuestionDTO> GetByIdAsync(Guid id)
         {
@@ -50,69 +88,308 @@ namespace SDLS.Services.Services
             if (!dto.Answers.Any(a => a.Iscorrect))
                 throw new ArgumentException("At least one answer must be correct");
 
-            var question = _mapper.Map<Question>(dto);
+            var now = DateTime.UtcNow.ToLocalTime();
 
-            question.Id = Guid.NewGuid();
-            question.CreateAt = DateTime.UtcNow;
-            question.UpdateAt = DateTime.UtcNow;
-            question.Status = 1;
+            var newQuestion = _mapper.Map<Question>(dto);
+            newQuestion.Id = Guid.NewGuid();
+            newQuestion.CreateAt = now;
+            newQuestion.UpdateAt = now;
+            newQuestion.Status = 1;
 
-            
-            foreach (var answer in question.Answers)
+            foreach (var ans in newQuestion.Answers)
             {
-                answer.Id = Guid.NewGuid();
-                answer.QuestionId = question.Id;
-                answer.CreateAt = DateTime.UtcNow;
-                answer.Status = 1;
+                ans.QuestionId = newQuestion.Id;
+                ans.CreateAt = now;
+                ans.UpdateAt = now;
+                ans.Status = 1;
             }
 
-            await _questionRepository.AddAsync(question);
-            
+            foreach (var questionTag in newQuestion.QuestionTags)
+            {
+                questionTag.QuestionId = newQuestion.Id;
+                questionTag.CreateAt = now;
+                questionTag.UpdateAt = now;
+                questionTag.Status = 1;
+            }
 
+            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(dto.QuestionLessonId);
+            var ordered = BuildOrderedLinkedList(lessonQuestions);
+
+            var position = NormalizePosition(dto.Position, ordered.Count);
+            ResolveInsertNeighbors(ordered, position, out var prevId, out var nextId);
+
+            newQuestion.ParentId = nextId;
+
+            if (prevId.HasValue)
+            {
+                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
+                if (prevTracked == null)
+                    throw new KeyNotFoundException($"Previous question not found: {prevId.Value}");
+
+                prevTracked.ParentId = newQuestion.Id;
+                prevTracked.UpdateAt = now;
+            }
+
+            await _questionRepository.AddAsync(newQuestion);
             return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionCreateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
-            var existing = await _questionRepository.GetByIdAsync(id);
+            var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Question not found");
+                throw new KeyNotFoundException("Không tìm thấy câu hỏi");
 
-            // Validation
-            if (!dto.Answers.Any(a => a.Iscorrect))
-                throw new ArgumentException("At least one answer must be correct");
+            var now = DateTime.UtcNow.ToLocalTime();
 
-            // Map các field cơ bản (không map Answers)
-            _mapper.Map(dto, existing);
+            existing.QuestionLessonId = dto.QuestionLessonId;
+            existing.QuestionTopicId = dto.QuestionTopicId;
+            existing.QuestionCategoryId = dto.QuestionCategoryId;
+            existing.Content = dto.Content;
+            existing.Image = dto.Image;
+            existing.Explanation = dto.Explanation;
+            existing.Type = dto.Type;
+            existing.UpdateAt = now;
 
-            existing.UpdateAt = DateTime.UtcNow;
-
-            // Xử lý Answers: cách đơn giản nhất là xóa hết cũ → thêm mới
-            // (an toàn, dễ implement, phù hợp nếu không cần giữ history answer)
-
-            existing.Answers.Clear(); // EF sẽ xóa các record cũ trong DB khi SaveChanges
-
-            foreach (var answerDto in dto.Answers)
+            if (dto.Answers != null)
             {
-                var newAnswer = _mapper.Map<Answer>(answerDto);
-                newAnswer.Id = Guid.NewGuid();
-                newAnswer.QuestionId = existing.Id;
-                newAnswer.CreateAt = DateTime.UtcNow;
-                newAnswer.Status = 1;
+                var existingAnswersById = existing.Answers.ToDictionary(a => a.Id, a => a);
 
-                existing.Answers.Add(newAnswer);
+                foreach (var answerDto in dto.Answers)
+                {
+                    if (answerDto.QuestionId != id)
+                        throw new ArgumentException($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
+
+                    if (answerDto.Id.HasValue)
+                    {
+                        if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
+                            throw new KeyNotFoundException($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
+
+                        answer.Content = answerDto.Content;
+                        answer.IsCorrect = answerDto.Iscorrect;
+                        answer.UpdateAt = now;
+                        answer.Status = answerDto.Status ?? answer.Status ?? 1;
+                    }
+                    else
+                    {
+                        var newAnswer = new Answer
+                        {
+                            QuestionId = id,
+                            Content = answerDto.Content,
+                            IsCorrect = answerDto.Iscorrect,
+                            CreateAt = now,
+                            UpdateAt = now,
+                            Status = answerDto.Status ?? 1
+                        };
+
+                        existing.Answers.Add(newAnswer);
+                    }
+                }
+            }
+
+            if (dto.QuestionTags != null)
+            {
+                // 1) Hard delete toàn bộ tag cũ của question
+                _questionRepository.RemoveQuestionTags(existing.QuestionTags.ToList());
+
+                // 2) Thêm lại tag mới (distinct để tránh trùng unique questionId + tagId)
+                var newTagIds = dto.QuestionTags
+                    .Select(qt => qt.TagId)
+                    .Where(tagId => tagId != Guid.Empty)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var tagId in newTagIds)
+                {
+                    var newQuestionTag = new QuestionTag
+                    {
+                        QuestionId = id,
+                        TagId = tagId,
+                        CreateAt = now,
+                        UpdateAt = now,
+                        Status = 1
+                    };
+
+                    existing.QuestionTags.Add(newQuestionTag);
+                }
+            }
+
+            // Reorder chỉ khi có Position
+            if (dto.Position.HasValue)
+            {
+                var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
+                var ordered = BuildOrderedLinkedList(lessonQuestions);
+
+                var currentIndex = ordered.FindIndex(q => q.Id == existing.Id);
+                if (currentIndex < 0)
+                    throw new InvalidOperationException("Question không tồn tại trong chuỗi linked list hiện tại.");
+
+                // oldPrev là node đang trỏ tới existing
+                var oldPrevId = ordered.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
+                var oldNextId = existing.ParentId;
+
+                // Gỡ existing khỏi vị trí cũ: oldPrev -> oldNext
+                if (oldPrevId.HasValue)
+                {
+                    var oldPrevTracked = await _questionRepository.GetByIdForUpdateAsync(oldPrevId.Value);
+                    if (oldPrevTracked != null)
+                    {
+                        oldPrevTracked.ParentId = oldNextId;
+                        oldPrevTracked.UpdateAt = now;
+                    }
+                }
+
+                // Remove existing khỏi list để tính vị trí mới
+                ordered.RemoveAt(currentIndex);
+
+                var newPosition = NormalizePosition(dto.Position, ordered.Count);
+                ResolveInsertNeighbors(ordered, newPosition, out var newPrevId, out var newNextId);
+
+                // existing -> newNext
+                existing.ParentId = newNextId;
+
+                // newPrev -> existing
+                if (newPrevId.HasValue)
+                {
+                    var newPrevTracked = await _questionRepository.GetByIdForUpdateAsync(newPrevId.Value);
+                    if (newPrevTracked != null)
+                    {
+                        newPrevTracked.ParentId = existing.Id;
+                        newPrevTracked.UpdateAt = now;
+                    }
+                }
             }
 
             await _questionRepository.UpdateAsync(existing);
-            // await _unitOfWork.SaveChangesAsync();
-
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _questionRepository.DeleteAsync(id);
+            var existing = await _questionRepository.GetByIdForUpdateAsync(id);
+            if (existing == null)
+                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với Id {id}");
+
+            var now = DateTime.UtcNow.ToLocalTime();
+
+            // Lấy các question đang active trong cùng lesson để tìm node đứng trước
+            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
+
+            // Node trước là node đang trỏ tới existing
+            var prevId = lessonQuestions
+                .FirstOrDefault(q => q.ParentId == existing.Id)
+                ?.Id;
+
+            // Node sau là node mà existing đang trỏ tới
+            var nextId = existing.ParentId;
+
+            // Nếu có node trước thì nối node trước -> node sau
+            if (prevId.HasValue)
+            {
+                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
+                if (prevTracked != null)
+                {
+                    prevTracked.ParentId = nextId;
+                    prevTracked.UpdateAt = now;
+                }
+            }
+
+            // Soft delete
+            existing.Status = 0;
+            existing.UpdateAt = now;
+            existing.ParentId = null; // tách khỏi linked list sau khi xóa
+
+            await _questionRepository.UpdateAsync(existing);
             return true;
+        }
+
+
+        // private method
+
+        private static int NormalizePosition(int? inputPosition, int currentCount)
+        {
+            if (!inputPosition.HasValue)
+                return currentCount + 1;
+
+            if (inputPosition.Value < 1)
+                return 1;
+
+            if (inputPosition.Value > currentCount + 1)
+                return currentCount + 1;
+
+            return inputPosition.Value;
+        }
+
+        private static void ResolveInsertNeighbors(List<Question> ordered, int position, out Guid? prevId, out Guid? nextId)
+        {
+            prevId = null;
+            nextId = null;
+
+            if (ordered.Count == 0)
+                return;
+
+            if (position == 1)
+            {
+                nextId = ordered[0].Id;
+                return;
+            }
+
+            if (position == ordered.Count + 1)
+            {
+                prevId = ordered[^1].Id;
+                return;
+            }
+
+            prevId = ordered[position - 2].Id;
+            nextId = ordered[position - 1].Id;
+        }
+
+        private List<Question> BuildOrderedLinkedList(IEnumerable<Question> all)
+        {
+            var allList = all.ToList();
+            if (allList.Count == 0)
+                return new List<Question>();
+
+            var byId = allList.ToDictionary(q => q.Id, q => q);
+            var referencedAsNext = allList
+                .Where(q => q.ParentId.HasValue)
+                .Select(q => q.ParentId!.Value)
+                .ToHashSet();
+
+            // Head: question không nằm trong ParentId của question khác
+            var heads = allList
+                .Where(q => !referencedAsNext.Contains(q.Id))
+                .ToList();
+
+            if (!heads.Any())
+                heads.Add(allList[0]);
+
+            var result = new List<Question>();
+            var visited = new HashSet<Guid>();
+
+            foreach (var head in heads)
+            {
+                var current = head;
+
+                while (current != null && visited.Add(current.Id))
+                {
+                    result.Add(current);
+
+                    if (current.ParentId.HasValue && byId.TryGetValue(current.ParentId.Value, out var next))
+                        current = next;
+                    else
+                        current = null;
+                }
+            }
+
+            // Nếu có cycle/disconnected node thì append nốt
+            foreach (var q in allList)
+            {
+                if (!visited.Contains(q.Id))
+                    result.Add(q);
+            }
+
+            return result;
         }
     }
 }
