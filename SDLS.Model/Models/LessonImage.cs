@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("PostImage")]
-public partial class PostImage
+[Table("LessonImage")]
+public partial class LessonImage
 {
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("forumPostId")]
-    public Guid ForumPostId { get; set; }
+    [Column("questionLessonId")]
+    public Guid QuestionLessonId { get; set; }
 
     [Column("name")]
     [StringLength(255)]
@@ -33,7 +33,7 @@ public partial class PostImage
     [Column("status")]
     public int? Status { get; set; }
 
-    [ForeignKey("ForumPostId")]
-    [InverseProperty("PostImages")]
-    public virtual ForumPost ForumPost { get; set; } = null!;
+    [ForeignKey("QuestionLessonId")]
+    [InverseProperty("LessonImages")]
+    public virtual QuestionLesson QuestionLesson { get; set; } = null!;
 }

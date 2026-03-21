@@ -6,21 +6,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("QuestionCategory")]
-[Index("Name", Name = "QuestionCategory_name_key", IsUnique = true)]
-public partial class QuestionCategory
+[Table("SituationExam")]
+public partial class SituationExam
 {
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("name")]
+    [Column("title")]
     [StringLength(255)]
-    public string Name { get; set; } = null!;
+    public string Title { get; set; } = null!;
 
     [Column("description")]
     [StringLength(255)]
     public string? Description { get; set; }
+
+    [Column("duration")]
+    public int? Duration { get; set; }
+
+    [Column("passScore")]
+    public int? PassScore { get; set; }
+
+    [Column("isRandom")]
+    public bool IsRandom { get; set; }
 
     [Column("createAt", TypeName = "timestamp without time zone")]
     public DateTime? CreateAt { get; set; }
@@ -31,6 +39,9 @@ public partial class QuestionCategory
     [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("QuestionCategory")]
-    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+    [InverseProperty("SituationExam")]
+    public virtual ICollection<SimulationExam> SimulationExams { get; set; } = new List<SimulationExam>();
+
+    [InverseProperty("SituationExam")]
+    public virtual ICollection<SimulationSession> SimulationSessions { get; set; } = new List<SimulationSession>();
 }
