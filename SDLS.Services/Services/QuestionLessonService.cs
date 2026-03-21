@@ -162,16 +162,14 @@ namespace SDLS.Services.Services
                 .Select(x => x.Url!)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var image in activeImages)
-            {
-                if (string.IsNullOrWhiteSpace(image.Url))
-                    continue;
+            var imagesToRemove = activeImages
+                .Where(x => !string.IsNullOrWhiteSpace(x.Url)
+                    && !newUrls.Contains(x.Url!, StringComparer.OrdinalIgnoreCase))
+                .ToList();
 
-                if (!newUrls.Contains(image.Url, StringComparer.OrdinalIgnoreCase))
-                {
-                    image.Status = 0;
-                    image.UpdateAt = now;
-                }
+            if (imagesToRemove.Any())
+            {
+                _repository.RemoveLessonImages(imagesToRemove);
             }
 
             var imagesToAdd = new List<LessonImage>();
