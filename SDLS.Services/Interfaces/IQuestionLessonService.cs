@@ -10,6 +10,7 @@ namespace SDLS.Services.Interfaces
             Guid? questionChapterId = null,
             string? name = null,
             string? description = null,
+            string? content = null,
             int? status = 1,
             int page = 1,
             int pageSize = 20);
