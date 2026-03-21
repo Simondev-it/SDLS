@@ -69,6 +69,12 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionCategoryRepository, QuestionCategoryRepository>();
             builder.Services.AddScoped<IQuestionCategoryService, QuestionCategoryService>();
 
+            builder.Services.AddScoped<IQuestionTopicRepository, QuestionTopicRepository>();
+            builder.Services.AddScoped<IQuestionTopicService, QuestionTopicService>();
+
+            builder.Services.AddScoped<ISimulationDifficultyLevelRepository, SimulationDifficultyLevelRepository>();
+            builder.Services.AddScoped<ISimulationDifficultyLevelService, SimulationDifficultyLevelService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

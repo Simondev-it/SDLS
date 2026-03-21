@@ -9,7 +9,7 @@ namespace SDLS.Repositories.Repositories
     {
         public async Task<List<QuestionCategory>> GetAllAsync()
         {
-            return await _context.QuestionCategories
+            return await _context.QuestionCategories.Where(qc => qc.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
         }

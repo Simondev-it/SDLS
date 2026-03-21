@@ -21,11 +21,11 @@ namespace SDLS.Services.Services
         public async Task<List<QuestionCategoryDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null,
-            int? status = 1)
+            string? description = null)
         {
             var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
+            var filtered = all.AsEnumerable()
+                .Where(x => x.Status == 1);
 
             if (id.HasValue)
                 filtered = filtered.Where(x => x.Id == id.Value);
@@ -38,9 +38,6 @@ namespace SDLS.Services.Services
                 filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
                     && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
 
-            if (status.HasValue)
-                filtered = filtered.Where(x => x.Status == status.Value);
-
             return _mapper.Map<List<QuestionCategoryDTO>>(filtered.ToList());
         }
 
@@ -48,11 +45,10 @@ namespace SDLS.Services.Services
             Guid? id = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
             int page = 1,
             int pageSize = 20)
         {
-            var items = await GetAllAsync(id, name, description, status);
+            var items = await GetAllAsync(id, name, description);
             var total = items.Count;
 
             return new PagedResult<QuestionCategoryDTO>

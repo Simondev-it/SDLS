@@ -1,28 +1,27 @@
 ﻿using AutoMapper;
 using SDLS.Model.DTOs;
-using SDLS.Model.DTOs.Tag;
+using SDLS.Model.DTOs.QuestionTopic;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
 {
-    public class TagService : ITagService
+    public class QuestionTopicService : IQuestionTopicService
     {
-        private readonly ITagRepository _repository;
+        private readonly IQuestionTopicRepository _repository;
         private readonly IMapper _mapper;
 
-        public TagService(ITagRepository repository, IMapper mapper)
+        public QuestionTopicService(IQuestionTopicRepository repository, IMapper mapper)
         {
             _repository = repository;
             _mapper = mapper;
         }
 
-        public async Task<List<TagDTO>> GetAllAsync(
+        public async Task<List<QuestionTopicDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null,
-            string? colorCode = null)
+            string? description = null)
         {
             var all = await _repository.GetAllAsync();
             var filtered = all.AsEnumerable()
@@ -39,25 +38,20 @@ namespace SDLS.Services.Services
                 filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
                     && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
 
-            if (!string.IsNullOrWhiteSpace(colorCode))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.ColorCode)
-                    && x.ColorCode.Contains(colorCode.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            return _mapper.Map<List<TagDTO>>(filtered.ToList());
+            return _mapper.Map<List<QuestionTopicDTO>>(filtered.ToList());
         }
 
-        public async Task<PagedResult<TagDTO>> GetPagedAsync(
+        public async Task<PagedResult<QuestionTopicDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
-            string? colorCode = null,
             int page = 1,
             int pageSize = 20)
         {
-            var items = await GetAllAsync(id, name, description, colorCode);
+            var items = await GetAllAsync(id, name, description);
             var total = items.Count;
 
-            return new PagedResult<TagDTO>
+            return new PagedResult<QuestionTopicDTO>
             {
                 Items = items.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
                 TotalCount = total,
@@ -67,25 +61,24 @@ namespace SDLS.Services.Services
             };
         }
 
-        public async Task<TagDTO> GetByIdAsync(Guid id)
+        public async Task<QuestionTopicDTO> GetByIdAsync(Guid id)
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
-            return _mapper.Map<TagDTO>(entity);
+            return _mapper.Map<QuestionTopicDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(TagCreateDTO dto)
+        public async Task<bool> CreateAsync(QuestionTopicCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
-            var entity = new Tag
+            var entity = new QuestionTopic
             {
                 Id = Guid.NewGuid(),
                 Name = dto.Name,
                 Description = dto.Description,
-                ColorCode = dto.ColorCode,
                 CreateAt = now,
                 UpdateAt = now,
                 Status = 1
@@ -95,15 +88,14 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, TagUpdateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, QuestionTopicUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Tag");
+                throw new KeyNotFoundException("Không tìm thấy QuestionTopic");
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
-            existing.ColorCode = dto.ColorCode;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 

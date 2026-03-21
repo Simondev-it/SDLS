@@ -8,14 +8,12 @@ namespace SDLS.Services.Interfaces
         Task<List<QuestionCategoryDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null,
-            int? status = 1);
+            string? description = null);
 
         Task<PagedResult<QuestionCategoryDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
             int page = 1,
             int pageSize = 20);
 

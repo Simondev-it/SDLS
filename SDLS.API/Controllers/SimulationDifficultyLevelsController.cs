@@ -1,23 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
-using SDLS.Model.DTOs.QuestionCategory;
+using SDLS.Model.DTOs.SimulationDifficultyLevel;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class QuestionCategoriesController : ControllerBase
+    public class SimulationDifficultyLevelsController : ControllerBase
     {
-        private readonly IQuestionCategoryService _service;
+        private readonly ISimulationDifficultyLevelService _service;
 
-        public QuestionCategoriesController(IQuestionCategoryService service)
+        public SimulationDifficultyLevelsController(ISimulationDifficultyLevelService service)
         {
             _service = service;
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<List<QuestionCategoryDTO>>> GetAll(
+        public async Task<ActionResult<List<SimulationDifficultyLevelDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] string? name,
             [FromQuery] string? description)
@@ -27,7 +27,7 @@ namespace SDLS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<QuestionCategoryDTO>>> GetPaged(
+        public async Task<ActionResult<PagedResult<SimulationDifficultyLevelDTO>>> GetPaged(
             [FromQuery] Guid? id,
             [FromQuery] string? name,
             [FromQuery] string? description,
@@ -39,14 +39,14 @@ namespace SDLS.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<QuestionCategoryDTO>> GetById(Guid id)
+        public async Task<ActionResult<SimulationDifficultyLevelDTO>> GetById(Guid id)
         {
             var item = await _service.GetByIdAsync(id);
             return Ok(item);
         }
 
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] QuestionCategoryCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] SimulationDifficultyLevelCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -54,7 +54,7 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] QuestionCategoryUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] SimulationDifficultyLevelUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);

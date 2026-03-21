@@ -21,10 +21,9 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] string? name,
             [FromQuery] string? description,
-            [FromQuery] string? colorCode,
-            [FromQuery] int? status = 1)
+            [FromQuery] string? colorCode)
         {
-            var result = await _service.GetAllAsync(id, name, description, colorCode, status);
+            var result = await _service.GetAllAsync(id, name, description, colorCode);
             return Ok(result);
         }
 
@@ -34,11 +33,10 @@ namespace SDLS.API.Controllers
             [FromQuery] string? name,
             [FromQuery] string? description,
             [FromQuery] string? colorCode,
-            [FromQuery] int? status = 1,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, name, description, colorCode, status, page, pageSize);
+            var result = await _service.GetPagedAsync(id, name, description, colorCode, page, pageSize);
             return Ok(result);
         }
 
