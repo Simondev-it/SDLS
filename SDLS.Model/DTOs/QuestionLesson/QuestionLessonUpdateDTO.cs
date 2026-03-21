@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.QuestionLesson
 {
@@ -19,11 +18,5 @@ namespace SDLS.Model.DTOs.QuestionLesson
 
         [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Status { get; set; }
-
-        // Upload multiple images from form-data
-        public List<IFormFile> LessonImageFiles { get; set; } = new();
-
-        // Optional custom names (same index with LessonImageFiles)
-        public List<string>? LessonImageNames { get; set; }
     }
 }
