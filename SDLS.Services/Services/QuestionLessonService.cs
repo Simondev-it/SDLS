@@ -6,6 +6,8 @@ using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
+using System.Globalization;
+using System.Text;
 
 namespace SDLS.Services.Services
 {
@@ -58,16 +60,13 @@ namespace SDLS.Services.Services
                 filtered = filtered.Where(x => x.QuestionChapterId == questionChapterId.Value);
 
             if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Name)
-                    && x.Name.Contains(name.Trim(), StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
 
             if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
-                    && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
 
             if (!string.IsNullOrWhiteSpace(content))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Content)
-                    && x.Content.Contains(content.Trim(), StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(x => ContainsNormalized(x.Content, content));
 
             if (status.HasValue)
                 filtered = filtered.Where(x => x.Status == status.Value);
@@ -316,6 +315,40 @@ namespace SDLS.Services.Services
                 if (imageNames != null && imageNames.Count > i && !string.IsNullOrWhiteSpace(imageNames[i]) && imageNames[i]!.Length > 255)
                     throw new ArgumentException("Vượt quá độ dài tối đa 255 ký tự.");
             }
+        }
+
+        private static bool ContainsNormalized(string? source, string? keyword)
+        {
+            var left = NormalizeText(source);
+            var right = NormalizeText(keyword);
+
+            if (string.IsNullOrWhiteSpace(right))
+                return true;
+
+            return left.Contains(right, StringComparison.Ordinal);
+        }
+
+        private static string NormalizeText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var formD = input.Trim().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var c in formD)
+            {
+                var uc = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            }
+
+            var normalized = sb.ToString().Normalize(NormalizationForm.FormC)
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D');
+
+            normalized = string.Join(' ', normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            return normalized.ToLowerInvariant();
         }
     }
 }
