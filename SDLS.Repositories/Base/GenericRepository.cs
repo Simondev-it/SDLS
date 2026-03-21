@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,11 @@ namespace SDLS.Repositories.Base
 {
     public class GenericRepository<T> where T : class
     {
-        protected SdlsDbContext _context;
+        protected AppDbContext _context;
 
-        public GenericRepository() => _context ??= new SdlsDbContext();
+        public GenericRepository() => _context ??= new AppDbContext();
 
-        public GenericRepository(SdlsDbContext context) => _context = context;
+        public GenericRepository(AppDbContext context) => _context = context;
 
         public async Task<T> GetAsync(Expression<Func<T, bool>> predicate)
         {
@@ -148,5 +149,11 @@ namespace SDLS.Repositories.Base
         }
 
         #endregion Separating asign entity and save operators
+
+        // Transaction support
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }
     }
 }

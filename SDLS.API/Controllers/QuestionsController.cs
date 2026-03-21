@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Question;
+using SDLS.Model.Models;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.API.Controllers
@@ -16,10 +18,19 @@ namespace SDLS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<QuestionDTO>>> GetAll()
+        public async Task<ActionResult<PagedResult<QuestionDTO>>> GetAll(
+            [FromQuery] Guid? lessonId,
+            [FromQuery] Guid? topicId,
+            [FromQuery] Guid? QuestionCategoryId,
+            [FromQuery] List<Guid>? tagIds,
+            [FromQuery] string? searchContent,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var questions = await _service.GetAllAsync();
-            return Ok(questions);
+            var result = await _service.GetAllAsync(
+                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, page, pageSize);
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -35,7 +46,7 @@ namespace SDLS.API.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            return Ok(created);
         }
 
         [HttpPut("{id}")]

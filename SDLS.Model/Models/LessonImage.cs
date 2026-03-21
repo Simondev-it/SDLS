@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -36,4 +37,5 @@ public partial class LessonImage
     [ForeignKey("QuestionLessonId")]
     [InverseProperty("LessonImages")]
     public virtual QuestionLesson QuestionLesson { get; set; } = null!;
+
 }
