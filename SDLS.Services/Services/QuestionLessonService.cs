@@ -113,23 +113,65 @@ namespace SDLS.Services.Services
 
         public async Task<bool> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
         {
-            if (dto.QuestionChapterId == Guid.Empty)
-                throw new ArgumentException("QuestionChapterId không hợp lệ.");
-
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null)
                 throw new KeyNotFoundException("Không tìm thấy QuestionLesson");
 
             var now = DateTime.UtcNow.ToLocalTime();
+            var changed = false;
 
-            lesson.QuestionChapterId = dto.QuestionChapterId;
-            lesson.Name = dto.Name;
-            lesson.Description = dto.Description;
-            lesson.Content = dto.Content;
-            lesson.Status = dto.Status ?? lesson.Status ?? 1;
+            if (dto.QuestionChapterId.HasValue)
+            {
+                if (dto.QuestionChapterId.Value == Guid.Empty)
+                    throw new ArgumentException("QuestionChapterId không hợp lệ.");
+
+                if (lesson.QuestionChapterId != dto.QuestionChapterId.Value)
+                {
+                    lesson.QuestionChapterId = dto.QuestionChapterId.Value;
+                    changed = true;
+                }
+            }
+
+            if (dto.Name != null)
+            {
+                var newName = dto.Name.Trim();
+                if (string.IsNullOrWhiteSpace(newName))
+                    throw new ArgumentException("Name không được để trống.");
+
+                if (!string.Equals(lesson.Name, newName, StringComparison.Ordinal))
+                {
+                    lesson.Name = newName;
+                    changed = true;
+                }
+            }
+
+            if (dto.Description != null && !string.Equals(lesson.Description, dto.Description, StringComparison.Ordinal))
+            {
+                lesson.Description = dto.Description;
+                changed = true;
+            }
+
+            if (dto.Content != null && !string.Equals(lesson.Content, dto.Content, StringComparison.Ordinal))
+            {
+                lesson.Content = dto.Content;
+                await SyncLessonImagesFromContentAsync(id, dto.Content, now);
+                changed = true;
+            }
+
+            if (dto.Status.HasValue)
+            {
+                var nextStatus = dto.Status.Value;
+                if (lesson.Status != nextStatus)
+                {
+                    lesson.Status = nextStatus;
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+                return true;
+
             lesson.UpdateAt = now;
-
-            await SyncLessonImagesFromContentAsync(id, dto.Content, now);
 
             await _repository.UpdateAsync(lesson);
             return true;
