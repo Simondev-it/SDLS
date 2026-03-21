@@ -43,6 +43,7 @@ namespace SDLS.Services.Services
             Guid? questionChapterId = null,
             string? name = null,
             string? description = null,
+            string? content = null,
             int? status = 1,
             int page = 1,
             int pageSize = 20)
@@ -63,6 +64,10 @@ namespace SDLS.Services.Services
             if (!string.IsNullOrWhiteSpace(description))
                 filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
                     && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(content))
+                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Content)
+                    && x.Content.Contains(content.Trim(), StringComparison.OrdinalIgnoreCase));
 
             if (status.HasValue)
                 filtered = filtered.Where(x => x.Status == status.Value);
@@ -127,6 +132,7 @@ namespace SDLS.Services.Services
                 QuestionChapterId = dto.QuestionChapterId,
                 Name = dto.Name,
                 Description = dto.Description,
+                Content = dto.Content,
                 CreateAt = now,
                 UpdateAt = now,
                 Status = 1
@@ -190,6 +196,7 @@ namespace SDLS.Services.Services
             lesson.QuestionChapterId = dto.QuestionChapterId;
             lesson.Name = dto.Name;
             lesson.Description = dto.Description;
+            lesson.Content = dto.Content;
             lesson.Status = dto.Status ?? lesson.Status ?? 1;
             lesson.UpdateAt = now;
 
