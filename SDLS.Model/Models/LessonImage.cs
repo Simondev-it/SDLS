@@ -1,20 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SDLS.Model.Models
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace SDLS.Model.Models;
+
+[Table("LessonImage")]
+public partial class LessonImage
 {
-    public class LessonImage
-    {
-        public Guid Id { get; set; }
-        public Guid QuestionLessonId { get; set; }
-        public string Name { get; set; }
-        public string Url { get; set; }
-        public DateTime? CreateAt { get; set; }
-        public DateTime? UpdateAt { get; set; }
-        public int? Status { get; set; }
-        public virtual QuestionLesson QuestionLesson { get; set; } = null!;
-    }
+    [Key]
+    [Column("id")]
+    public Guid Id { get; set; }
+
+    [Column("questionLessonId")]
+    public Guid QuestionLessonId { get; set; }
+
+    [Column("name")]
+    [StringLength(255)]
+    public string? Name { get; set; }
+
+    [Column("url")]
+    [StringLength(255)]
+    public string? Url { get; set; }
+
+    [Column("createAt", TypeName = "timestamp without time zone")]
+    public DateTime? CreateAt { get; set; }
+
+    [Column("updateAt", TypeName = "timestamp without time zone")]
+    public DateTime? UpdateAt { get; set; }
+
+    [Column("status")]
+    public int? Status { get; set; }
+
+    [ForeignKey("QuestionLessonId")]
+    [InverseProperty("LessonImages")]
+    public virtual QuestionLesson QuestionLesson { get; set; } = null!;
+
 }

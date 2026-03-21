@@ -6,8 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("SimulationSession")]
-public partial class SimulationSession
+[Table("SimulationExam")]
+[Index("SituationExamId", "SimulationId", Name = "SimulationExam_situationExamId_simulationId_key", IsUnique = true)]
+public partial class SimulationExam
 {
     [Key]
     [Column("id")]
@@ -16,17 +17,11 @@ public partial class SimulationSession
     [Column("situationExamId")]
     public Guid SituationExamId { get; set; }
 
-    [Column("userId")]
-    public Guid UserId { get; set; }
+    [Column("simulationId")]
+    public Guid SimulationId { get; set; }
 
-    [Column("totalScore")]
-    public int? TotalScore { get; set; }
-
-    [Column("totalDuration")]
-    public int? TotalDuration { get; set; }
-
-    [Column("isPassed")]
-    public bool IsPassed { get; set; }
+    [Column("baseScore")]
+    public int? BaseScore { get; set; }
 
     [Column("createAt", TypeName = "timestamp without time zone")]
     public DateTime? CreateAt { get; set; }
@@ -37,14 +32,14 @@ public partial class SimulationSession
     [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("SimulationSession")]
+    [ForeignKey("SimulationId")]
+    [InverseProperty("SimulationExams")]
+    public virtual SimulationScenario Simulation { get; set; } = null!;
+
+    [InverseProperty("SimulationExam")]
     public virtual ICollection<SimulationSessionDetail> SimulationSessionDetails { get; set; } = new List<SimulationSessionDetail>();
 
     [ForeignKey("SituationExamId")]
-    [InverseProperty("SimulationSessions")]
+    [InverseProperty("SimulationExams")]
     public virtual SituationExam SituationExam { get; set; } = null!;
-
-    [ForeignKey("UserId")]
-    [InverseProperty("SimulationSessions")]
-    public virtual User User { get; set; } = null!;
 }

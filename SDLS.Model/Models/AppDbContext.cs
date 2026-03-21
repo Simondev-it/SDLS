@@ -81,9 +81,15 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<SimulationDifficultyLevel> SimulationDifficultyLevels { get; set; }
 
+    public virtual DbSet<SimulationExam> SimulationExams { get; set; }
+
     public virtual DbSet<SimulationScenario> SimulationScenarios { get; set; }
 
     public virtual DbSet<SimulationSession> SimulationSessions { get; set; }
+
+    public virtual DbSet<SimulationSessionDetail> SimulationSessionDetails { get; set; }
+
+    public virtual DbSet<SituationExam> SituationExams { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
@@ -103,138 +109,56 @@ public partial class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("pgcrypto");
+
         modelBuilder.Entity<Answer>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Answer_pkey");
 
-            entity.ToTable("Answer");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsCorrect).HasDefaultValue(true);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.IsCorrect)
-                .HasDefaultValue(true)
-                .HasColumnName("isCorrect");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-
-            entity.HasOne(d => d.Question).WithMany(p => p.Answers)
-                .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("Answer_questionId_fkey");
+            entity.HasOne(d => d.Question).WithMany(p => p.Answers).HasConstraintName("Answer_questionId_fkey");
         });
 
         modelBuilder.Entity<CommentVote>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("CommentVote_pkey");
 
-            entity.ToTable("CommentVote");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.ForumCommentId, e.UserId }, "CommentVote_forumCommentId_userId_key").IsUnique();
+            entity.HasOne(d => d.ForumComment).WithMany(p => p.CommentVotes).HasConstraintName("CommentVote_forumCommentId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumCommentId).HasColumnName("forumCommentId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.ForumComment).WithMany(p => p.CommentVotes)
-                .HasForeignKey(d => d.ForumCommentId)
-                .HasConstraintName("CommentVote_forumCommentId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.CommentVotes)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("CommentVote_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.CommentVotes).HasConstraintName("CommentVote_userId_fkey");
         });
 
         modelBuilder.Entity<DrivingLicense>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("DrivingLicense_pkey");
 
-            entity.ToTable("DrivingLicense");
-
-            entity.HasIndex(e => e.Name, "DrivingLicense_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Exam>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Exam_pkey");
 
-            entity.ToTable("Exam");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Duration).HasColumnName("duration");
-            entity.Property(e => e.IsRandom)
-                .HasDefaultValue(false)
-                .HasColumnName("isRandom");
-            entity.Property(e => e.PassScore).HasColumnName("passScore");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Title)
-                .HasMaxLength(255)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsRandom).HasDefaultValue(false);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.User).WithMany(p => p.Exams)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Exam_userId_fkey");
         });
@@ -243,104 +167,45 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("ExamDetail_pkey");
 
-            entity.ToTable("ExamDetail");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.AnswerId, e.ExamSessionId }, "ExamDetail_answerId_examSessionId_key").IsUnique();
+            entity.HasOne(d => d.Answer).WithMany(p => p.ExamDetails).HasConstraintName("ExamDetail_answerId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.AnswerId).HasColumnName("answerId");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ExamSessionId).HasColumnName("examSessionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-
-            entity.HasOne(d => d.Answer).WithMany(p => p.ExamDetails)
-                .HasForeignKey(d => d.AnswerId)
-                .HasConstraintName("ExamDetail_answerId_fkey");
-
-            entity.HasOne(d => d.ExamSession).WithMany(p => p.ExamDetails)
-                .HasForeignKey(d => d.ExamSessionId)
-                .HasConstraintName("ExamDetail_examSessionId_fkey");
+            entity.HasOne(d => d.ExamSession).WithMany(p => p.ExamDetails).HasConstraintName("ExamDetail_examSessionId_fkey");
         });
 
         modelBuilder.Entity<ExamQuestion>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("ExamQuestion_pkey");
 
-            entity.ToTable("ExamQuestion");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.QuestionId, e.ExamId }, "ExamQuestion_questionId_examId_key").IsUnique();
+            entity.HasOne(d => d.Exam).WithMany(p => p.ExamQuestions).HasConstraintName("ExamQuestion_examId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ExamId).HasColumnName("examId");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-
-            entity.HasOne(d => d.Exam).WithMany(p => p.ExamQuestions)
-                .HasForeignKey(d => d.ExamId)
-                .HasConstraintName("ExamQuestion_examId_fkey");
-
-            entity.HasOne(d => d.Question).WithMany(p => p.ExamQuestions)
-                .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("ExamQuestion_questionId_fkey");
+            entity.HasOne(d => d.Question).WithMany(p => p.ExamQuestions).HasConstraintName("ExamQuestion_questionId_fkey");
         });
 
         modelBuilder.Entity<ExamSession>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("ExamSession_pkey");
 
-            entity.ToTable("ExamSession");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ExamId).HasColumnName("examId");
-            entity.Property(e => e.IsPassed)
-                .HasDefaultValue(true)
-                .HasColumnName("isPassed");
-            entity.Property(e => e.Score).HasColumnName("score");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsPassed).HasDefaultValue(true);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Exam).WithMany(p => p.ExamSessions)
-                .HasForeignKey(d => d.ExamId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ExamSession_examId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ExamSessions)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ExamSession_userId_fkey");
         });
@@ -349,39 +214,16 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("ForumComment_pkey");
 
-            entity.ToTable("ForumComment");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(1000)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumPostId).HasColumnName("forumPostId");
-            entity.Property(e => e.ReplyId).HasColumnName("replyId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.HasOne(d => d.ForumPost).WithMany(p => p.ForumComments).HasConstraintName("ForumComment_forumPostId_fkey");
 
-            entity.HasOne(d => d.ForumPost).WithMany(p => p.ForumComments)
-                .HasForeignKey(d => d.ForumPostId)
-                .HasConstraintName("ForumComment_forumPostId_fkey");
-
-            entity.HasOne(d => d.Reply).WithMany(p => p.InverseReply)
-                .HasForeignKey(d => d.ReplyId)
-                .HasConstraintName("ForumComment_replyId_fkey");
+            entity.HasOne(d => d.Reply).WithMany(p => p.InverseReply).HasConstraintName("ForumComment_replyId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ForumComment_userId_fkey");
         });
@@ -390,44 +232,17 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("ForumPost_pkey");
 
-            entity.ToTable("ForumPost");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumTopicId).HasColumnName("forumTopicId");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Title)
-                .HasMaxLength(255)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-            entity.Property(e => e.ViewCount)
-                .HasDefaultValue(0)
-                .HasColumnName("viewCount");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
 
             entity.HasOne(d => d.ForumTopic).WithMany(p => p.ForumPosts)
-                .HasForeignKey(d => d.ForumTopicId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ForumPost_forumTopicId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumPosts)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ForumPost_userId_fkey");
         });
@@ -436,165 +251,74 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("ForumTopic_pkey");
 
-            entity.ToTable("ForumTopic");
-
-            entity.HasIndex(e => e.Name, "ForumTopic_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<LearningProgress>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("LearningProgress_pkey");
 
-            entity.ToTable("LearningProgress");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.QuestionId, e.UserId }, "LearningProgress_questionId_userId_key").IsUnique();
+            entity.HasOne(d => d.Question).WithMany(p => p.LearningProgresses).HasConstraintName("LearningProgress_questionId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.HasOne(d => d.User).WithOne(p => p.LearningProgress).HasConstraintName("LearningProgress_userId_fkey");
+        });
 
-            entity.HasOne(d => d.Question).WithMany(p => p.LearningProgresses)
-                .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("LearningProgress_questionId_fkey");
+        modelBuilder.Entity<LessonImage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("LessonImage_pkey");
 
-            entity.HasOne(d => d.User).WithMany(p => p.LearningProgresses)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("LearningProgress_userId_fkey");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.QuestionLesson).WithMany(p => p.LessonImages)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("LessonImage_questionLessonId_fkey");
         });
 
         modelBuilder.Entity<LessonProgress>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("LessonProgress_pkey");
 
-            entity.ToTable("LessonProgress");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.UserId, e.QuestionLessonId }, "LessonProgress_userId_questionLessonId_key").IsUnique();
+            entity.HasOne(d => d.QuestionLesson).WithMany(p => p.LessonProgresses).HasConstraintName("LessonProgress_questionLessonId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.QuestionLessonId).HasColumnName("questionLessonId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.QuestionLesson).WithMany(p => p.LessonProgresses)
-                .HasForeignKey(d => d.QuestionLessonId)
-                .HasConstraintName("LessonProgress_questionLessonId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.LessonProgresses)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("LessonProgress_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.LessonProgresses).HasConstraintName("LessonProgress_userId_fkey");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Notification_pkey");
 
-            entity.ToTable("Notification");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Image)
-                .HasMaxLength(255)
-                .HasColumnName("image");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Title)
-                .HasMaxLength(255)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Payment_pkey");
 
-            entity.ToTable("Payment");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Amount).HasColumnName("amount");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Method)
-                .HasMaxLength(255)
-                .HasColumnName("method");
-            entity.Property(e => e.Note)
-                .HasMaxLength(255)
-                .HasColumnName("note");
-            entity.Property(e => e.Response)
-                .HasMaxLength(255)
-                .HasColumnName("response");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.User).WithMany(p => p.Payments)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Payment_userId_fkey");
         });
@@ -603,32 +327,12 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PostImage_pkey");
 
-            entity.ToTable("PostImage");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumPostId).HasColumnName("forumPostId");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.Url)
-                .HasMaxLength(255)
-                .HasColumnName("url");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.ForumPost).WithMany(p => p.PostImages)
-                .HasForeignKey(d => d.ForumPostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("PostImage_forumPostId_fkey");
         });
@@ -637,92 +341,36 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PostReact_pkey");
 
-            entity.ToTable("PostReact");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.ForumPostId, e.UserId }, "PostReact_forumPostId_userId_key").IsUnique();
+            entity.HasOne(d => d.ForumPost).WithMany(p => p.PostReacts).HasConstraintName("PostReact_forumPostId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumPostId).HasColumnName("forumPostId");
-            entity.Property(e => e.ReactType)
-                .HasMaxLength(20)
-                .HasColumnName("reactType");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.ForumPost).WithMany(p => p.PostReacts)
-                .HasForeignKey(d => d.ForumPostId)
-                .HasConstraintName("PostReact_forumPostId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PostReacts)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("PostReact_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.PostReacts).HasConstraintName("PostReact_userId_fkey");
         });
 
         modelBuilder.Entity<Question>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Question_pkey");
 
-            entity.ToTable("Question");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Explanation)
-                .HasMaxLength(255)
-                .HasColumnName("explanation");
-            entity.Property(e => e.Image)
-                .HasMaxLength(255)
-                .HasColumnName("image");
-            entity.Property(e => e.ParentId).HasColumnName("parentId");
-            entity.Property(e => e.QuestionCategoryId).HasColumnName("questionCategoryId");
-            entity.Property(e => e.QuestionLessonId).HasColumnName("questionLessonId");
-            entity.Property(e => e.QuestionTopicId).HasColumnName("questionTopicId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Type)
-                .HasMaxLength(20)
-                .HasColumnName("type");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-
-            entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
-                .HasForeignKey(d => d.ParentId)
-                .HasConstraintName("Question_parentId_fkey");
+            entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent).HasConstraintName("Question_parentId_fkey");
 
             entity.HasOne(d => d.QuestionCategory).WithMany(p => p.Questions)
-                .HasForeignKey(d => d.QuestionCategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Question_questionCategoryId_fkey");
 
             entity.HasOne(d => d.QuestionLesson).WithMany(p => p.Questions)
-                .HasForeignKey(d => d.QuestionLessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Question_questionLessonId_fkey");
 
             entity.HasOne(d => d.QuestionTopic).WithMany(p => p.Questions)
-                .HasForeignKey(d => d.QuestionTopicId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Question_questionTopicId_fkey");
         });
@@ -731,64 +379,22 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("QuestionCategory_pkey");
 
-            entity.ToTable("QuestionCategory");
-
-            entity.HasIndex(e => e.Name, "QuestionCategory_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<QuestionChapter>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("QuestionChapter_pkey");
 
-            entity.ToTable("QuestionChapter");
-
-            entity.HasIndex(e => e.Name, "QuestionChapter_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.DrivingLicenseId).HasColumnName("drivingLicenseId");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.DrivingLicense).WithMany(p => p.QuestionChapters)
-                .HasForeignKey(d => d.DrivingLicenseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("QuestionChapter_drivingLicenseId_fkey");
         });
@@ -797,34 +403,12 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("QuestionLesson_pkey");
 
-            entity.ToTable("QuestionLesson");
-
-            entity.HasIndex(e => e.Name, "QuestionLesson_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.QuestionChapterId).HasColumnName("questionChapterId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.QuestionChapter).WithMany(p => p.QuestionLessons)
-                .HasForeignKey(d => d.QuestionChapterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("QuestionLesson_questionChapterId_fkey");
         });
@@ -833,127 +417,52 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("QuestionTag_pkey");
 
-            entity.ToTable("QuestionTag");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.QuestionId, e.TagId }, "QuestionTag_questionId_tagId_key").IsUnique();
+            entity.HasOne(d => d.Question).WithMany(p => p.QuestionTags).HasConstraintName("QuestionTag_questionId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.TagId).HasColumnName("tagId");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-
-            entity.HasOne(d => d.Question).WithMany(p => p.QuestionTags)
-                .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("QuestionTag_questionId_fkey");
-
-            entity.HasOne(d => d.Tag).WithMany(p => p.QuestionTags)
-                .HasForeignKey(d => d.TagId)
-                .HasConstraintName("QuestionTag_tagId_fkey");
+            entity.HasOne(d => d.Tag).WithMany(p => p.QuestionTags).HasConstraintName("QuestionTag_tagId_fkey");
         });
 
         modelBuilder.Entity<QuestionTopic>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("QuestionTopic_pkey");
 
-            entity.ToTable("QuestionTopic");
-
-            entity.HasIndex(e => e.Name, "QuestionTopic_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Report>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Report_pkey");
 
-            entity.ToTable("Report");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(1000)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ForumCommentId).HasColumnName("forumCommentId");
-            entity.Property(e => e.ForumPostId).HasColumnName("forumPostId");
-            entity.Property(e => e.Image)
-                .HasMaxLength(255)
-                .HasColumnName("image");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.ReportCategoryId).HasColumnName("reportCategoryId");
-            entity.Property(e => e.SimulationId).HasColumnName("simulationId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Title)
-                .HasMaxLength(255)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.ForumComment).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.ForumCommentId)
-                .HasConstraintName("Report_forumCommentId_fkey");
+            entity.HasOne(d => d.ForumComment).WithMany(p => p.Reports).HasConstraintName("Report_forumCommentId_fkey");
 
             entity.HasOne(d => d.ForumPost).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.ForumPostId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("Report_forumPostId_fkey");
 
             entity.HasOne(d => d.Question).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("Report_questionId_fkey");
 
-            entity.HasOne(d => d.ReportCategory).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.ReportCategoryId)
-                .HasConstraintName("Report_reportCategoryId_fkey");
+            entity.HasOne(d => d.ReportCategory).WithMany(p => p.Reports).HasConstraintName("Report_reportCategoryId_fkey");
 
             entity.HasOne(d => d.Simulation).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.SimulationId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("Report_simulationId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Reports)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Report_userId_fkey");
         });
@@ -962,339 +471,136 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("ReportCategory_pkey");
 
-            entity.ToTable("ReportCategory");
-
-            entity.HasIndex(e => e.Name, "ReportCategory_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Resolve>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Resolve_pkey");
 
-            entity.ToTable("Resolve");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.ReportId).HasColumnName("reportId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.Title)
-                .HasMaxLength(255)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.HasOne(d => d.Report).WithMany(p => p.Resolves).HasConstraintName("Resolve_reportId_fkey");
 
-            entity.HasOne(d => d.Report).WithMany(p => p.Resolves)
-                .HasForeignKey(d => d.ReportId)
-                .HasConstraintName("Resolve_reportId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Resolves)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("Resolve_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.Resolves).HasConstraintName("Resolve_userId_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Role_pkey");
 
-            entity.ToTable("Role");
-
-            entity.HasIndex(e => e.Name, "Role_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<SavedQuestion>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SavedQuestion_pkey");
 
-            entity.ToTable("SavedQuestion");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.QuestionId, e.UserId }, "SavedQuestion_questionId_userId_key").IsUnique();
+            entity.HasOne(d => d.Question).WithMany(p => p.SavedQuestions).HasConstraintName("SavedQuestion_questionId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.QuestionId).HasColumnName("questionId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.Question).WithMany(p => p.SavedQuestions)
-                .HasForeignKey(d => d.QuestionId)
-                .HasConstraintName("SavedQuestion_questionId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.SavedQuestions)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("SavedQuestion_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.SavedQuestions).HasConstraintName("SavedQuestion_userId_fkey");
         });
 
         modelBuilder.Entity<SavedTrafficSign>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SavedTrafficSign_pkey");
 
-            entity.ToTable("SavedTrafficSign");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.TrafficSignId, e.UserId }, "SavedTrafficSign_trafficSignId_userId_key").IsUnique();
+            entity.HasOne(d => d.TrafficSign).WithMany(p => p.SavedTrafficSigns).HasConstraintName("SavedTrafficSign_trafficSignId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.TrafficSignId).HasColumnName("trafficSignId");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.TrafficSign).WithMany(p => p.SavedTrafficSigns)
-                .HasForeignKey(d => d.TrafficSignId)
-                .HasConstraintName("SavedTrafficSign_trafficSignId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.SavedTrafficSigns)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("SavedTrafficSign_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.SavedTrafficSigns).HasConstraintName("SavedTrafficSign_userId_fkey");
         });
 
         modelBuilder.Entity<SignCategory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SignCategory_pkey");
 
-            entity.ToTable("SignCategory");
-
-            entity.HasIndex(e => e.Name, "SignCategory_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<SimulationCategory>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SimulationCategory_pkey");
 
-            entity.ToTable("SimulationCategory");
-
-            entity.HasIndex(e => e.Name, "SimulationCategory_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<SimulationChapter>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SimulationChapter_pkey");
 
-            entity.ToTable("SimulationChapter");
-
-            entity.HasIndex(e => e.Name, "SimulationChapter_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<SimulationDifficultyLevel>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SimulationDifficultyLevel_pkey");
 
-            entity.ToTable("SimulationDifficultyLevel");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
 
-            entity.HasIndex(e => e.Name, "SimulationDifficultyLevel_name_key").IsUnique();
+        modelBuilder.Entity<SimulationExam>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SimulationExam_pkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Simulation).WithMany(p => p.SimulationExams).HasConstraintName("SimulationExam_simulationId_fkey");
+
+            entity.HasOne(d => d.SituationExam).WithMany(p => p.SimulationExams).HasConstraintName("SimulationExam_situationExamId_fkey");
         });
 
         modelBuilder.Entity<SimulationScenario>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("SimulationScenario_pkey");
 
-            entity.ToTable("SimulationScenario");
-
-            entity.HasIndex(e => e.Name, "SimulationScenario_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.BaseScore).HasColumnName("baseScore");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.EndPoint).HasColumnName("endPoint");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.SimulationCategoryId).HasColumnName("simulationCategoryId");
-            entity.Property(e => e.SimulationChapterId).HasColumnName("simulationChapterId");
-            entity.Property(e => e.SimulationDifficultyLevelId).HasColumnName("simulationDifficultyLevelId");
-            entity.Property(e => e.StartPoint).HasColumnName("startPoint");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.TotalTime).HasColumnName("totalTime");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.Video)
-                .HasMaxLength(255)
-                .HasColumnName("video");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.SimulationCategory).WithMany(p => p.SimulationScenarios)
-                .HasForeignKey(d => d.SimulationCategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("SimulationScenario_simulationCategoryId_fkey");
 
             entity.HasOne(d => d.SimulationChapter).WithMany(p => p.SimulationScenarios)
-                .HasForeignKey(d => d.SimulationChapterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("SimulationScenario_simulationChapterId_fkey");
 
             entity.HasOne(d => d.SimulationDifficultyLevel).WithMany(p => p.SimulationScenarios)
-                .HasForeignKey(d => d.SimulationDifficultyLevelId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("SimulationScenario_simulationDifficultyLevelId_fkey");
         });
@@ -1303,119 +609,66 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("SimulationSession_pkey");
 
-            entity.ToTable("SimulationSession");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsPassed).HasDefaultValue(true);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.DurationSecond).HasColumnName("durationSecond");
-            entity.Property(e => e.IsPassed)
-                .HasDefaultValue(true)
-                .HasColumnName("isPassed");
-            entity.Property(e => e.Score).HasColumnName("score");
-            entity.Property(e => e.SimulationId).HasColumnName("simulationId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.Simulation).WithMany(p => p.SimulationSessions)
-                .HasForeignKey(d => d.SimulationId)
+            entity.HasOne(d => d.SituationExam).WithMany(p => p.SimulationSessions)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("SimulationSession_simulationId_fkey");
+                .HasConstraintName("SimulationSession_situationExamId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.SimulationSessions)
-                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("SimulationSession_userId_fkey");
+        });
+
+        modelBuilder.Entity<SimulationSessionDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SimulationSessionDetail_pkey");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.SimulationExam).WithMany(p => p.SimulationSessionDetails).HasConstraintName("SimulationSessionDetail_simulationExamId_fkey");
+
+            entity.HasOne(d => d.SimulationSession).WithMany(p => p.SimulationSessionDetails).HasConstraintName("SimulationSessionDetail_simulationSessionId_fkey");
+        });
+
+        modelBuilder.Entity<SituationExam>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SituationExam_pkey");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsRandom).HasDefaultValue(false);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Tag_pkey");
 
-            entity.ToTable("Tag");
-
-            entity.HasIndex(e => e.ColorCode, "Tag_colorCode_key").IsUnique();
-
-            entity.HasIndex(e => e.Name, "Tag_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.ColorCode)
-                .HasMaxLength(255)
-                .HasColumnName("colorCode");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<TrafficSign>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("TrafficSign_pkey");
 
-            entity.ToTable("TrafficSign");
-
-            entity.HasIndex(e => e.Code, "TrafficSign_code_key").IsUnique();
-
-            entity.HasIndex(e => e.Name, "TrafficSign_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(255)
-                .HasColumnName("code");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Image)
-                .HasMaxLength(255)
-                .HasColumnName("image");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.SignCategoryId).HasColumnName("signCategoryId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.VectorData)
-                .HasMaxLength(255)
-                .HasColumnName("vectorData");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.SignCategory).WithMany(p => p.TrafficSigns)
-                .HasForeignKey(d => d.SignCategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("TrafficSign_signCategoryId_fkey");
         });
@@ -1424,53 +677,12 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("User_pkey");
 
-            entity.ToTable("User");
-
-            entity.HasIndex(e => e.Email, "User_email_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.Avatar)
-                .HasMaxLength(255)
-                .HasColumnName("avatar");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.DateOfBirth).HasColumnName("dateOfBirth");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.Email)
-                .HasMaxLength(255)
-                .HasColumnName("email");
-            entity.Property(e => e.Gender)
-                .HasMaxLength(20)
-                .HasColumnName("gender");
-            entity.Property(e => e.LicenseType)
-                .HasMaxLength(20)
-                .HasColumnName("licenseType");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Password)
-                .HasMaxLength(255)
-                .HasColumnName("password");
-            entity.Property(e => e.Phone)
-                .HasMaxLength(20)
-                .HasColumnName("phone");
-            entity.Property(e => e.RoleId).HasColumnName("roleId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
-                .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("User_roleId_fkey");
         });
@@ -1479,100 +691,40 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("UserLicense_pkey");
 
-            entity.ToTable("UserLicense");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasIndex(e => new { e.UserId, e.DrivingLicenseId }, "UserLicense_userId_drivingLicenseId_key").IsUnique();
+            entity.HasOne(d => d.DrivingLicense).WithMany(p => p.UserLicenses).HasConstraintName("UserLicense_drivingLicenseId_fkey");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.DrivingLicenseId).HasColumnName("drivingLicenseId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
-
-            entity.HasOne(d => d.DrivingLicense).WithMany(p => p.UserLicenses)
-                .HasForeignKey(d => d.DrivingLicenseId)
-                .HasConstraintName("UserLicense_drivingLicenseId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserLicenses)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("UserLicense_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.UserLicenses).HasConstraintName("UserLicense_userId_fkey");
         });
 
         modelBuilder.Entity<UserNotification>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("UserNotification_pkey");
 
-            entity.ToTable("UserNotification");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.NotificationId).HasColumnName("notificationId");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
-            entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.HasOne(d => d.Notification).WithMany(p => p.UserNotifications).HasConstraintName("UserNotification_notificationId_fkey");
 
-            entity.HasOne(d => d.Notification).WithMany(p => p.UserNotifications)
-                .HasForeignKey(d => d.NotificationId)
-                .HasConstraintName("UserNotification_notificationId_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserNotifications)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("UserNotification_userId_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.UserNotifications).HasConstraintName("UserNotification_userId_fkey");
         });
 
         modelBuilder.Entity<Vehicle>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Vehicle_pkey");
 
-            entity.ToTable("Vehicle");
-
-            entity.HasIndex(e => e.Name, "Vehicle_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createAt");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.DrivingLicenseId).HasColumnName("drivingLicenseId");
-            entity.Property(e => e.Name)
-                .HasMaxLength(255)
-                .HasColumnName("name");
-            entity.Property(e => e.Status)
-                .HasDefaultValue(1)
-                .HasColumnName("status");
-            entity.Property(e => e.UpdateAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updateAt");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.DrivingLicense).WithMany(p => p.Vehicles)
-                .HasForeignKey(d => d.DrivingLicenseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Vehicle_drivingLicenseId_fkey");
         });
