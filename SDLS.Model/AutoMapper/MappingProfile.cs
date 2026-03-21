@@ -7,6 +7,8 @@ using SDLS.Model.DTOs.ExamSession;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.DTOs.Question;
+using SDLS.Model.DTOs.QuestionChapter;
+using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Models;
 
@@ -50,6 +52,18 @@ namespace SDLS.Model.AutoMapper
             CreateMap<LearningProgressUpdateDTO, LearningProgress>().ReverseMap()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<LearningProgress, LearningProgressDTO>().ReverseMap();
+
+            CreateMap<QuestionChapterDTO, QuestionChapter>().ReverseMap();
+            CreateMap<QuestionChapterCreateDTO, QuestionChapter>().ReverseMap();
+            CreateMap<QuestionChapterUpdateDTO, QuestionChapter>().ReverseMap();
+
+            CreateMap<QuestionLessonDTO, QuestionLesson>().ReverseMap();
+            CreateMap<QuestionLessonCreateDTO, QuestionLesson>().ReverseMap();
+            CreateMap<QuestionLessonUpdateDTO, QuestionLesson>().ReverseMap();
+
+            CreateMap<QuestionLessonImageDTO, LessonImage>().ReverseMap();
+            CreateMap<QuestionLessonImageCreateDTO, LessonImage>().ReverseMap();
+            CreateMap<QuestionLessonImageUpdateDTO, LessonImage>().ReverseMap();
         }
     }
 }

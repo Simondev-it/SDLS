@@ -54,6 +54,12 @@ namespace SDLS.API
             builder.Services.AddScoped<IExamSessionRepository, ExamSessionRepository>();
             builder.Services.AddScoped<IExamSessionService, ExamSessionService>();
 
+            builder.Services.AddScoped<IQuestionChapterRepository, QuestionChapterRepository>();
+            builder.Services.AddScoped<IQuestionChapterService, QuestionChapterService>();
+
+            builder.Services.AddScoped<IQuestionLessonRepository, QuestionLessonRepository>();
+            builder.Services.AddScoped<IQuestionLessonService, QuestionLessonService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
