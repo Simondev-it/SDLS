@@ -63,6 +63,12 @@ namespace SDLS.API
             builder.Services.AddScoped<IDrivingLicenseRepository, DrivingLicenseRepository>();
             builder.Services.AddScoped<IDrivingLicenseService, DrivingLicenseService>();
 
+            builder.Services.AddScoped<ITagRepository, TagRepository>();
+            builder.Services.AddScoped<ITagService, TagService>();
+
+            builder.Services.AddScoped<IQuestionCategoryRepository, QuestionCategoryRepository>();
+            builder.Services.AddScoped<IQuestionCategoryService, QuestionCategoryService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

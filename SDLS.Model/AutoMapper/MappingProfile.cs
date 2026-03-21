@@ -13,6 +13,8 @@ using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.DTOs.DrivingLicense;
 using SDLS.Model.DTOs.Vehicle;
 using SDLS.Model.Models;
+using SDLS.Model.DTOs.Tag;
+using SDLS.Model.DTOs.QuestionCategory;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -74,6 +76,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<VehicleDTO, Vehicle>().ReverseMap();
             CreateMap<VehicleCreateDTO, Vehicle>().ReverseMap();
             CreateMap<VehicleUpdateDTO, Vehicle>().ReverseMap();
+
+            CreateMap<TagDTO, Tag>().ReverseMap();
+            CreateMap<TagCreateDTO, Tag>().ReverseMap();
+            CreateMap<TagUpdateDTO, Tag>().ReverseMap();
+
+            CreateMap<QuestionCategoryDTO, QuestionCategory>().ReverseMap();
+            CreateMap<QuestionCategoryCreateDTO, QuestionCategory>().ReverseMap();
+            CreateMap<QuestionCategoryUpdateDTO, QuestionCategory>().ReverseMap();
         }
     }
 }
