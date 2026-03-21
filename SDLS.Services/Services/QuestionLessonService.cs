@@ -48,29 +48,13 @@ namespace SDLS.Services.Services
             int page = 1,
             int pageSize = 20)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (questionChapterId.HasValue)
-                filtered = filtered.Where(x => x.QuestionChapterId == questionChapterId.Value);
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Name)
-                    && x.Name.Contains(name.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
-                    && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            if (!string.IsNullOrWhiteSpace(content))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Content)
-                    && x.Content.Contains(content.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            if (status.HasValue)
-                filtered = filtered.Where(x => x.Status == status.Value);
+            var filtered = await _repository.GetAllAsync(
+                id,
+                questionChapterId,
+                name,
+                description,
+                content,
+                status);
 
             var total = filtered.Count();
 

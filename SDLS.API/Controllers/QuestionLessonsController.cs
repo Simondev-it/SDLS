@@ -28,7 +28,14 @@ namespace SDLS.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                id, questionChapterId, name, description, content, status, page, pageSize);
+                id: id,
+                questionChapterId: questionChapterId,
+                name: name,
+                description: description,
+                content: content,
+                status: status,
+                page: page,
+                pageSize: pageSize);
 
             return Ok(result);
         }
