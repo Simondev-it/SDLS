@@ -116,6 +116,9 @@ namespace SDLS.API
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
 
+            builder.Services.AddScoped<ISimulationScenarioRepository, SimulationScenarioRepository>();
+            builder.Services.AddScoped<ISimulationScenarioService, SimulationScenarioService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

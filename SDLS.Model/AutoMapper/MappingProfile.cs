@@ -30,6 +30,7 @@ using SDLS.Model.DTOs.SavedTrafficSign;
 using SDLS.Model.DTOs.PostReact;
 using SDLS.Model.DTOs.CommentVote;
 using SDLS.Model.DTOs.Notification;
+using SDLS.Model.DTOs.SimulationScenario;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -166,6 +167,10 @@ namespace SDLS.Model.AutoMapper
             CreateMap<UserNotificationUpdateDTO, UserNotification>().ReverseMap();
 
             CreateMap<UserNotificationUserDTO, User>().ReverseMap();
+
+            CreateMap<SimulationScenarioDTO, SimulationScenario>().ReverseMap();
+            CreateMap<SimulationScenarioCreateDTO, SimulationScenario>().ReverseMap();
+            CreateMap<SimulationScenarioUpdateDTO, SimulationScenario>().ReverseMap();
         }
     }
 }
