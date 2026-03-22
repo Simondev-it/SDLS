@@ -108,6 +108,9 @@ namespace SDLS.API
             builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
             builder.Services.AddScoped<ICommentVoteService, CommentVoteService>();
 
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
