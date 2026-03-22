@@ -22,6 +22,14 @@ using SDLS.Model.DTOs.SignCategory;
 using SDLS.Model.DTOs.SimulationCategory;
 using SDLS.Model.DTOs.ReportCategory;
 using SDLS.Model.DTOs.ForumTopic;
+using SDLS.Model.DTOs.SimulationChapter;
+using SDLS.Model.DTOs.UserLicense;
+using SDLS.Model.DTOs.LessonProgress;
+using SDLS.Model.DTOs.SavedQuestion;
+using SDLS.Model.DTOs.SavedTrafficSign;
+using SDLS.Model.DTOs.PostReact;
+using SDLS.Model.DTOs.CommentVote;
+using SDLS.Model.DTOs.Notification;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -120,6 +128,44 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ForumTopicDTO, ForumTopic>().ReverseMap();
             CreateMap<ForumTopicCreateDTO, ForumTopic>().ReverseMap();
             CreateMap<ForumTopicUpdateDTO, ForumTopic>().ReverseMap();
+
+            CreateMap<SimulationChapterDTO, SimulationChapter>().ReverseMap();
+            CreateMap<SimulationChapterCreateDTO, SimulationChapter>().ReverseMap();
+            CreateMap<SimulationChapterUpdateDTO, SimulationChapter>().ReverseMap();
+
+            CreateMap<UserLicense, UserLicenseDTO>().ReverseMap();
+            CreateMap<UserLicenseCreateDTO, UserLicense>().ReverseMap();
+            CreateMap<UserLicenseUpdateDTO, UserLicense>().ReverseMap();
+
+            CreateMap<LessonProgress, LessonProgressDTO>().ReverseMap();
+            CreateMap<LessonProgressCreateDTO, LessonProgress>().ReverseMap();
+            CreateMap<LessonProgressUpdateDTO, LessonProgress>().ReverseMap();
+
+            CreateMap<SavedQuestion, SavedQuestionDTO>().ReverseMap();
+            CreateMap<SavedQuestionCreateDTO, SavedQuestion>().ReverseMap();
+            CreateMap<SavedQuestionUpdateDTO, SavedQuestion>().ReverseMap();
+
+            CreateMap<SavedTrafficSign, SavedTrafficSignDTO>().ReverseMap();
+            CreateMap<SavedTrafficSignCreateDTO, SavedTrafficSign>().ReverseMap();
+            CreateMap<SavedTrafficSignUpdateDTO, SavedTrafficSign>().ReverseMap();
+
+            CreateMap<PostReact, PostReactDTO>().ReverseMap();
+            CreateMap<PostReactCreateDTO, PostReact>().ReverseMap();
+            CreateMap<PostReactUpdateDTO, PostReact>().ReverseMap();
+
+            CreateMap<CommentVote, CommentVoteDTO>().ReverseMap();
+            CreateMap<CommentVoteCreateDTO, CommentVote>().ReverseMap();
+            CreateMap<CommentVoteUpdateDTO, CommentVote>().ReverseMap();
+
+            CreateMap<NotificationDTO, Notification>().ReverseMap();
+            CreateMap<NotificationCreateDTO, Notification>().ReverseMap();
+            CreateMap<NotificationUpdateDTO, Notification>().ReverseMap();
+
+            CreateMap<UserNotificationDTO, UserNotification>().ReverseMap();
+            CreateMap<UserNotificationCreateDTO, UserNotification>().ReverseMap();
+            CreateMap<UserNotificationUpdateDTO, UserNotification>().ReverseMap();
+
+            CreateMap<UserNotificationUserDTO, User>().ReverseMap();
         }
     }
 }

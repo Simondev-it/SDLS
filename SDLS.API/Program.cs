@@ -92,6 +92,30 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+            builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
+            builder.Services.AddScoped<ISimulationChapterService, SimulationChapterService>();
+
+            builder.Services.AddScoped<IUserLicenseRepository, UserLicenseRepository>();
+            builder.Services.AddScoped<IUserLicenseService, UserLicenseService>();
+
+            builder.Services.AddScoped<ILessonProgressRepository, LessonProgressRepository>();
+            builder.Services.AddScoped<ILessonProgressService, LessonProgressService>();
+
+            builder.Services.AddScoped<ISavedQuestionRepository, SavedQuestionRepository>();
+            builder.Services.AddScoped<ISavedQuestionService, SavedQuestionService>();
+
+            builder.Services.AddScoped<ISavedTrafficSignRepository, SavedTrafficSignRepository>();
+            builder.Services.AddScoped<ISavedTrafficSignService, SavedTrafficSignService>();
+
+            builder.Services.AddScoped<IPostReactRepository, PostReactRepository>();
+            builder.Services.AddScoped<IPostReactService, PostReactService>();
+
+            builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
+            builder.Services.AddScoped<ICommentVoteService, CommentVoteService>();
+
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

@@ -1,4 +1,5 @@
-﻿using SDLS.Model.DTOs.Answer;
+﻿using Microsoft.AspNetCore.Http;
+using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Validations;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,8 @@ namespace SDLS.Model.DTOs.Question
 
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Image { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
 
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Explanation { get; set; }
