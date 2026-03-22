@@ -8,9 +8,11 @@ namespace SDLS.Model.DTOs.ForumComment
         public Guid? ReplyId { get; set; }
 
         [NotEmptyGuid]
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
         public Guid ForumPostId { get; set; }
 
         [NotEmptyGuid]
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
         public Guid UserId { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]

@@ -11,7 +11,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Notifications
                 .Include(n => n.UserNotifications.Where(un => un.Status == 1))
-                .Where(n => n.Status == 1)
+                .Where(n => n.Status == 1 || n.Status == 2)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -22,7 +22,7 @@ namespace SDLS.Repositories.Repositories
                 .Include(n => n.UserNotifications.Where(un => un.Status == 1))
                     .ThenInclude(un => un.User)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(n => n.Id == id && n.Status == 1);
+                .FirstOrDefaultAsync(n => n.Id == id && n.Status == 1 || n.Status == 2);
         }
 
         public async Task<Notification?> GetByIdForUpdateAsync(Guid id)

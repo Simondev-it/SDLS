@@ -118,9 +118,6 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(ForumCommentCreateDTO dto)
         {
-            if (dto.ForumPostId == Guid.Empty || dto.UserId == Guid.Empty)
-                throw new ArgumentException("ForumPostId và UserId không được rỗng.");
-
             return await _executionStrategy.ExecuteAsync(async () =>
             {
                 await using var transaction = await _repository.BeginTransactionAsync();
@@ -144,7 +141,7 @@ namespace SDLS.Services.Services
 
                         recipientUserId = parent.UserId;
                         notificationTitle = "Trả lời bình luận";
-                        notificationContent = "Có người đã trả lời bình luận của bạn";
+                        notificationContent = "Có người đã trả lời bình luận '" + parent.Content + "' của bạn";
                     }
                     else
                     {
@@ -154,7 +151,7 @@ namespace SDLS.Services.Services
 
                         recipientUserId = forumPost.UserId;
                         notificationTitle = "Bình luận bài viết";
-                        notificationContent = "Có người đã bình luận vào bài đăng của bạn";
+                        notificationContent = "Có người đã bình luận vào bài đăng '" + forumPost.Title + "' của bạn";
                     }
 
                     var now = DateTime.UtcNow.ToLocalTime();
