@@ -19,6 +19,8 @@ using SDLS.Model.DTOs.QuestionTopic;
 using SDLS.Model.DTOs.SimulationDifficultyLevel;
 using SDLS.Model.DTOs.SignCategory;
 using SDLS.Model.DTOs.SimulationCategory;
+using SDLS.Model.DTOs.ReportCategory;
+using SDLS.Model.DTOs.ForumTopic;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -104,6 +106,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationCategoryDTO, SimulationCategory>().ReverseMap();
             CreateMap<SimulationCategoryCreateDTO, SimulationCategory>().ReverseMap();
             CreateMap<SimulationCategoryUpdateDTO, SimulationCategory>().ReverseMap();
+
+            CreateMap<ReportCategoryDTO, ReportCategory>().ReverseMap();
+            CreateMap<ReportCategoryCreateDTO, ReportCategory>().ReverseMap();
+            CreateMap<ReportCategoryUpdateDTO, ReportCategory>().ReverseMap();
+
+            CreateMap<ForumTopicDTO, ForumTopic>().ReverseMap();
+            CreateMap<ForumTopicCreateDTO, ForumTopic>().ReverseMap();
+            CreateMap<ForumTopicUpdateDTO, ForumTopic>().ReverseMap();
         }
     }
 }

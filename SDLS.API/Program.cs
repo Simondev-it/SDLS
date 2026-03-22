@@ -81,6 +81,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ISignCategoryRepository, SignCategoryRepository>();
             builder.Services.AddScoped<ISignCategoryService, SignCategoryService>();
 
+            builder.Services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
+            builder.Services.AddScoped<IReportCategoryService, ReportCategoryService>();
+
+            builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
+            builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
