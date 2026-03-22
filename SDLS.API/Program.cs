@@ -87,6 +87,9 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+            builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
+            builder.Services.AddScoped<ISimulationChapterService, SimulationChapterService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

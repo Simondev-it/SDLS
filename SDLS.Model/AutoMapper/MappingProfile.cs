@@ -21,6 +21,7 @@ using SDLS.Model.DTOs.SignCategory;
 using SDLS.Model.DTOs.SimulationCategory;
 using SDLS.Model.DTOs.ReportCategory;
 using SDLS.Model.DTOs.ForumTopic;
+using SDLS.Model.DTOs.SimulationChapter;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -114,6 +115,10 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ForumTopicDTO, ForumTopic>().ReverseMap();
             CreateMap<ForumTopicCreateDTO, ForumTopic>().ReverseMap();
             CreateMap<ForumTopicUpdateDTO, ForumTopic>().ReverseMap();
+
+            CreateMap<SimulationChapterDTO, SimulationChapter>().ReverseMap();
+            CreateMap<SimulationChapterCreateDTO, SimulationChapter>().ReverseMap();
+            CreateMap<SimulationChapterUpdateDTO, SimulationChapter>().ReverseMap();
         }
     }
 }
