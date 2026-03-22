@@ -24,6 +24,8 @@ using SDLS.Model.DTOs.ForumTopic;
 using SDLS.Model.DTOs.SimulationChapter;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.DTOs.LessonProgress;
+using SDLS.Model.DTOs.SavedQuestion;
+using SDLS.Model.DTOs.SavedTrafficSign;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -129,6 +131,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<LessonProgress, LessonProgressDTO>().ReverseMap();
             CreateMap<LessonProgressCreateDTO, LessonProgress>().ReverseMap();
             CreateMap<LessonProgressUpdateDTO, LessonProgress>().ReverseMap();
+
+            CreateMap<SavedQuestion, SavedQuestionDTO>().ReverseMap();
+            CreateMap<SavedQuestionCreateDTO, SavedQuestion>().ReverseMap();
+            CreateMap<SavedQuestionUpdateDTO, SavedQuestion>().ReverseMap();
+
+            CreateMap<SavedTrafficSign, SavedTrafficSignDTO>().ReverseMap();
+            CreateMap<SavedTrafficSignCreateDTO, SavedTrafficSign>().ReverseMap();
+            CreateMap<SavedTrafficSignUpdateDTO, SavedTrafficSign>().ReverseMap();
         }
     }
 }

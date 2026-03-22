@@ -1,0 +1,58 @@
+using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Models;
+using SDLS.Repositories.Base;
+using SDLS.Repositories.Interface;
+
+namespace SDLS.Repositories.Repositories
+{
+    public class SavedTrafficSignRepository : GenericRepository<SavedTrafficSign>, ISavedTrafficSignRepository
+    {
+        public async Task<List<SavedTrafficSign>> GetAllAsync()
+        {
+            return await _context.SavedTrafficSigns
+                .Where(x => x.Status == 1)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<SavedTrafficSign?> GetByIdAsync(Guid id)
+        {
+            return await _context.SavedTrafficSigns
+                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+        }
+
+        public async Task<List<SavedTrafficSign>> GetByUserAndTrafficSignAsync(Guid? userId, Guid? trafficSignId)
+        {
+            var query = _context.SavedTrafficSigns.Where(x => x.Status == 1);
+
+            if (userId.HasValue)
+                query = query.Where(x => x.UserId == userId.Value);
+
+            if (trafficSignId.HasValue)
+                query = query.Where(x => x.TrafficSignId == trafficSignId.Value);
+
+            return await query.ToListAsync();
+        }
+
+        public async Task AddAsync(SavedTrafficSign entity)
+        {
+            await _context.SavedTrafficSigns.AddAsync(entity);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(SavedTrafficSign entity)
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var entity = await GetByIdAsync(id);
+            if (entity != null)
+            {
+                _context.SavedTrafficSigns.Remove(entity);
+                await _context.SaveChangesAsync();
+            }
+        }
+    }
+}

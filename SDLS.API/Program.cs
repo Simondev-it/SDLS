@@ -96,6 +96,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ILessonProgressRepository, LessonProgressRepository>();
             builder.Services.AddScoped<ILessonProgressService, LessonProgressService>();
 
+            builder.Services.AddScoped<ISavedQuestionRepository, SavedQuestionRepository>();
+            builder.Services.AddScoped<ISavedQuestionService, SavedQuestionService>();
+
+            builder.Services.AddScoped<ISavedTrafficSignRepository, SavedTrafficSignRepository>();
+            builder.Services.AddScoped<ISavedTrafficSignService, SavedTrafficSignService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
