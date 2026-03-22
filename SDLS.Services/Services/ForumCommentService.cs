@@ -132,6 +132,10 @@ namespace SDLS.Services.Services
                         if (dto.ReplyId.Value == Guid.Empty)
                             throw new ArgumentException("ReplyId không hợp lệ.");
 
+                        var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
+                        if (forumPost == null)
+                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
+
                         var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
                         if (parent == null)
                             throw new KeyNotFoundException("Không tìm thấy comment cha.");
@@ -141,7 +145,7 @@ namespace SDLS.Services.Services
 
                         recipientUserId = parent.UserId;
                         notificationTitle = "Trả lời bình luận";
-                        notificationContent = "Có người đã trả lời bình luận '" + parent.Content + "' của bạn";
+                        notificationContent = "Có người đã trả lời bình luận '" + parent.Content + "' của bạn trong bài đăng '" + forumPost.Title + "'";
                     }
                     else
                     {

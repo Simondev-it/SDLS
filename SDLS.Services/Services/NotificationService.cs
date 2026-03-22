@@ -87,6 +87,14 @@ namespace SDLS.Services.Services
 
         public async Task<NotificationDTO?> GetByIdAsync(Guid id)
         {
+            var existing = await _repository.GetByIdForUpdateAsync(id);
+            if (existing == null)
+                return null;
+
+            existing.Status = 1;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _repository.UpdateAsync(existing);
+
             var entity = await _repository.GetByIdAsync(id);
             return entity != null ? _mapper.Map<NotificationDTO>(entity) : null;
         }
