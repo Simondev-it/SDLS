@@ -28,7 +28,14 @@ namespace SDLS.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                id, questionChapterId, name, description, content, status, page, pageSize);
+                id: id,
+                questionChapterId: questionChapterId,
+                name: name,
+                description: description,
+                content: content,
+                status: status,
+                page: page,
+                pageSize: pageSize);
 
             return Ok(result);
         }
@@ -41,8 +48,7 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Create([FromForm] QuestionLessonCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] QuestionLessonCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -50,8 +56,7 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromForm] QuestionLessonUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] QuestionLessonUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);

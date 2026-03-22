@@ -60,6 +60,11 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionLessonRepository, QuestionLessonRepository>();
             builder.Services.AddScoped<IQuestionLessonService, QuestionLessonService>();
 
+            builder.Services.AddScoped<IForumPostRepository, ForumPostRepository>();
+            builder.Services.AddScoped<IForumPostService, ForumPostService>();
+
+            builder.Services.AddScoped<IMediaImageService, MediaImageService>();
+
             builder.Services.AddScoped<IDrivingLicenseRepository, DrivingLicenseRepository>();
             builder.Services.AddScoped<IDrivingLicenseService, DrivingLicenseService>();
 
