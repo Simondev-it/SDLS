@@ -4,6 +4,7 @@ using SDLS.Model.DTOs.Answer.ExamQuestion;
 using SDLS.Model.DTOs.Exam;
 using SDLS.Model.DTOs.ExamDetail;
 using SDLS.Model.DTOs.ExamSession;
+using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.DTOs.Question;
@@ -83,6 +84,11 @@ namespace SDLS.Model.AutoMapper
             CreateMap<VehicleCreateDTO, Vehicle>().ReverseMap();
             CreateMap<VehicleUpdateDTO, Vehicle>().ReverseMap();
 
+            CreateMap<ForumPostDTO, ForumPost>().ReverseMap();
+            CreateMap<ForumPostCreateDTO, ForumPost>().ReverseMap();
+            CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
+
+            CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
             CreateMap<TagDTO, Tag>().ReverseMap();
             CreateMap<TagCreateDTO, Tag>().ReverseMap();
             CreateMap<TagUpdateDTO, Tag>().ReverseMap();

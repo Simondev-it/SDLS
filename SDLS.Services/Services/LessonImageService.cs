@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
@@ -13,15 +14,18 @@ namespace SDLS.Services.Services
         private readonly ILessonImageRepository _lessonImageRepository;
         private readonly IStorageService _storageService;
         private readonly IMapper _mapper;
+        private readonly AppDbContext _dbContext;
 
         public LessonImageService(
             ILessonImageRepository lessonImageRepository,
             IStorageService storageService,
-            IMapper mapper)
+            IMapper mapper,
+            AppDbContext dbContext)
         {
             _lessonImageRepository = lessonImageRepository;
             _storageService = storageService;
             _mapper = mapper;
+            _dbContext = dbContext;
         }
 
         public async Task<IEnumerable<LessonImageDTO>> GetAllAsync()
@@ -59,6 +63,13 @@ namespace SDLS.Services.Services
                 throw new ArgumentException("Image file is required", nameof(file));
             }
 
+            // Validate that the QuestionLesson exists
+            var questionLessonExists = await _dbContext.QuestionLessons.AnyAsync(ql => ql.Id == lessonId);
+            if (!questionLessonExists)
+            {
+                throw new KeyNotFoundException($"QuestionLesson with ID {lessonId} not found");
+            }
+
             var url = await _storageService.UploadImageAsync(file, ImageTarget.LessonImage, lessonId);
 
             var image = new LessonImage
@@ -67,8 +78,8 @@ namespace SDLS.Services.Services
                 QuestionLessonId = lessonId,
                 Name = string.IsNullOrWhiteSpace(name) ? file.FileName : name,
                 Url = url,
-                CreateAt = DateTime.UtcNow,
-                UpdateAt = DateTime.UtcNow,
+                CreateAt = DateTime.UtcNow.ToLocalTime(),
+                UpdateAt = DateTime.UtcNow.ToLocalTime(),
                 Status = 1
             };
 
