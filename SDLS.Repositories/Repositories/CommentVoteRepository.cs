@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<CommentVote>> GetAllAsync()
         {
             return await _context.CommentVotes
+                .Include(x => x.ForumComment)
                 .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -18,12 +19,16 @@ namespace SDLS.Repositories.Repositories
         public async Task<CommentVote?> GetByIdAsync(Guid id)
         {
             return await _context.CommentVotes
+                .Include(x => x.ForumComment)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
         public async Task<List<CommentVote>> GetByUserAndForumCommentAsync(Guid? userId, Guid? forumCommentId)
         {
-            var query = _context.CommentVotes.Where(x => x.Status == 1);
+            var query = _context.CommentVotes
+                .Include(x => x.ForumComment)
+                .Where(x => x.Status == 1);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -31,7 +36,7 @@ namespace SDLS.Repositories.Repositories
             if (forumCommentId.HasValue)
                 query = query.Where(x => x.ForumCommentId == forumCommentId.Value);
 
-            return await query.ToListAsync();
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task AddAsync(CommentVote entity)
@@ -42,6 +47,7 @@ namespace SDLS.Repositories.Repositories
 
         public async Task UpdateAsync(CommentVote entity)
         {
+            _context.CommentVotes.Update(entity);
             await _context.SaveChangesAsync();
         }
 
