@@ -3,11 +3,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -144,13 +141,6 @@ namespace SDLS.Repositories.Repositories
             if (questionCategoryId.HasValue)
                 query = query.Where(q => q.QuestionCategoryId == questionCategoryId.Value);
 
-            if (!string.IsNullOrWhiteSpace(searchContent))
-            {
-                var keyword = searchContent.Trim();
-                query = query.Where(q => q.Content != null && EF.Functions.ILike(q.Content, $"%{keyword}%"));
-            }
-
-            // AND logic: question phải có đủ tất cả tagIds
             if (normalizedTagIds.Count > 0)
             {
                 var requiredTagCount = normalizedTagIds.Count;
@@ -163,12 +153,59 @@ namespace SDLS.Repositories.Repositories
                         .Count() == requiredTagCount);
             }
 
-            return await query
+            var list = await query
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchContent))
+            {
+                list = list
+                    .Where(q => ContainsNormalized(q.Content, searchContent))
+                    .ToList();
+            }
+
+            return list;
+        }
+
+        private static bool ContainsNormalized(string? source, string? keyword)
+        {
+            var left = NormalizeText(source);
+            var right = NormalizeText(keyword);
+
+            if (string.IsNullOrWhiteSpace(right))
+                return true;
+
+            return left.Contains(right, StringComparison.Ordinal);
+        }
+
+        private static string NormalizeText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var formD = input.Trim().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var c in formD)
+            {
+                var uc = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+
+            var normalized = sb.ToString().Normalize(NormalizationForm.FormC)
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D');
+
+            normalized = string.Join(' ', normalized
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+            return normalized.ToLowerInvariant();
         }
 
         public void RemoveQuestionTags(IEnumerable<QuestionTag> questionTags)

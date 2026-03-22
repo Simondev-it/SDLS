@@ -14,6 +14,14 @@ using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.DTOs.DrivingLicense;
 using SDLS.Model.DTOs.Vehicle;
 using SDLS.Model.Models;
+using SDLS.Model.DTOs.Tag;
+using SDLS.Model.DTOs.QuestionCategory;
+using SDLS.Model.DTOs.QuestionTopic;
+using SDLS.Model.DTOs.SimulationDifficultyLevel;
+using SDLS.Model.DTOs.SignCategory;
+using SDLS.Model.DTOs.SimulationCategory;
+using SDLS.Model.DTOs.ReportCategory;
+using SDLS.Model.DTOs.ForumTopic;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -81,6 +89,37 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
 
             CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
+            CreateMap<TagDTO, Tag>().ReverseMap();
+            CreateMap<TagCreateDTO, Tag>().ReverseMap();
+            CreateMap<TagUpdateDTO, Tag>().ReverseMap();
+
+            CreateMap<QuestionCategoryDTO, QuestionCategory>().ReverseMap();
+            CreateMap<QuestionCategoryCreateDTO, QuestionCategory>().ReverseMap();
+            CreateMap<QuestionCategoryUpdateDTO, QuestionCategory>().ReverseMap();
+
+            CreateMap<QuestionTopicDTO, QuestionTopic>().ReverseMap();
+            CreateMap<QuestionTopicCreateDTO, QuestionTopic>().ReverseMap();
+            CreateMap<QuestionTopicUpdateDTO, QuestionTopic>().ReverseMap();
+
+            CreateMap<SimulationDifficultyLevelDTO, SimulationDifficultyLevel>().ReverseMap();
+            CreateMap<SimulationDifficultyLevelCreateDTO, SimulationDifficultyLevel>().ReverseMap();
+            CreateMap<SimulationDifficultyLevelUpdateDTO, SimulationDifficultyLevel>().ReverseMap();
+
+            CreateMap<SignCategoryDTO, SignCategory>().ReverseMap();
+            CreateMap<SignCategoryCreateDTO, SignCategory>().ReverseMap();
+            CreateMap<SignCategoryUpdateDTO, SignCategory>().ReverseMap();
+
+            CreateMap<SimulationCategoryDTO, SimulationCategory>().ReverseMap();
+            CreateMap<SimulationCategoryCreateDTO, SimulationCategory>().ReverseMap();
+            CreateMap<SimulationCategoryUpdateDTO, SimulationCategory>().ReverseMap();
+
+            CreateMap<ReportCategoryDTO, ReportCategory>().ReverseMap();
+            CreateMap<ReportCategoryCreateDTO, ReportCategory>().ReverseMap();
+            CreateMap<ReportCategoryUpdateDTO, ReportCategory>().ReverseMap();
+
+            CreateMap<ForumTopicDTO, ForumTopic>().ReverseMap();
+            CreateMap<ForumTopicCreateDTO, ForumTopic>().ReverseMap();
+            CreateMap<ForumTopicUpdateDTO, ForumTopic>().ReverseMap();
         }
     }
 }
