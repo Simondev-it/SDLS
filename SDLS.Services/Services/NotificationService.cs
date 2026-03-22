@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
+using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
@@ -10,11 +11,16 @@ namespace SDLS.Services.Services
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _repository;
+        private readonly IStorageService _storageService;
         private readonly IMapper _mapper;
 
-        public NotificationService(INotificationRepository repository, IMapper mapper)
+        public NotificationService(
+            INotificationRepository repository,
+            IStorageService storageService,
+            IMapper mapper)
         {
             _repository = repository;
+            _storageService = storageService;
             _mapper = mapper;
         }
 
@@ -103,6 +109,15 @@ namespace SDLS.Services.Services
                 userNotification.Status = 1;
             }
 
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, entity.Id);
+            }
+            else
+            {
+                entity.Image = dto.Image;
+            }
+
             await _repository.AddAsync(entity);
             return true;
         }
@@ -150,6 +165,15 @@ namespace SDLS.Services.Services
                         });
                     }
                 }
+            }
+
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, id);
+            }
+            else
+            {
+                existing.Image = dto.Image;
             }
 
             await _repository.UpdateAsync(existing);

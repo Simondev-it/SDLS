@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Notification
 {
@@ -14,6 +15,8 @@ namespace SDLS.Model.DTOs.Notification
 
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Image { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
 
         [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Status { get; set; }
