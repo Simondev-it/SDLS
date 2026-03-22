@@ -63,6 +63,30 @@ namespace SDLS.API
             builder.Services.AddScoped<IDrivingLicenseRepository, DrivingLicenseRepository>();
             builder.Services.AddScoped<IDrivingLicenseService, DrivingLicenseService>();
 
+            builder.Services.AddScoped<ITagRepository, TagRepository>();
+            builder.Services.AddScoped<ITagService, TagService>();
+
+            builder.Services.AddScoped<IQuestionCategoryRepository, QuestionCategoryRepository>();
+            builder.Services.AddScoped<IQuestionCategoryService, QuestionCategoryService>();
+
+            builder.Services.AddScoped<IQuestionTopicRepository, QuestionTopicRepository>();
+            builder.Services.AddScoped<IQuestionTopicService, QuestionTopicService>();
+
+            builder.Services.AddScoped<ISimulationDifficultyLevelRepository, SimulationDifficultyLevelRepository>();
+            builder.Services.AddScoped<ISimulationDifficultyLevelService, SimulationDifficultyLevelService>();
+
+            builder.Services.AddScoped<ISimulationCategoryRepository, SimulationCategoryRepository>();
+            builder.Services.AddScoped<ISimulationCategoryService, SimulationCategoryService>();
+
+            builder.Services.AddScoped<ISignCategoryRepository, SignCategoryRepository>();
+            builder.Services.AddScoped<ISignCategoryService, SignCategoryService>();
+
+            builder.Services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
+            builder.Services.AddScoped<IReportCategoryService, ReportCategoryService>();
+
+            builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
+            builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
