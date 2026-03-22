@@ -26,6 +26,8 @@ using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.DTOs.LessonProgress;
 using SDLS.Model.DTOs.SavedQuestion;
 using SDLS.Model.DTOs.SavedTrafficSign;
+using SDLS.Model.DTOs.PostReact;
+using SDLS.Model.DTOs.CommentVote;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -139,6 +141,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SavedTrafficSign, SavedTrafficSignDTO>().ReverseMap();
             CreateMap<SavedTrafficSignCreateDTO, SavedTrafficSign>().ReverseMap();
             CreateMap<SavedTrafficSignUpdateDTO, SavedTrafficSign>().ReverseMap();
+
+            CreateMap<PostReact, PostReactDTO>().ReverseMap();
+            CreateMap<PostReactCreateDTO, PostReact>().ReverseMap();
+            CreateMap<PostReactUpdateDTO, PostReact>().ReverseMap();
+
+            CreateMap<CommentVote, CommentVoteDTO>().ReverseMap();
+            CreateMap<CommentVoteCreateDTO, CommentVote>().ReverseMap();
+            CreateMap<CommentVoteUpdateDTO, CommentVote>().ReverseMap();
         }
     }
 }

@@ -102,6 +102,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ISavedTrafficSignRepository, SavedTrafficSignRepository>();
             builder.Services.AddScoped<ISavedTrafficSignService, SavedTrafficSignService>();
 
+            builder.Services.AddScoped<IPostReactRepository, PostReactRepository>();
+            builder.Services.AddScoped<IPostReactService, PostReactService>();
+
+            builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
+            builder.Services.AddScoped<ICommentVoteService, CommentVoteService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
