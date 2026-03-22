@@ -18,6 +18,8 @@ namespace SDLS.Model.DTOs.Notification
 
         public IFormFile? ImageFile { get; set; }
 
+        public int Status { get; set; } = 1;
+
         public List<UserNotificationCreateDTO> UserNotifications { get; set; } = new();
     }
 }

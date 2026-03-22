@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
@@ -35,6 +36,8 @@ namespace SDLS.API
             {
                 config.AddProfile<MappingProfile>();
             });
+
+            builder.Services.AddScoped<IExecutionStrategyRepository, ExecutionStrategyRepository>();
 
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();

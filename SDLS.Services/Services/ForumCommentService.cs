@@ -4,6 +4,7 @@ using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumComment;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -14,17 +15,20 @@ namespace SDLS.Services.Services
         private readonly IForumCommentRepository _repository;
         private readonly INotificationService _notificationService;
         private readonly IForumPostRepository _forumPostRepository;
+        private readonly IExecutionStrategyRepository _executionStrategy;
         private readonly IMapper _mapper;
 
         public ForumCommentService(
             IForumCommentRepository repository,
             INotificationService notificationService,
             IForumPostRepository forumPostRepository,
+            IExecutionStrategyRepository executionStrategyService,
             IMapper mapper)
         {
             _repository = repository;
             _notificationService = notificationService;
             _forumPostRepository = forumPostRepository;
+            _executionStrategy = executionStrategyService;
             _mapper = mapper;
         }
 
@@ -117,81 +121,82 @@ namespace SDLS.Services.Services
             if (dto.ForumPostId == Guid.Empty || dto.UserId == Guid.Empty)
                 throw new ArgumentException("ForumPostId và UserId không được rỗng.");
 
-            await using var transaction = await _repository.BeginTransactionAsync();
-            try
+            return await _executionStrategy.ExecuteAsync(async () =>
             {
-                Guid recipientUserId;
-                string notificationTitle;
-                string notificationContent;
-
-                ForumComment? parent = null;
-
-                if (dto.ReplyId.HasValue)
+                await using var transaction = await _repository.BeginTransactionAsync();
+                try
                 {
-                    if (dto.ReplyId.Value == Guid.Empty)
-                        throw new ArgumentException("ReplyId không hợp lệ.");
+                    Guid recipientUserId;
+                    string notificationTitle;
+                    string notificationContent;
 
-                    parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
-                    if (parent == null)
-                        throw new KeyNotFoundException("Không tìm thấy comment cha.");
-
-                    if (parent.ForumPostId != dto.ForumPostId)
-                        throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
-
-                    recipientUserId = parent.UserId;
-                    notificationTitle = "Trả lời bình luận";
-                    notificationContent = "Có người đã trả lời bình luận của bạn";
-                }
-                else
-                {
-                    var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
-
-                    if (forumPost == null)
-                        throw new KeyNotFoundException("Không tìm thấy ForumPost.");
-
-                    recipientUserId = forumPost.UserId;
-                    notificationTitle = "Bình luận bài viết";
-                    notificationContent = "Có người đã bình luận vào bài đăng của bạn";
-                }
-
-                var now = DateTime.UtcNow.ToLocalTime();
-                var entity = new ForumComment
-                {
-                    Id = Guid.NewGuid(),
-                    ReplyId = dto.ReplyId,
-                    ForumPostId = dto.ForumPostId,
-                    UserId = dto.UserId,
-                    Content = dto.Content.Trim(),
-                    CreateAt = now,
-                    UpdateAt = now,
-                    Status = 1
-                };
-
-                await _repository.AddAsync(entity);
-
-                var notificationDto = new NotificationCreateDTO
-                {
-                    Title = notificationTitle,
-                    Content = notificationContent,
-                    UserNotifications = new List<UserNotificationCreateDTO>
+                    if (dto.ReplyId.HasValue)
                     {
-                        new UserNotificationCreateDTO
-                        {
-                            UserId = recipientUserId
-                        }
+                        if (dto.ReplyId.Value == Guid.Empty)
+                            throw new ArgumentException("ReplyId không hợp lệ.");
+
+                        var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
+                        if (parent == null)
+                            throw new KeyNotFoundException("Không tìm thấy comment cha.");
+
+                        if (parent.ForumPostId != dto.ForumPostId)
+                            throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
+
+                        recipientUserId = parent.UserId;
+                        notificationTitle = "Trả lời bình luận";
+                        notificationContent = "Có người đã trả lời bình luận của bạn";
                     }
-                };
+                    else
+                    {
+                        var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
+                        if (forumPost == null)
+                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
 
-                await _notificationService.CreateAsync(notificationDto);
+                        recipientUserId = forumPost.UserId;
+                        notificationTitle = "Bình luận bài viết";
+                        notificationContent = "Có người đã bình luận vào bài đăng của bạn";
+                    }
 
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                    var now = DateTime.UtcNow.ToLocalTime();
+                    var entity = new ForumComment
+                    {
+                        Id = Guid.NewGuid(),
+                        ReplyId = dto.ReplyId,
+                        ForumPostId = dto.ForumPostId,
+                        UserId = dto.UserId,
+                        Content = dto.Content.Trim(),
+                        CreateAt = now,
+                        UpdateAt = now,
+                        Status = 1
+                    };
+
+                    await _repository.AddAsync(entity);
+
+                    var notificationDto = new NotificationCreateDTO
+                    {
+                        Title = notificationTitle,
+                        Content = notificationContent,
+                        Status = 2,
+                        UserNotifications = new List<UserNotificationCreateDTO>
+                        {
+                            new UserNotificationCreateDTO
+                            {
+                                UserId = recipientUserId
+                            }
+                        }
+                    };
+
+                    await _notificationService.CreateAsync(notificationDto);
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> UpdateAsync(Guid id, ForumCommentUpdateDTO dto)

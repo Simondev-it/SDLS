@@ -99,7 +99,6 @@ namespace SDLS.Services.Services
             entity.Id = Guid.NewGuid();
             entity.CreateAt = now;
             entity.UpdateAt = now;
-            entity.Status = 1;
 
             foreach (var userNotification in entity.UserNotifications)
             {
