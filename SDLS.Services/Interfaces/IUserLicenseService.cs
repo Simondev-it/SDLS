@@ -18,8 +18,8 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<UserLicenseDTO?> GetByIdAsync(Guid id);
-        Task<UserLicenseDTO> CreateAsync(UserLicenseCreateDTO dto);
-        Task<UserLicenseDTO?> UpdateAsync(Guid id, UserLicenseUpdateDTO dto);
+        Task<bool> CreateAsync(UserLicenseCreateDTO dto);
+        Task<bool> UpdateAsync(Guid id, UserLicenseUpdateDTO dto);
         Task<bool> DeleteAsync(Guid id);
     }
 }

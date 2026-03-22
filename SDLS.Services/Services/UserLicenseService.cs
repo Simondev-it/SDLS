@@ -64,7 +64,7 @@ namespace SDLS.Services.Services
             return entity != null ? _mapper.Map<UserLicenseDTO>(entity) : null;
         }
 
-        public async Task<UserLicenseDTO> CreateAsync(UserLicenseCreateDTO dto)
+        public async Task<bool> CreateAsync(UserLicenseCreateDTO dto)
         {
             if (dto.UserId == Guid.Empty || dto.DrivingLicenseId == Guid.Empty)
                 throw new ArgumentException("UserId và DrivingLicenseId không được rỗng");
@@ -80,13 +80,13 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return _mapper.Map<UserLicenseDTO>(entity);
+            return true;
         }
 
-        public async Task<UserLicenseDTO?> UpdateAsync(Guid id, UserLicenseUpdateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, UserLicenseUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null) return false;
 
             var isChangingKeys = existing.UserId != dto.UserId || existing.DrivingLicenseId != dto.DrivingLicenseId;
             if (isChangingKeys)
@@ -102,7 +102,7 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return _mapper.Map<UserLicenseDTO>(existing);
+            return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)

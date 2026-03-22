@@ -47,23 +47,23 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<LessonProgressDTO>> Create([FromBody] LessonProgressCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] LessonProgressCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<LessonProgressDTO>> Update(Guid id, [FromBody] LessonProgressUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] LessonProgressUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var updated = await _service.UpdateAsync(id, dto);
-            if (updated == null) return NotFound();
+            if (!updated) return NotFound();
 
-            return Ok(updated);
+            return Ok(true);
         }
 
         [HttpDelete("{id}")]

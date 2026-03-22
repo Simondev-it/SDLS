@@ -34,7 +34,7 @@ namespace SDLS.Services.Services
             return entity != null ? _mapper.Map<LearningProgressDTO>(entity) : null;
         }
 
-        public async Task<LearningProgressDTO> CreateAsync(LearningProgressCreateDTO dto)
+        public async Task<bool> CreateAsync(LearningProgressCreateDTO dto)
         {
             if (dto.QuestionId == Guid.Empty || dto.UserId == Guid.Empty)
                 throw new ArgumentException("QuestionId và UserId không được rỗng");
@@ -50,14 +50,13 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-
-            return _mapper.Map<LearningProgressDTO>(entity);
+            return true;
         }
 
-        public async Task<LearningProgressDTO?> UpdateAsync(Guid id, LearningProgressUpdateDTO dto)
+        public async Task<bool> UpdateAsync(Guid id, LearningProgressUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return null;
+            if (existing == null) return false;
 
             // Kiểm tra nếu thay đổi UserId hoặc QuestionId → tránh trùng lặp
             bool isChangingKeys = existing.UserId != dto.UserId || existing.QuestionId != dto.QuestionId;
@@ -76,8 +75,7 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-
-            return _mapper.Map<LearningProgressDTO>(existing);
+            return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
