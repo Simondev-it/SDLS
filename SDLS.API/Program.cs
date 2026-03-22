@@ -75,6 +75,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ISimulationDifficultyLevelRepository, SimulationDifficultyLevelRepository>();
             builder.Services.AddScoped<ISimulationDifficultyLevelService, SimulationDifficultyLevelService>();
 
+            builder.Services.AddScoped<ISimulationCategoryRepository, SimulationCategoryRepository>();
+            builder.Services.AddScoped<ISimulationCategoryService, SimulationCategoryService>();
+
+            builder.Services.AddScoped<ISignCategoryRepository, SignCategoryRepository>();
+            builder.Services.AddScoped<ISignCategoryService, SignCategoryService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

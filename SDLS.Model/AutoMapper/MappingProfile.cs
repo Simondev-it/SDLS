@@ -17,6 +17,8 @@ using SDLS.Model.DTOs.Tag;
 using SDLS.Model.DTOs.QuestionCategory;
 using SDLS.Model.DTOs.QuestionTopic;
 using SDLS.Model.DTOs.SimulationDifficultyLevel;
+using SDLS.Model.DTOs.SignCategory;
+using SDLS.Model.DTOs.SimulationCategory;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -94,6 +96,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationDifficultyLevelDTO, SimulationDifficultyLevel>().ReverseMap();
             CreateMap<SimulationDifficultyLevelCreateDTO, SimulationDifficultyLevel>().ReverseMap();
             CreateMap<SimulationDifficultyLevelUpdateDTO, SimulationDifficultyLevel>().ReverseMap();
+
+            CreateMap<SignCategoryDTO, SignCategory>().ReverseMap();
+            CreateMap<SignCategoryCreateDTO, SignCategory>().ReverseMap();
+            CreateMap<SignCategoryUpdateDTO, SignCategory>().ReverseMap();
+
+            CreateMap<SimulationCategoryDTO, SimulationCategory>().ReverseMap();
+            CreateMap<SimulationCategoryCreateDTO, SimulationCategory>().ReverseMap();
+            CreateMap<SimulationCategoryUpdateDTO, SimulationCategory>().ReverseMap();
         }
     }
 }
