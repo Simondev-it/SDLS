@@ -22,6 +22,8 @@ using SDLS.Model.DTOs.SimulationCategory;
 using SDLS.Model.DTOs.ReportCategory;
 using SDLS.Model.DTOs.ForumTopic;
 using SDLS.Model.DTOs.SimulationChapter;
+using SDLS.Model.DTOs.UserLicense;
+using SDLS.Model.DTOs.LessonProgress;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -119,6 +121,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationChapterDTO, SimulationChapter>().ReverseMap();
             CreateMap<SimulationChapterCreateDTO, SimulationChapter>().ReverseMap();
             CreateMap<SimulationChapterUpdateDTO, SimulationChapter>().ReverseMap();
+
+            CreateMap<UserLicense, UserLicenseDTO>().ReverseMap();
+            CreateMap<UserLicenseCreateDTO, UserLicense>().ReverseMap();
+            CreateMap<UserLicenseUpdateDTO, UserLicense>().ReverseMap();
+
+            CreateMap<LessonProgress, LessonProgressDTO>().ReverseMap();
+            CreateMap<LessonProgressCreateDTO, LessonProgress>().ReverseMap();
+            CreateMap<LessonProgressUpdateDTO, LessonProgress>().ReverseMap();
         }
     }
 }

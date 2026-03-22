@@ -90,6 +90,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
             builder.Services.AddScoped<ISimulationChapterService, SimulationChapterService>();
 
+            builder.Services.AddScoped<IUserLicenseRepository, UserLicenseRepository>();
+            builder.Services.AddScoped<IUserLicenseService, UserLicenseService>();
+
+            builder.Services.AddScoped<ILessonProgressRepository, LessonProgressRepository>();
+            builder.Services.AddScoped<ILessonProgressService, LessonProgressService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
