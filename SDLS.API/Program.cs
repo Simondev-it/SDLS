@@ -131,6 +131,9 @@ namespace SDLS.API
             builder.Services.AddScoped<ITrafficSignRepository, TrafficSignRepository>();
             builder.Services.AddScoped<ITrafficSignService, TrafficSignService>();
 
+            builder.Services.AddScoped<IResolveRepository, ResolveRepository>();
+            builder.Services.AddScoped<IResolveService, ResolveService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
