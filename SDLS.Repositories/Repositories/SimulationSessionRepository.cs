@@ -33,6 +33,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<SimulationSession?> GetByIdAsync(Guid id)
         {
             return await _context.SimulationSessions
+                .Include(x => x.SituationExam)
                 .Include(x => x.SimulationSessionDetails.Where(d => d.Status == 1))
                 .Where(x => x.Status == 1)
                 .AsNoTracking()

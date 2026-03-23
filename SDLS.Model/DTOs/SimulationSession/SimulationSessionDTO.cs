@@ -1,3 +1,5 @@
+using SDLS.Model.DTOs.SituationExam;
+
 namespace SDLS.Model.DTOs.SimulationSession
 {
     public class SimulationSessionDTO
@@ -10,6 +12,7 @@ namespace SDLS.Model.DTOs.SimulationSession
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
 
+        public SituationExamDTO? SituationExam { get; set; }
         public List<SimulationSessionDetailDTO> SimulationSessionDetails { get; set; } = new();
     }
 }
