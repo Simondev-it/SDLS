@@ -10,12 +10,15 @@ namespace SDLS.Repositories.Repositories
 {
     public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
-
         public async Task<Question> GetByIdAsync(Guid id)
         {
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
@@ -25,6 +28,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers)
                 .Include(q => q.QuestionTags)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
@@ -33,6 +40,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .Include(q => q.InverseParent)
                 .Where(q => q.Status == 1)
                 .AsNoTracking()
@@ -43,7 +54,7 @@ namespace SDLS.Repositories.Repositories
         {
             this.CreateAsync(question);
         }
-        //_context.Update(question); 
+
         public async Task UpdateAsync(Question question)
         {
             await _context.SaveChangesAsync();
@@ -62,7 +73,7 @@ namespace SDLS.Repositories.Repositories
         public async Task AddAnswerAsync(Answer answer)
         {
             _context.Answers.AddAsync(answer);
-            await SaveAsync();  // hoặc Prepare + Save riêng tùy thiết kế
+            await SaveAsync();
         }
 
         public async Task DeleteAsync(Guid id)
@@ -72,7 +83,6 @@ namespace SDLS.Repositories.Repositories
             {
                 question.Status = 0;
                 this.Update(question);
-
             }
         }
 
@@ -85,9 +95,13 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers)
-                .Include(q => q.InverseParent)   // cần để traverse next
+                .Include(q => q.InverseParent)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
-                .AsNoTracking()                  // tăng tốc
+                .AsNoTracking()
                 .ToListAsync();
         }
 
@@ -96,6 +110,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers)
                 .Include(q => q.InverseParent)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
@@ -112,7 +130,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
-                .Select(q => new Question { Id = q.Id, ParentId = q.ParentId }) // chỉ lấy 2 field
+                .Select(q => new Question { Id = q.Id, ParentId = q.ParentId })
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -156,6 +174,10 @@ namespace SDLS.Repositories.Repositories
             var list = await query
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync();

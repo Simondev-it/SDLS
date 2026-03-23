@@ -32,6 +32,8 @@ using SDLS.Model.DTOs.CommentVote;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.ForumComment;
 using SDLS.Model.DTOs.SimulationScenario;
+using SDLS.Model.DTOs.Report;
+using SDLS.Model.DTOs.TrafficSign;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -182,6 +184,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationScenarioDTO, SimulationScenario>().ReverseMap();
             CreateMap<SimulationScenarioCreateDTO, SimulationScenario>().ReverseMap();
             CreateMap<SimulationScenarioUpdateDTO, SimulationScenario>().ReverseMap();
+
+            CreateMap<ReportDTO, Report>().ReverseMap();
+            CreateMap<ReportCreateDTO, Report>().ReverseMap();
+            CreateMap<ReportUpdateDTO, Report>().ReverseMap();
+
+            CreateMap<TrafficSignDTO, TrafficSign>().ReverseMap();
+            CreateMap<TrafficSignCreateDTO, TrafficSign>().ReverseMap();
+            CreateMap<TrafficSignUpdateDTO, TrafficSign>().ReverseMap();
         }
     }
 }

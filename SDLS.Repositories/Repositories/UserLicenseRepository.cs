@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<UserLicense>> GetAllAsync()
         {
             return await _context.UserLicenses
+                .Include(x => x.DrivingLicense)
                 .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -18,6 +19,8 @@ namespace SDLS.Repositories.Repositories
         public async Task<UserLicense?> GetByIdAsync(Guid id)
         {
             return await _context.UserLicenses
+                .Include(x => x.DrivingLicense)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
@@ -29,7 +32,9 @@ namespace SDLS.Repositories.Repositories
 
         public async Task<List<UserLicense>> GetByUserAndDrivingLicenseAsync(Guid? userId, Guid? drivingLicenseId)
         {
-            var query = _context.UserLicenses.Where(x => x.Status == 1);
+            var query = _context.UserLicenses
+                .Include(x => x.DrivingLicense)
+                .Where(x => x.Status == 1);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -37,7 +42,9 @@ namespace SDLS.Repositories.Repositories
             if (drivingLicenseId.HasValue)
                 query = query.Where(x => x.DrivingLicenseId == drivingLicenseId.Value);
 
-            return await query.ToListAsync();
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task AddAsync(UserLicense entity)

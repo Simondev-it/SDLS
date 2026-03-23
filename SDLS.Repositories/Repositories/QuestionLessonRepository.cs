@@ -16,6 +16,7 @@ namespace SDLS.Repositories.Repositories
             int? status = 1)
         {
             var query = _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -52,6 +53,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdAsync(Guid id)
         {
             return await _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
@@ -59,6 +61,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 

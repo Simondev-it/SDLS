@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<SavedQuestion>> GetAllAsync()
         {
             return await _context.SavedQuestions
+                .Include(x => x.Question).ThenInclude(q => q.Answers)
                 .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -18,12 +19,15 @@ namespace SDLS.Repositories.Repositories
         public async Task<SavedQuestion?> GetByIdAsync(Guid id)
         {
             return await _context.SavedQuestions
+                .Include(x => x.Question).ThenInclude(q => q.Answers)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
         public async Task<List<SavedQuestion>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId)
         {
-            var query = _context.SavedQuestions.Where(x => x.Status == 1);
+            var query = _context.SavedQuestions
+                .Where(x => x.Status == 1);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -31,7 +35,9 @@ namespace SDLS.Repositories.Repositories
             if (questionId.HasValue)
                 query = query.Where(x => x.QuestionId == questionId.Value);
 
-            return await query.ToListAsync();
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task AddAsync(SavedQuestion entity)

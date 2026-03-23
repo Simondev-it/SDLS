@@ -1,3 +1,5 @@
+using SDLS.Model.DTOs.DrivingLicense;
+
 namespace SDLS.Model.DTOs.UserLicense
 {
     public class UserLicenseDTO
@@ -6,5 +8,7 @@ namespace SDLS.Model.DTOs.UserLicense
         public Guid UserId { get; set; }
         public Guid DrivingLicenseId { get; set; }
         public int? Status { get; set; }
+
+        public DrivingLicenseDTO? DrivingLicense { get; set; }
     }
 }

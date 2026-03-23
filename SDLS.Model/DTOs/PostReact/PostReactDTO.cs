@@ -1,3 +1,5 @@
+using SDLS.Model.DTOs.ForumPost;
+
 namespace SDLS.Model.DTOs.PostReact
 {
     public class PostReactDTO
@@ -7,5 +9,7 @@ namespace SDLS.Model.DTOs.PostReact
         public Guid UserId { get; set; }
         public string ReactType { get; set; } = null!;
         public int? Status { get; set; }
+
+        public ForumPostDTO? ForumPost { get; set; }
     }
 }
