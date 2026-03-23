@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<LessonProgress>> GetAllAsync()
         {
             return await _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
                 .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -18,18 +19,23 @@ namespace SDLS.Repositories.Repositories
         public async Task<LessonProgress?> GetByIdAsync(Guid id)
         {
             return await _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
         public async Task<LessonProgress?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
         public async Task<List<LessonProgress>> GetByUserAndQuestionLessonAsync(Guid? userId, Guid? questionLessonId)
         {
-            var query = _context.LessonProgresses.Where(x => x.Status == 1);
+            var query = _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
+                .Where(x => x.Status == 1);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -37,7 +43,9 @@ namespace SDLS.Repositories.Repositories
             if (questionLessonId.HasValue)
                 query = query.Where(x => x.QuestionLessonId == questionLessonId.Value);
 
-            return await query.ToListAsync();
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task AddAsync(LessonProgress entity)
