@@ -35,6 +35,7 @@ using SDLS.Model.DTOs.SimulationScenario;
 using SDLS.Model.DTOs.Report;
 using SDLS.Model.DTOs.TrafficSign;
 using SDLS.Model.DTOs.Resolve;
+using SDLS.Model.DTOs.SituationExam;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -197,6 +198,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ResolveDTO, Resolve>().ReverseMap();
             CreateMap<ResolveCreateDTO, Resolve>().ReverseMap();
             CreateMap<ResolveUpdateDTO, Resolve>().ReverseMap();
+
+            CreateMap<SituationExam, SituationExamDTO>().ReverseMap();
+            CreateMap<SituationExamCreateDTO, SituationExam>().ReverseMap();
+            CreateMap<SituationExamUpdateDTO, SituationExam>().ReverseMap();
+
+            CreateMap<SimulationExam, SimulationExamDTO>().ReverseMap();
+            CreateMap<SimulationExamCreateDTO, SimulationExam>().ReverseMap();
+            CreateMap<SimulationExamUpdateDTO, SimulationExam>().ReverseMap();
         }
     }
 }
