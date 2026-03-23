@@ -134,6 +134,12 @@ namespace SDLS.API
             builder.Services.AddScoped<IResolveRepository, ResolveRepository>();
             builder.Services.AddScoped<IResolveService, ResolveService>();
 
+            builder.Services.AddScoped<ISituationExamRepository, SituationExamRepository>();
+            builder.Services.AddScoped<ISituationExamService, SituationExamService>();
+
+            builder.Services.AddScoped<ISimulationSessionRepository, SimulationSessionRepository>();
+            builder.Services.AddScoped<ISimulationSessionService, SimulationSessionService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
