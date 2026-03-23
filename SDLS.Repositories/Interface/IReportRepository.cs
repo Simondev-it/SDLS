@@ -14,7 +14,7 @@ namespace SDLS.Repositories.Interface
             Guid? questionId = null,
             string? title = null,
             string? content = null,
-            int? status = 1);
+            int? status = null);
 
         Task<Report?> GetByIdAsync(Guid id);
         Task<Report?> GetByIdForUpdateAsync(Guid id);

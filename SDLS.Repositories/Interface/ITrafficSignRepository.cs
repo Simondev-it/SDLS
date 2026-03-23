@@ -9,8 +9,7 @@ namespace SDLS.Repositories.Interface
             Guid? signCategoryId = null,
             string? name = null,
             string? code = null,
-            string? description = null,
-            int? status = 1);
+            string? description = null);
 
         Task<TrafficSign?> GetByIdAsync(Guid id);
         Task<TrafficSign?> GetByIdForUpdateAsync(Guid id);

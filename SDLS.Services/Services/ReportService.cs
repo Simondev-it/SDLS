@@ -31,7 +31,7 @@ namespace SDLS.Services.Services
             Guid? questionId = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
@@ -79,7 +79,7 @@ namespace SDLS.Services.Services
             entity.Id = Guid.NewGuid();
             entity.CreateAt = now;
             entity.UpdateAt = now;
-            entity.Status = 1;
+            entity.Status = -1;
 
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {

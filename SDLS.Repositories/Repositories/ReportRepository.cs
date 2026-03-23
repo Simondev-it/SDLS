@@ -17,10 +17,15 @@ namespace SDLS.Repositories.Repositories
             Guid? questionId = null,
             string? title = null,
             string? content = null,
-            int? status = 1)
+            int? status = null)
         {
             var query = _context.Reports
                 .Include(x => x.ReportCategory)
+                .Include(x => x.ForumComment)
+                .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                .Include(x => x.Question)
+                .Include(x => x.Simulation)
+                .Where(x => x.Status.HasValue && (x.Status == -1 || x.Status == 1 || x.Status == 2))
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -67,14 +72,22 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Reports
                 .Include(x => x.ReportCategory)
+                .Include(x => x.ForumComment)
+                .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                .Include(x => x.Question)
+                .Include(x => x.Simulation)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id
+                    && x.Status.HasValue
+                    && (x.Status == -1 || x.Status == 1 || x.Status == 2));
         }
 
         public async Task<Report?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.Reports
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id
+                    && x.Status.HasValue
+                    && (x.Status == -1 || x.Status == 1 || x.Status == 2));
         }
 
         public async Task AddAsync(Report entity)
@@ -91,7 +104,9 @@ namespace SDLS.Repositories.Repositories
         public async Task DeleteAsync(Guid id)
         {
             var existing = await _context.Reports
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id
+                    && x.Status.HasValue
+                    && (x.Status == -1 || x.Status == 1 || x.Status == 2));
 
             if (existing == null)
                 return;

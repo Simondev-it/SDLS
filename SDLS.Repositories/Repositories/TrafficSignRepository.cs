@@ -12,11 +12,11 @@ namespace SDLS.Repositories.Repositories
             Guid? signCategoryId = null,
             string? name = null,
             string? code = null,
-            string? description = null,
-            int? status = 1)
+            string? description = null)
         {
             var query = _context.TrafficSigns
                 .Include(x => x.SignCategory)
+                .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -43,9 +43,6 @@ namespace SDLS.Repositories.Repositories
                 var keyword = description.Trim();
                 query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{keyword}%"));
             }
-
-            if (status.HasValue)
-                query = query.Where(x => x.Status == status.Value);
 
             return await query.ToListAsync();
         }

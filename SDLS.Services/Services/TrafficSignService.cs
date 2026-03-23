@@ -27,14 +27,13 @@ namespace SDLS.Services.Services
             string? name = null,
             string? code = null,
             string? description = null,
-            int? status = 1,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
-            var filtered = await _repository.GetAllAsync(id, signCategoryId, name, code, description, status);
+            var filtered = await _repository.GetAllAsync(id, signCategoryId, name, code, description);
             var ordered = filtered.OrderBy(x => x.Code).ThenBy(x => x.Name).ToList();
             var total = ordered.Count;
 
