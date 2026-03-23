@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<SavedTrafficSign>> GetAllAsync()
         {
             return await _context.SavedTrafficSigns
+                .Include(x => x.TrafficSign).ThenInclude(x => x.SignCategory)
                 .Where(x => x.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -18,12 +19,15 @@ namespace SDLS.Repositories.Repositories
         public async Task<SavedTrafficSign?> GetByIdAsync(Guid id)
         {
             return await _context.SavedTrafficSigns
+                .Include(x => x.TrafficSign).ThenInclude(x => x.SignCategory)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
         public async Task<List<SavedTrafficSign>> GetByUserAndTrafficSignAsync(Guid? userId, Guid? trafficSignId)
         {
-            var query = _context.SavedTrafficSigns.Where(x => x.Status == 1);
+            var query = _context.SavedTrafficSigns
+                .Where(x => x.Status == 1);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -31,7 +35,9 @@ namespace SDLS.Repositories.Repositories
             if (trafficSignId.HasValue)
                 query = query.Where(x => x.TrafficSignId == trafficSignId.Value);
 
-            return await query.ToListAsync();
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task AddAsync(SavedTrafficSign entity)

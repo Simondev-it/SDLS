@@ -1,3 +1,5 @@
+using SDLS.Model.DTOs.TrafficSign;
+
 namespace SDLS.Model.DTOs.SavedTrafficSign
 {
     public class SavedTrafficSignDTO
@@ -6,5 +8,7 @@ namespace SDLS.Model.DTOs.SavedTrafficSign
         public Guid UserId { get; set; }
         public Guid TrafficSignId { get; set; }
         public int? Status { get; set; }
+
+        public TrafficSignDTO? TrafficSign { get; set; }
     }
 }
