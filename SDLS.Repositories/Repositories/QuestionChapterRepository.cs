@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<QuestionChapter>> GetAllAsync()
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -17,6 +18,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionChapter?> GetByIdAsync(Guid id)
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
@@ -24,6 +26,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionChapter?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
