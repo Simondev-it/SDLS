@@ -2,6 +2,7 @@ using SDLS.Model.DTOs.ForumComment;
 using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.DTOs.ReportCategory;
+using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.DTOs.SimulationScenario;
 
 namespace SDLS.Model.DTOs.Report
@@ -25,5 +26,6 @@ namespace SDLS.Model.DTOs.Report
         public ForumPostDTO? ForumPost { get; set; }
         public QuestionDTO? Question { get; set; }
         public SimulationScenarioDTO? Simulation { get; set; }
+        public List<ResolveDTO> Resolves { get; set; } = new();
     }
 }

@@ -76,6 +76,7 @@ namespace SDLS.Repositories.Repositories
                 .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
                 .Include(x => x.Question)
                 .Include(x => x.Simulation)
+                .Include(x => x.Resolves.Where(r => r.Status == 1))
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id
                     && x.Status.HasValue
