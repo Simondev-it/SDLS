@@ -125,6 +125,12 @@ namespace SDLS.API
             builder.Services.AddScoped<ISimulationScenarioRepository, SimulationScenarioRepository>();
             builder.Services.AddScoped<ISimulationScenarioService, SimulationScenarioService>();
 
+            builder.Services.AddScoped<IReportRepository, ReportRepository>();
+            builder.Services.AddScoped<IReportService, ReportService>();
+
+            builder.Services.AddScoped<ITrafficSignRepository, TrafficSignRepository>();
+            builder.Services.AddScoped<ITrafficSignService, TrafficSignService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
