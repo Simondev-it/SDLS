@@ -30,6 +30,8 @@ using SDLS.Model.DTOs.SavedTrafficSign;
 using SDLS.Model.DTOs.PostReact;
 using SDLS.Model.DTOs.CommentVote;
 using SDLS.Model.DTOs.Notification;
+using SDLS.Model.DTOs.ForumComment;
+using SDLS.Model.DTOs.SimulationScenario;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -156,6 +158,16 @@ namespace SDLS.Model.AutoMapper
             CreateMap<CommentVote, CommentVoteDTO>().ReverseMap();
             CreateMap<CommentVoteCreateDTO, CommentVote>().ReverseMap();
             CreateMap<CommentVoteUpdateDTO, CommentVote>().ReverseMap();
+            CreateMap<ForumCommentBriefDTO, ForumComment>().ReverseMap();
+
+            CreateMap<ForumComment, ForumCommentDTO>()
+                .ForMember(dest => dest.Replies, opt => opt.Ignore());
+            CreateMap<ForumCommentCreateDTO, ForumComment>().ReverseMap();
+            CreateMap<ForumCommentUpdateDTO, ForumComment>().ReverseMap();
+
+            CreateMap<User, ForumCommentUserBriefDTO>().ReverseMap();
+            CreateMap<ForumPost, ForumCommentPostBriefDTO>().ReverseMap();
+            CreateMap<CommentVote, ForumCommentVoteBriefDTO>().ReverseMap();
 
             CreateMap<NotificationDTO, Notification>().ReverseMap();
             CreateMap<NotificationCreateDTO, Notification>().ReverseMap();
@@ -166,6 +178,10 @@ namespace SDLS.Model.AutoMapper
             CreateMap<UserNotificationUpdateDTO, UserNotification>().ReverseMap();
 
             CreateMap<UserNotificationUserDTO, User>().ReverseMap();
+
+            CreateMap<SimulationScenarioDTO, SimulationScenario>().ReverseMap();
+            CreateMap<SimulationScenarioCreateDTO, SimulationScenario>().ReverseMap();
+            CreateMap<SimulationScenarioUpdateDTO, SimulationScenario>().ReverseMap();
         }
     }
 }

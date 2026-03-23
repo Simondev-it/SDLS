@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
@@ -35,6 +36,8 @@ namespace SDLS.API
             {
                 config.AddProfile<MappingProfile>();
             });
+
+            builder.Services.AddScoped<IExecutionStrategyRepository, ExecutionStrategyRepository>();
 
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
@@ -113,8 +116,14 @@ namespace SDLS.API
             builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
             builder.Services.AddScoped<ICommentVoteService, CommentVoteService>();
 
+            builder.Services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
+            builder.Services.AddScoped<IForumCommentService, ForumCommentService>();
+
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+
+            builder.Services.AddScoped<ISimulationScenarioRepository, SimulationScenarioRepository>();
+            builder.Services.AddScoped<ISimulationScenarioService, SimulationScenarioService>();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();

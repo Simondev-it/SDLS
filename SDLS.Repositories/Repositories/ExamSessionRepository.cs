@@ -2,10 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -14,7 +10,9 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<ExamSession>> GetAllAsync()
         {
             return await _context.ExamSessions
+                .Include(es => es.Exam)
                 .Include(es => es.ExamDetails.Where(ed => ed.Status == 1))
+                    .ThenInclude(ed => ed.Answer)
                 .Where(es => es.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -23,7 +21,9 @@ namespace SDLS.Repositories.Repositories
         public async Task<ExamSession?> GetByIdAsync(Guid id)
         {
             return await _context.ExamSessions
+                .Include(es => es.Exam)
                 .Include(es => es.ExamDetails.Where(ed => ed.Status == 1))
+                    .ThenInclude(ed => ed.Answer)
                 .Where(es => es.Status == 1)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(es => es.Id == id);
