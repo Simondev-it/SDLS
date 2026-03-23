@@ -141,10 +141,6 @@ namespace SDLS.Services.Services
             {
                 newQuestion.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, newQuestion.Id);
             }
-            else
-            {
-                newQuestion.Image = dto.Image;
-            }
 
             await _questionRepository.AddAsync(newQuestion);
             return true;
@@ -162,7 +158,6 @@ namespace SDLS.Services.Services
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
             existing.Content = dto.Content;
-            existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
             existing.Type = dto.Type;
             existing.UpdateAt = now;
@@ -280,10 +275,6 @@ namespace SDLS.Services.Services
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, id);
-            }
-            else
-            {
-                existing.Image = dto.Image;
             }
 
             await _questionRepository.UpdateAsync(existing);

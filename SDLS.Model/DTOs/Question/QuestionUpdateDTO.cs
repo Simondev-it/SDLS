@@ -26,9 +26,6 @@ namespace SDLS.Model.DTOs.Question
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
-        public string? Image { get; set; }
-
         public IFormFile? ImageFile { get; set; }
 
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]

@@ -120,10 +120,6 @@ namespace SDLS.Services.Services
             {
                 entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, entity.Id);
             }
-            else
-            {
-                entity.Image = dto.Image;
-            }
 
             await _repository.AddAsync(entity);
             return true;
@@ -138,7 +134,6 @@ namespace SDLS.Services.Services
 
             existing.Title = dto.Title;
             existing.Content = dto.Content;
-            existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = now;
 
@@ -177,10 +172,6 @@ namespace SDLS.Services.Services
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, id);
-            }
-            else
-            {
-                existing.Image = dto.Image;
             }
 
             await _repository.UpdateAsync(existing);

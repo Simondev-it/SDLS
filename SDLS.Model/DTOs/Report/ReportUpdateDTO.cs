@@ -25,9 +25,6 @@ namespace SDLS.Model.DTOs.Report
         [StringLength(1000, ErrorMessage = "Vượt quá độ dài tối đa 1000 ký tự.")]
         public string Content { get; set; } = null!;
 
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
-        public string? Image { get; set; }
-
         public IFormFile? ImageFile { get; set; }
 
         [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]

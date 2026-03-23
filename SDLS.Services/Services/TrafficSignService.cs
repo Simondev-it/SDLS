@@ -76,10 +76,6 @@ namespace SDLS.Services.Services
             {
                 entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.TrafficSign, entity.Id);
             }
-            else
-            {
-                entity.Image = dto.Image;
-            }
 
             await _repository.AddAsync(entity);
             return true;
@@ -102,10 +98,6 @@ namespace SDLS.Services.Services
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
                 existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.TrafficSign, id);
-            }
-            else
-            {
-                existing.Image = dto.Image;
             }
 
             await _repository.UpdateAsync(existing);
