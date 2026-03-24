@@ -7,16 +7,53 @@ namespace SDLS.Repositories.Repositories
 {
     public class QuestionLessonRepository : GenericRepository<QuestionLesson>, IQuestionLessonRepository
     {
-        public async Task<IEnumerable<QuestionLesson>> GetAllAsync()
+        public async Task<IEnumerable<QuestionLesson>> GetAllAsync(
+            Guid? id = null,
+            Guid? questionChapterId = null,
+            string? name = null,
+            string? description = null,
+            string? content = null,
+            int? status = 1)
         {
-            return await _context.QuestionLessons
+            var query = _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
-                .ToListAsync();
+                .AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
+
+            if (questionChapterId.HasValue)
+                query = query.Where(x => x.QuestionChapterId == questionChapterId.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var keyword = name.Trim();
+                query = query.Where(x => x.Name != null && EF.Functions.ILike(x.Name, $"%{keyword}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                var keyword = description.Trim();
+                query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{keyword}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(content))
+            {
+                var keyword = content.Trim();
+                query = query.Where(x => x.Content != null && EF.Functions.ILike(x.Content, $"%{keyword}%"));
+            }
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            return await query.ToListAsync();
         }
 
         public async Task<QuestionLesson?> GetByIdAsync(Guid id)
         {
             return await _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
@@ -24,6 +61,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 

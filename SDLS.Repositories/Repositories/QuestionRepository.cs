@@ -3,22 +3,22 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
     public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
-
         public async Task<Question> GetByIdAsync(Guid id)
         {
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
@@ -28,6 +28,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers)
                 .Include(q => q.QuestionTags)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
@@ -36,6 +40,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .Include(q => q.InverseParent)
                 .Where(q => q.Status == 1)
                 .AsNoTracking()
@@ -46,7 +54,7 @@ namespace SDLS.Repositories.Repositories
         {
             this.CreateAsync(question);
         }
-        //_context.Update(question); 
+
         public async Task UpdateAsync(Question question)
         {
             await _context.SaveChangesAsync();
@@ -65,7 +73,7 @@ namespace SDLS.Repositories.Repositories
         public async Task AddAnswerAsync(Answer answer)
         {
             _context.Answers.AddAsync(answer);
-            await SaveAsync();  // hoặc Prepare + Save riêng tùy thiết kế
+            await SaveAsync();
         }
 
         public async Task DeleteAsync(Guid id)
@@ -75,7 +83,6 @@ namespace SDLS.Repositories.Repositories
             {
                 question.Status = 0;
                 this.Update(question);
-
             }
         }
 
@@ -88,9 +95,13 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Include(q => q.Answers)
-                .Include(q => q.InverseParent)   // cần để traverse next
+                .Include(q => q.InverseParent)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
-                .AsNoTracking()                  // tăng tốc
+                .AsNoTracking()
                 .ToListAsync();
         }
 
@@ -99,6 +110,10 @@ namespace SDLS.Repositories.Repositories
             return await _context.Questions
                 .Include(q => q.Answers)
                 .Include(q => q.InverseParent)
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
         }
 
@@ -115,7 +130,7 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Questions
                 .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
-                .Select(q => new Question { Id = q.Id, ParentId = q.ParentId }) // chỉ lấy 2 field
+                .Select(q => new Question { Id = q.Id, ParentId = q.ParentId })
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -144,13 +159,6 @@ namespace SDLS.Repositories.Repositories
             if (questionCategoryId.HasValue)
                 query = query.Where(q => q.QuestionCategoryId == questionCategoryId.Value);
 
-            if (!string.IsNullOrWhiteSpace(searchContent))
-            {
-                var keyword = searchContent.Trim();
-                query = query.Where(q => q.Content != null && EF.Functions.ILike(q.Content, $"%{keyword}%"));
-            }
-
-            // AND logic: question phải có đủ tất cả tagIds
             if (normalizedTagIds.Count > 0)
             {
                 var requiredTagCount = normalizedTagIds.Count;
@@ -163,12 +171,63 @@ namespace SDLS.Repositories.Repositories
                         .Count() == requiredTagCount);
             }
 
-            return await query
+            var list = await query
                 .Include(q => q.Answers.Where(a => a.Status == 1))
                 .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
+                .Include(q => q.QuestionLesson)
+                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => q.QuestionTopic)
+                .Include(q => q.QuestionCategory)
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchContent))
+            {
+                list = list
+                    .Where(q => ContainsNormalized(q.Content, searchContent))
+                    .ToList();
+            }
+
+            return list;
+        }
+
+        private static bool ContainsNormalized(string? source, string? keyword)
+        {
+            var left = NormalizeText(source);
+            var right = NormalizeText(keyword);
+
+            if (string.IsNullOrWhiteSpace(right))
+                return true;
+
+            return left.Contains(right, StringComparison.Ordinal);
+        }
+
+        private static string NormalizeText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var formD = input.Trim().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var c in formD)
+            {
+                var uc = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+
+            var normalized = sb.ToString().Normalize(NormalizationForm.FormC)
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D');
+
+            normalized = string.Join(' ', normalized
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+            return normalized.ToLowerInvariant();
         }
 
         public void RemoveQuestionTags(IEnumerable<QuestionTag> questionTags)

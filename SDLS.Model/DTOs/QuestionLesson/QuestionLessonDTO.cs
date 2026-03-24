@@ -1,3 +1,5 @@
+using SDLS.Model.DTOs.QuestionChapter;
+
 namespace SDLS.Model.DTOs.QuestionLesson
 {
     public class QuestionLessonDTO
@@ -6,7 +8,10 @@ namespace SDLS.Model.DTOs.QuestionLesson
         public Guid QuestionChapterId { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
+        public string? Content { get; set; }
         public int? Status { get; set; }
         public List<QuestionLessonImageDTO> LessonImages { get; set; } = new();
+
+        public QuestionChapterDTO? QuestionChapter { get; set; }
     }
 }

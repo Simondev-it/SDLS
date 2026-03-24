@@ -58,9 +58,9 @@ namespace SDLS.Services.Services
             string filePath;
             if (_singleImageTargets.Contains(target))
             {
-                filePath = $"{folder}/{entityId}{ext}"; // 1 ảnh  → avatars/{userId}.jpg
+                filePath = $"{folder}/{entityId}{ext}"; // 1 ảnh  → avatars/{userId}.jpg, ghi đè nếu đã tồn tại
             }
-            else // nhiều  → lessons/{lessonId}/{newGuid}.jpg
+            else // nhiều  → lessons/{lessonId}/{newGuid}.jpg để tránh ghi đè và có thể lưu nhiều ảnh cho cùng 1 entity
             {
                 filePath = $"{folder}/{entityId}/{Guid.NewGuid()}{ext}";
             }

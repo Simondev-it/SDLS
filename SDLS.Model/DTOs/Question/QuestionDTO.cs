@@ -1,5 +1,8 @@
 ﻿using SDLS.Model.DTOs.Answer;
+using SDLS.Model.DTOs.QuestionCategory;
+using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.DTOs.QuestionTag;
+using SDLS.Model.DTOs.QuestionTopic;
 using System;
 using System.Collections.Generic;
 
@@ -21,5 +24,9 @@ namespace SDLS.Model.DTOs.Question
 
         public List<AnswerDTO> Answers { get; set; } = new();
         public List<QuestionTagDTO> QuestionTags { get; set; } = new();
+
+        public QuestionLessonDTO? QuestionLesson { get; set; }
+        public QuestionTopicDTO? QuestionTopic { get; set; }
+        public QuestionCategoryDTO? QuestionCategory { get; set; }
     }
 }
