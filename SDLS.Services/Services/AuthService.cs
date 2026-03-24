@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using SDLS.Model.Constants;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs.User;
+using SDLS.Model.Models;
 
 namespace SDLS.Services.Services
 {
@@ -88,18 +89,18 @@ namespace SDLS.Services.Services
                 Email = dto.Email,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Name = dto.Name,
-                Avatar = dto.Avatar,
+                //Avatar = dto.Avatar,
                 Phone = dto.Phone,
                 Gender = dto.Gender,
                 DateOfBirth = dto.DateOfBirth,
 
-                RoleId = RoleConst.USER_ROLE_ID, // mặc định USER
+                RoleId = RoleConst.GUEST_ROLE_ID, // mặc định USER
                 CreateAt = DateTime.Now,
                 Status = 1
             };
 
             await _userRepo.CreateAsync(user);
-            await _context.SaveChangesAsync();
+            await _userRepo.SaveAsync();
 
             return new
             {
