@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -14,17 +14,20 @@ namespace SDLS.Services.Services
         private readonly IResolveRepository _repository;
         private readonly IExecutionStrategyRepository _executionStrategyRepository;
         private readonly IReportRepository _reportRepository;
+        private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
 
         public ResolveService(
             IResolveRepository repository,
             IExecutionStrategyRepository executionStrategyRepository,
             IReportRepository reportRepository,
+            INotificationService notificationService,
             IMapper mapper)
         {
             _repository = repository;
             _executionStrategyRepository = executionStrategyRepository;
             _reportRepository = reportRepository;
+            _notificationService = notificationService;
             _mapper = mapper;
         }
 
@@ -79,7 +82,6 @@ namespace SDLS.Services.Services
                     var now = DateTime.UtcNow.ToLocalTime();
 
                     var report = await _reportRepository.GetByIdAsync(dto.ReportId);
-
                     if (report == null)
                         throw new KeyNotFoundException("Không tìm thấy Report.");
 
@@ -100,6 +102,22 @@ namespace SDLS.Services.Services
                     report.Status = 1;
                     report.UpdateAt = now;
                     await _reportRepository.UpdateAsync(report);
+
+                    var notificationDto = new NotificationCreateDTO
+                    {
+                        Title = "Báo cáo đã được xử lý",
+                        Content = "Báo cáo '" + report.Title + "' của bạn đã được xử lý.",
+                        Status = 2,
+                        UserNotifications = new List<UserNotificationCreateDTO>
+                        {
+                            new UserNotificationCreateDTO
+                            {
+                                UserId = report.UserId
+                            }
+                        }
+                    };
+
+                    await _notificationService.CreateAsync(notificationDto);
 
                     await transaction.CommitAsync();
                 }
