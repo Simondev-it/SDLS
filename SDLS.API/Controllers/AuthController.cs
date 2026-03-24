@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SDLS.Model.DTOs.User;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.API.Controllers
@@ -24,6 +25,12 @@ namespace SDLS.API.Controllers
         public async Task<IActionResult> Refresh(string refreshToken)
         {
             return Ok(await _auth.Refresh(refreshToken));
+        }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterDTO dto)
+        {
+            var result = await _auth.Register(dto);
+            return Ok(result);
         }
     }
 }
