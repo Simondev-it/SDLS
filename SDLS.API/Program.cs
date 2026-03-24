@@ -60,6 +60,11 @@ namespace SDLS.API
             builder.Services.AddScoped<IQuestionLessonRepository, QuestionLessonRepository>();
             builder.Services.AddScoped<IQuestionLessonService, QuestionLessonService>();
 
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IJwtService, JwtService>();
+
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

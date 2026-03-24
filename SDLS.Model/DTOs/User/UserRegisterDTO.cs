@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SDLS.Repositories.Interface
+namespace SDLS.Model.DTOs.User
 {
-    internal interface Interface1
+    internal class UserDTO
     {
     }
 }
