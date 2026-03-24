@@ -28,5 +28,14 @@ namespace SDLS.Repositories.Repositories
                 .Include(x => x.Role)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
+        // ✅ IMPLEMENT CREATE
+        public async Task CreateAsync(User user)
+        {
+            await _context.Users.AddAsync(user);
+        }
+        public async Task<int> SaveAsync()
+        {
+            return await _context.SaveChangesAsync();
+        }
     }
 }
