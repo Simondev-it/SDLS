@@ -140,6 +140,9 @@ namespace SDLS.API
             builder.Services.AddScoped<ISimulationSessionRepository, SimulationSessionRepository>();
             builder.Services.AddScoped<ISimulationSessionService, SimulationSessionService>();
 
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
