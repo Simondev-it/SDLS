@@ -1,33 +1,69 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class SavedQuestionRepository : GenericRepository<SavedQuestion>, ISavedQuestionRepository
     {
-        public async Task<List<SavedQuestion>> GetAllAsync()
+        public async Task<List<SavedQuestion>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            string? role = null)
         {
-            return await _context.SavedQuestions
-                .Include(x => x.Question).ThenInclude(q => q.Answers)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<SavedQuestion> query = isPrivileged
+                ? _context.SavedQuestions
+                    .Include(x => x.Question).ThenInclude(q => q.Answers)
+                : _context.SavedQuestions
+                    .Include(x => x.Question).ThenInclude(q => q.Answers.Where(a => a.Status != 0));
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
+
+            if (userId.HasValue)
+                query = query.Where(x => x.UserId == userId.Value);
+
+            if (questionId.HasValue)
+                query = query.Where(x => x.QuestionId == questionId.Value);
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+                query = query.Where(x => x.Question == null || x.Question.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<SavedQuestion?> GetByIdAsync(Guid id)
+        public async Task<SavedQuestion?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.SavedQuestions
-                .Include(x => x.Question).ThenInclude(q => q.Answers)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<SavedQuestion> query = isPrivileged
+                ? _context.SavedQuestions
+                    .Include(x => x.Question).ThenInclude(q => q.Answers)
+                : _context.SavedQuestions
+                    .Include(x => x.Question).ThenInclude(q => q.Answers.Where(a => a.Status != 0));
+
+            query = query.Where(x => x.Id == id).ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+                query = query.Where(x => x.Question == null || x.Question.Status != 0);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<List<SavedQuestion>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId)
         {
-            var query = _context.SavedQuestions
-                .Where(x => x.Status == 1);
+            IQueryable<SavedQuestion> query = _context.SavedQuestions;
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);

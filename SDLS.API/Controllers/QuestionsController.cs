@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
@@ -24,11 +25,12 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? QuestionCategoryId,
             [FromQuery] List<Guid>? tagIds,
             [FromQuery] string? searchContent,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, page, pageSize);
+                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize);
 
             return Ok(result);
         }
@@ -41,6 +43,8 @@ namespace SDLS.API.Controllers
             return Ok(question);
         }
 
+        //[Authorize(Roles = "Instructor")]
+        //[Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<QuestionDTO>> Create([FromForm] QuestionCreateDTO dto)
@@ -50,6 +54,8 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize(Roles = "Instructor")]
+        //[Authorize]
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromForm] QuestionUpdateDTO dto)
@@ -60,6 +66,8 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        //[Authorize(Roles = "Instructor")]
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -67,6 +75,8 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize(Roles = "Instructor")]
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

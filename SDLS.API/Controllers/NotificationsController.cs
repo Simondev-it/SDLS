@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
@@ -16,19 +17,22 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<NotificationDTO>>> GetAll(
             [FromQuery] Guid? userId,
             [FromQuery] string? title,
             [FromQuery] string? content,
+            [FromQuery] int? status = null,
             [FromQuery] string? sortBy = "time",
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(userId, title, content, sortBy, page, pageSize);
+            var result = await _service.GetAllAsync(userId, title, content, status, sortBy, page, pageSize);
             return Ok(result);
         }
 
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<NotificationDTO>> GetById(Guid id)
         {
@@ -37,6 +41,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Create([FromForm] NotificationCreateDTO dto)
@@ -46,6 +51,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromForm] NotificationUpdateDTO dto)
@@ -56,6 +62,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -63,6 +70,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

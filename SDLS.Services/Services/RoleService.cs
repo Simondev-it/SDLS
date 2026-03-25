@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Role;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,55 +12,42 @@ namespace SDLS.Services.Services
     public class RoleService : IRoleService
     {
         private readonly IRoleRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public RoleService(IRoleRepository repository, IMapper mapper)
+        public RoleService(IRoleRepository repository, IHttpContextAccessor httpContextAccessor, IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
+        }
+
+        public async Task<List<RoleDTO>> GetListAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var all = await _repository.GetAllAsync(id, name, description, status, role);
+            var ordered = all.OrderBy(x => x.Name).ThenBy(x => x.Id).ToList();
+            return _mapper.Map<List<RoleDTO>>(ordered);
         }
 
         public async Task<PagedResult<RoleDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 20 : pageSize;
-
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable().Where(x => x.Status == 1);
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                var keyword = name.Trim();
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Name)
-                    && x.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(description))
-            {
-                var keyword = description.Trim();
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
-                    && x.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var ordered = filtered.OrderBy(x => x.Name).ThenBy(x => x.Id).ToList();
-            var total = ordered.Count;
-
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var items = await GetListAsync(id, name, description, status);
+            var total = items.Count;
 
             return new PagedResult<RoleDTO>
             {
-                Items = _mapper.Map<List<RoleDTO>>(items),
+                Items = items.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -68,7 +57,8 @@ namespace SDLS.Services.Services
 
         public async Task<RoleDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

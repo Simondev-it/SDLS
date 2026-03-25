@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
@@ -11,13 +13,16 @@ namespace SDLS.Services.Services
     public class QuestionLessonService : IQuestionLessonService
     {
         private readonly IQuestionLessonRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public QuestionLessonService(
             IQuestionLessonRepository repository,
+            IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -27,17 +32,14 @@ namespace SDLS.Services.Services
             string? name = null,
             string? description = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
             var filtered = await _repository.GetAllAsync(
-                id,
-                questionChapterId,
-                name,
-                description,
-                content,
-                status);
+                id, questionChapterId, name, description, content, status, role);
 
             var total = filtered.Count();
 
@@ -47,7 +49,7 @@ namespace SDLS.Services.Services
                 .ToList();
 
             var lessonIds = pageEntities.Select(x => x.Id).ToList();
-            var lessonImages = await _repository.GetLessonImagesByLessonIdsAsync(lessonIds);
+            var lessonImages = await _repository.GetLessonImagesByLessonIdsAsync(lessonIds, role);
             var imageLookup = lessonImages.GroupBy(x => x.QuestionLessonId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -56,9 +58,7 @@ namespace SDLS.Services.Services
             foreach (var dto in dtos)
             {
                 if (imageLookup.TryGetValue(dto.Id, out var images))
-                {
                     dto.LessonImages = _mapper.Map<List<QuestionLessonImageDTO>>(images);
-                }
             }
 
             return new PagedResult<QuestionLessonDTO>
@@ -73,12 +73,14 @@ namespace SDLS.Services.Services
 
         public async Task<QuestionLessonDTO> GetByIdAsync(Guid id)
         {
-            var lesson = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var lesson = await _repository.GetByIdAsync(id, role);
             if (lesson == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
             var dto = _mapper.Map<QuestionLessonDTO>(lesson);
-            var images = await _repository.GetLessonImagesByLessonIdsAsync(new List<Guid> { id });
+            var images = await _repository.GetLessonImagesByLessonIdsAsync(new List<Guid> { id }, role);
             dto.LessonImages = _mapper.Map<List<QuestionLessonImageDTO>>(images);
 
             return dto;

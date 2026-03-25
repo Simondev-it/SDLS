@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -12,15 +14,18 @@ namespace SDLS.Services.Services
     {
         private readonly INotificationRepository _repository;
         private readonly IStorageService _storageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public NotificationService(
             INotificationRepository repository,
             IStorageService storageService,
+            IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
             _storageService = storageService;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -28,35 +33,13 @@ namespace SDLS.Services.Services
             Guid? userId = null,
             string? title = null,
             string? content = null,
+            int? status = null,
             string? sortBy = "time",
             int page = 1,
             int pageSize = 20)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
-
-            if (userId.HasValue)
-            {
-                filtered = filtered.Where(n =>
-                    n.UserNotifications != null &&
-                    n.UserNotifications.Any(un => un.Status == 1 && un.UserId == userId.Value));
-            }
-
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                var keyword = title.Trim();
-                filtered = filtered.Where(n =>
-                    !string.IsNullOrWhiteSpace(n.Title) &&
-                    n.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                var keyword = content.Trim();
-                filtered = filtered.Where(n =>
-                    !string.IsNullOrWhiteSpace(n.Content) &&
-                    n.Content.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-            }
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var filtered = (await _repository.GetAllAsync(userId, title, content, status, role)).AsEnumerable();
 
             sortBy = (sortBy ?? "time").Trim().ToLowerInvariant();
             filtered = sortBy switch
@@ -67,17 +50,11 @@ namespace SDLS.Services.Services
             };
 
             var total = filtered.Count();
-
-            var pagedEntities = filtered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var dtos = _mapper.Map<List<NotificationDTO>>(pagedEntities);
+            var pagedEntities = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedResult<NotificationDTO>
             {
-                Items = dtos,
+                Items = _mapper.Map<List<NotificationDTO>>(pagedEntities),
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -87,15 +64,8 @@ namespace SDLS.Services.Services
 
         public async Task<NotificationDTO?> GetByIdAsync(Guid id)
         {
-            var existing = await _repository.GetByIdForUpdateAsync(id);
-            if (existing == null)
-                return null;
-
-            existing.Status = 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
-            await _repository.UpdateAsync(existing);
-
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<NotificationDTO>(entity) : null;
         }
 

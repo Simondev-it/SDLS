@@ -22,6 +22,7 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? simulationChapterId,
             [FromQuery] Guid? simulationDifficultyLevelId,
             [FromQuery] string? name,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
@@ -30,6 +31,7 @@ namespace SDLS.API.Controllers
                 simulationChapterId,
                 simulationDifficultyLevelId,
                 name,
+                status,
                 page,
                 pageSize);
 

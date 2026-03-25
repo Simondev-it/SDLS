@@ -1,30 +1,58 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class ReportCategoryRepository : GenericRepository<ReportCategory>, IReportCategoryRepository
     {
-        public async Task<List<ReportCategory>> GetAllAsync()
+        public async Task<List<ReportCategory>> GetAllAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null,
+            string? role = null)
         {
-            return await _context.ReportCategories
-                .AsNoTracking()
-                .ToListAsync();
+            var query = _context.ReportCategories.AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var keyword = name.Trim();
+                query = query.Where(x => x.Name != null && EF.Functions.ILike(x.Name, $"%{keyword}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                var keyword = description.Trim();
+                query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{keyword}%"));
+            }
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<ReportCategory?> GetByIdAsync(Guid id)
+        public async Task<ReportCategory?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.ReportCategories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var query = _context.ReportCategories
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<ReportCategory?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.ReportCategories
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(ReportCategory entity)

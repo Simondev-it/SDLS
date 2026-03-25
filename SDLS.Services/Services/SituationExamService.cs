@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SituationExam;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -12,15 +14,18 @@ namespace SDLS.Services.Services
     {
         private readonly ISituationExamRepository _repository;
         private readonly AppDbContext _dbContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SituationExamService(
             ISituationExamRepository repository,
             AppDbContext dbContext,
+            IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
             _dbContext = dbContext;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -29,20 +34,20 @@ namespace SDLS.Services.Services
             string? title = null,
             string? description = null,
             bool? isRandom = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
-            var all = await _repository.GetAllAsync(id, title, description, isRandom);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var all = await _repository.GetAllAsync(id, title, description, isRandom, status, role);
+
             var ordered = all.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
 
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedResult<SituationExamDTO>
             {
@@ -56,7 +61,8 @@ namespace SDLS.Services.Services
 
         public async Task<SituationExamDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

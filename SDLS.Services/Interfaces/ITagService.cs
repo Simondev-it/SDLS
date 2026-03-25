@@ -9,13 +9,15 @@ namespace SDLS.Services.Interfaces
             Guid? id = null,
             string? name = null,
             string? description = null,
-            string? colorCode = null);
+            string? colorCode = null,
+            int? status = null);
 
         Task<PagedResult<TagDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
             string? colorCode = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

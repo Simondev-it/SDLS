@@ -1,27 +1,66 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class LearningProgressRepository : GenericRepository<LearningProgress>, ILearningProgressRepository
     {
-        public async Task<LearningProgress?> GetByIdAsync(Guid id)
+        public async Task<LearningProgress?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.LearningProgresses
+            var query = _context.LearningProgresses
                 .Include(lp => lp.Question)
                 .Include(lp => lp.User)
-                .FirstOrDefaultAsync(lp => lp.Id == id && lp.Status == 1);
+                .Where(lp => lp.Id == id);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+            {
+                query = query.Where(lp =>
+                    (lp.Question == null || lp.Question.Status != 0) &&
+                    (lp.User == null || lp.User.Status != 0));
+            }
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
-        public async Task<List<LearningProgress>> GetAllAsync()
+        public async Task<List<LearningProgress>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            string? role = null)
         {
-            return await _context.LearningProgresses
+            var query = _context.LearningProgresses
                 .Include(lp => lp.Question)
                 .Include(lp => lp.User)
-                .Where(lp => lp.Status == 1)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(lp => lp.Id == id.Value);
+
+            if (userId.HasValue)
+                query = query.Where(lp => lp.UserId == userId.Value);
+
+            if (questionId.HasValue)
+                query = query.Where(lp => lp.QuestionId == questionId.Value);
+
+            if (status.HasValue)
+                query = query.Where(lp => lp.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+            {
+                query = query.Where(lp =>
+                    (lp.Question == null || lp.Question.Status != 0) &&
+                    (lp.User == null || lp.User.Status != 0));
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task AddAsync(LearningProgress entity)
@@ -60,12 +99,16 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<LearningProgress>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId)
+        public async Task<List<LearningProgress>> GetByUserAndQuestionAsync(
+            Guid? userId,
+            Guid? questionId,
+            int? status = null,
+            string? role = null)
         {
             var query = _context.LearningProgresses
                 .Include(lp => lp.Question)
                 .Include(lp => lp.User)
-                .Where(lp => lp.Status == 1);
+                .AsQueryable();
 
             if (userId.HasValue)
                 query = query.Where(lp => lp.UserId == userId.Value);
@@ -73,7 +116,19 @@ namespace SDLS.Repositories.Repositories
             if (questionId.HasValue)
                 query = query.Where(lp => lp.QuestionId == questionId.Value);
 
-            return await query.ToListAsync();
+            if (status.HasValue)
+                query = query.Where(lp => lp.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+            {
+                query = query.Where(lp =>
+                    (lp.Question == null || lp.Question.Status != 0) &&
+                    (lp.User == null || lp.User.Status != 0));
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
     }
 }

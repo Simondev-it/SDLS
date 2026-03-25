@@ -20,9 +20,10 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<SignCategoryDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] string? name,
-            [FromQuery] string? description)
+            [FromQuery] string? description,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, name, description);
+            var result = await _service.GetAllAsync(id, name, description, status);
             return Ok(result);
         }
 
@@ -31,10 +32,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] string? name,
             [FromQuery] string? description,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, name, description, page, pageSize);
+            var result = await _service.GetPagedAsync(id, name, description, status, page, pageSize);
             return Ok(result);
         }
 

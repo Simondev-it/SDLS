@@ -10,15 +10,17 @@ namespace SDLS.Repositories.Interface
             string? name = null,
             string? description = null,
             string? content = null,
-            int? status = 1);
-        Task<QuestionLesson?> GetByIdAsync(Guid id);
+            int? status = null,
+            string? role = null);
+
+        Task<QuestionLesson?> GetByIdAsync(Guid id, string? role = null);
         Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(QuestionLesson lesson);
         Task UpdateAsync(QuestionLesson lesson);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
 
-        Task<List<LessonImage>> GetLessonImagesByLessonIdsAsync(List<Guid> lessonIds);
+        Task<List<LessonImage>> GetLessonImagesByLessonIdsAsync(List<Guid> lessonIds, string? role = null);
         Task<List<LessonImage>> GetLessonImagesByLessonIdForUpdateAsync(Guid lessonId);
         void RemoveLessonImages(IEnumerable<LessonImage> images);
         void AddLessonImages(IEnumerable<LessonImage> images);

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
@@ -12,12 +13,12 @@ namespace SDLS.Repositories.Repositories
             Guid? signCategoryId = null,
             string? name = null,
             string? code = null,
-            string? description = null)
+            string? description = null,
+            int? status = null,
+            string? role = null)
         {
             var query = _context.TrafficSigns
                 .Include(x => x.SignCategory)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
                 .AsQueryable();
 
             if (id.HasValue)
@@ -44,21 +45,34 @@ namespace SDLS.Repositories.Repositories
                 query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{keyword}%"));
             }
 
-            return await query.ToListAsync();
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.SignCategory == null || x.SignCategory.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<TrafficSign?> GetByIdAsync(Guid id)
+        public async Task<TrafficSign?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.TrafficSigns
+            var query = _context.TrafficSigns
                 .Include(x => x.SignCategory)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.SignCategory == null || x.SignCategory.Status != 0);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<TrafficSign?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.TrafficSigns
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(TrafficSign entity)

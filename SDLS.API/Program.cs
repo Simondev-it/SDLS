@@ -167,6 +167,7 @@ namespace SDLS.API
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
 
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();

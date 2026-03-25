@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SimulationDifficultyLevel;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,45 +12,39 @@ namespace SDLS.Services.Services
     public class SimulationDifficultyLevelService : ISimulationDifficultyLevelService
     {
         private readonly ISimulationDifficultyLevelRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public SimulationDifficultyLevelService(ISimulationDifficultyLevelRepository repository, IMapper mapper)
+        public SimulationDifficultyLevelService(
+            ISimulationDifficultyLevelRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
         public async Task<List<SimulationDifficultyLevelDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null)
+            string? description = null,
+            int? status = null)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable()
-                .Where(x => x.Status == 1);
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Name)
-                    && x.Name.Contains(name.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Description)
-                    && x.Description.Contains(description.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            return _mapper.Map<List<SimulationDifficultyLevelDTO>>(filtered.ToList());
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetAllAsync(id, name, description, status, role);
+            return _mapper.Map<List<SimulationDifficultyLevelDTO>>(entities);
         }
 
         public async Task<PagedResult<SimulationDifficultyLevelDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var items = await GetAllAsync(id, name, description);
+            var items = await GetAllAsync(id, name, description, status);
             var total = items.Count;
 
             return new PagedResult<SimulationDifficultyLevelDTO>
@@ -63,7 +59,8 @@ namespace SDLS.Services.Services
 
         public async Task<SimulationDifficultyLevelDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

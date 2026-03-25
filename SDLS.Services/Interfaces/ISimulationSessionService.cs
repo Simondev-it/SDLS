@@ -9,6 +9,7 @@ namespace SDLS.Services.Interfaces
             Guid? id = null,
             Guid? situationExamId = null,
             Guid? userId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

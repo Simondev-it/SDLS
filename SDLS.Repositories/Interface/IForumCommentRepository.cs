@@ -5,8 +5,15 @@ namespace SDLS.Repositories.Interface
 {
     public interface IForumCommentRepository
     {
-        Task<IEnumerable<ForumComment>> GetAllAsync();
-        Task<ForumComment?> GetByIdAsync(Guid id);
+        Task<IEnumerable<ForumComment>> GetAllAsync(
+            Guid? id = null,
+            Guid? forumPostId = null,
+            Guid? userId = null,
+            string? content = null,
+            int? status = null,
+            string? role = null);
+
+        Task<ForumComment?> GetByIdAsync(Guid id, string? role = null);
         Task<ForumComment?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ForumComment entity);
         Task UpdateAsync(ForumComment entity);

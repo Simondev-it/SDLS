@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.DrivingLicense;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System.Globalization;
@@ -11,12 +13,22 @@ namespace SDLS.Services.Services
 {
     public class DrivingLicenseService : IDrivingLicenseService
     {
+        private static readonly HashSet<string> PrivilegedRoles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Admin", "Instructor"
+        };
+
         private readonly IDrivingLicenseRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public DrivingLicenseService(IDrivingLicenseRepository repository, IMapper mapper)
+        public DrivingLicenseService(
+            IDrivingLicenseRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -24,16 +36,15 @@ namespace SDLS.Services.Services
             Guid? id = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
+            int? status = null,
             string? vehicleName = null,
             int page = 1,
             int pageSize = 20)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
+            var all = await _repository.GetAllAsync(id, status, role);
+            var filtered = all.AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(name))
                 filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
@@ -41,14 +52,11 @@ namespace SDLS.Services.Services
             if (!string.IsNullOrWhiteSpace(description))
                 filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
 
-            if (status.HasValue)
-                filtered = filtered.Where(x => x.Status == status.Value);
-
             if (!string.IsNullOrWhiteSpace(vehicleName))
             {
                 filtered = filtered.Where(x =>
                     x.Vehicles != null &&
-                    x.Vehicles.Any(v => v.Status == 1 && ContainsNormalized(v.Name, vehicleName)));
+                    x.Vehicles.Any(v => v.Status != 0 && ContainsNormalized(v.Name, vehicleName)));
             }
 
             var total = filtered.Count();
@@ -72,7 +80,8 @@ namespace SDLS.Services.Services
 
         public async Task<DrivingLicenseDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
@@ -157,12 +166,6 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            await _repository.DeleteSoftAsync(id);
-            return true;
-        }
-
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
             await _repository.DeleteSoftAsync(id);
@@ -173,6 +176,11 @@ namespace SDLS.Services.Services
         {
             await _repository.DeleteHardAsync(id);
             return true;
+        }
+
+        private static bool CanViewDeleted(string? role)
+        {
+            return !string.IsNullOrWhiteSpace(role) && PrivilegedRoles.Contains(role);
         }
 
         private static bool ContainsNormalized(string? source, string? keyword)

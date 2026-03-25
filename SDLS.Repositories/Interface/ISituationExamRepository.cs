@@ -8,9 +8,11 @@ namespace SDLS.Repositories.Interface
             Guid? id = null,
             string? title = null,
             string? description = null,
-            bool? isRandom = null);
+            bool? isRandom = null,
+            int? status = null,
+            string? role = null);
 
-        Task<SituationExam?> GetByIdAsync(Guid id);
+        Task<SituationExam?> GetByIdAsync(Guid id, string? role = null);
         Task<SituationExam?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SituationExam entity);
         Task UpdateAsync(SituationExam entity);

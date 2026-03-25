@@ -9,6 +9,7 @@ namespace SDLS.Services.Interfaces
             Guid? userId = null,
             string? title = null,
             string? content = null,
+            int? status = null,
             string? sortBy = "time",
             int page = 1,
             int pageSize = 20);

@@ -1,4 +1,4 @@
-    using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
 using SDLS.Services.Interfaces;
@@ -23,11 +23,12 @@ namespace SDLS.API.Controllers
             [FromQuery] string? name,
             [FromQuery] string? code,
             [FromQuery] string? description,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                id, signCategoryId, name, code, description, page, pageSize);
+                id, signCategoryId, name, code, description, status, page, pageSize);
 
             return Ok(result);
         }

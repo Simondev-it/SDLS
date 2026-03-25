@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.CommentVote;
@@ -20,9 +21,10 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<CommentVoteDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? forumCommentId)
+            [FromQuery] Guid? forumCommentId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, forumCommentId);
+            var result = await _service.GetAllAsync(id, userId, forumCommentId, status);
             return Ok(result);
         }
 
@@ -31,10 +33,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumCommentId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, forumCommentId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, forumCommentId, status, page, pageSize);
             return Ok(result);
         }
 
@@ -46,6 +49,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] CommentVoteCreateDTO dto)
         {
@@ -54,6 +58,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] CommentVoteUpdateDTO dto)
         {
@@ -63,6 +68,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        //[Authorize]
         [HttpPatch("{id}/soft-delete")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -70,6 +76,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

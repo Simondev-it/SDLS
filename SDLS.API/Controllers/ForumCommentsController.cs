@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumComment;
@@ -22,10 +23,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? forumPostId,
             [FromQuery] Guid? userId,
             [FromQuery] string? content,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(id, forumPostId, userId, content, page, pageSize);
+            var result = await _service.GetAllAsync(id, forumPostId, userId, content, status, page, pageSize);
             return Ok(result);
         }
 
@@ -37,6 +39,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ForumCommentCreateDTO dto)
         {
@@ -45,6 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumCommentUpdateDTO dto)
         {
@@ -54,6 +58,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -61,6 +66,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

@@ -10,7 +10,7 @@ namespace SDLS.Services.Interfaces
             Guid? drivingLicenseId = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

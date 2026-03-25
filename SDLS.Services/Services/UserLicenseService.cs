@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,42 +12,39 @@ namespace SDLS.Services.Services
     public class UserLicenseService : IUserLicenseService
     {
         private readonly IUserLicenseRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public UserLicenseService(IUserLicenseRepository repository, IMapper mapper)
+        public UserLicenseService(
+            IUserLicenseRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
         public async Task<List<UserLicenseDTO>> GetAllAsync(
             Guid? id = null,
             Guid? userId = null,
-            Guid? drivingLicenseId = null)
+            Guid? drivingLicenseId = null,
+            int? status = null)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            if (drivingLicenseId.HasValue)
-                filtered = filtered.Where(x => x.DrivingLicenseId == drivingLicenseId.Value);
-
-            return _mapper.Map<List<UserLicenseDTO>>(filtered.ToList());
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetAllAsync(id, userId, drivingLicenseId, status, role);
+            return _mapper.Map<List<UserLicenseDTO>>(entities);
         }
 
         public async Task<PagedResult<UserLicenseDTO>> GetPagedAsync(
             Guid? id = null,
             Guid? userId = null,
             Guid? drivingLicenseId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var items = await GetAllAsync(id, userId, drivingLicenseId);
+            var items = await GetAllAsync(id, userId, drivingLicenseId, status);
             var total = items.Count;
 
             return new PagedResult<UserLicenseDTO>
@@ -60,7 +59,8 @@ namespace SDLS.Services.Services
 
         public async Task<UserLicenseDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<UserLicenseDTO>(entity) : null;
         }
 
@@ -85,7 +85,7 @@ namespace SDLS.Services.Services
 
         public async Task<bool> UpdateAsync(Guid id, UserLicenseUpdateDTO dto)
         {
-            var existing = await _repository.GetByIdAsync(id);
+            var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null) return false;
 
             var isChangingKeys = existing.UserId != dto.UserId || existing.DrivingLicenseId != dto.DrivingLicenseId;
