@@ -1,11 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -14,7 +10,9 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<ExamSession>> GetAllAsync()
         {
             return await _context.ExamSessions
+                .Include(es => es.Exam)
                 .Include(es => es.ExamDetails.Where(ed => ed.Status == 1))
+                    .ThenInclude(ed => ed.Answer)
                 .Where(es => es.Status == 1)
                 .AsNoTracking()
                 .ToListAsync();
@@ -23,7 +21,9 @@ namespace SDLS.Repositories.Repositories
         public async Task<ExamSession?> GetByIdAsync(Guid id)
         {
             return await _context.ExamSessions
+                .Include(es => es.Exam)
                 .Include(es => es.ExamDetails.Where(ed => ed.Status == 1))
+                    .ThenInclude(ed => ed.Answer)
                 .Where(es => es.Status == 1)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(es => es.Id == id);
@@ -47,7 +47,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var examSession = await _context.ExamSessions
                 .FirstOrDefaultAsync(es => es.Id == id && es.Status == 1);
@@ -58,6 +58,22 @@ namespace SDLS.Repositories.Repositories
             examSession.Status = 0;
             examSession.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var examSession = await _context.ExamSessions
+                .Include(es => es.ExamDetails)
+                .FirstOrDefaultAsync(es => es.Id == id);
+
+            if (examSession == null)
+                return;
+
+            if (examSession.ExamDetails.Any())
+                _context.ExamDetails.RemoveRange(examSession.ExamDetails);
+
+            _context.ExamSessions.Remove(examSession);
             await _context.SaveChangesAsync();
         }
     }

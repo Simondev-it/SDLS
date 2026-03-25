@@ -159,7 +159,19 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _repository.DeleteAsync(id);
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
 

@@ -17,6 +17,9 @@ namespace SDLS.Services.Interfaces
         Task<DrivingLicenseDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(DrivingLicenseCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto);
+
         Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

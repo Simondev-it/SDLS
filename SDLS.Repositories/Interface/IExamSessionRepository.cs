@@ -1,4 +1,4 @@
-using SDLS.Model.Models;
+﻿using SDLS.Model.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,6 +12,7 @@ namespace SDLS.Repositories.Interface
         Task<ExamSession?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ExamSession examSession);
         Task UpdateAsync(ExamSession examSession);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

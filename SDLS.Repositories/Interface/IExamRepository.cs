@@ -12,6 +12,7 @@ namespace SDLS.Repositories.Interface
         Task<Exam?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Exam exam);
         Task UpdateAsync(Exam exam);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

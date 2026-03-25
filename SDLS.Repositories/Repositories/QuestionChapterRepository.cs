@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<QuestionChapter>> GetAllAsync()
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -17,6 +18,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionChapter?> GetByIdAsync(Guid id)
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
@@ -24,6 +26,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionChapter?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionChapters
+                .Include(x => x.DrivingLicense)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
 
@@ -38,7 +41,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var chapter = await _context.QuestionChapters
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -48,6 +51,18 @@ namespace SDLS.Repositories.Repositories
 
             chapter.Status = 0;
             chapter.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var chapter = await _context.QuestionChapters
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (chapter == null)
+                return;
+
+            _context.QuestionChapters.Remove(chapter);
             await _context.SaveChangesAsync();
         }
     }

@@ -3,6 +3,7 @@ using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
+using SDLS.Model.Enumerations;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System;
@@ -16,11 +17,16 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
+        private readonly IStorageService _storageService;
         private readonly IMapper _mapper;
 
-        public QuestionService(IQuestionRepository questionRepository, IMapper mapper)
+        public QuestionService(
+            IQuestionRepository questionRepository,
+            IStorageService storageService,
+            IMapper mapper)
         {
             _questionRepository = questionRepository;
+            _storageService = storageService;
             _mapper = mapper;
         }
 
@@ -130,6 +136,12 @@ namespace SDLS.Services.Services
                 prevTracked.UpdateAt = now;
             }
 
+            // trong CreateAsync, sau khi newQuestion.Id = Guid.NewGuid();
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                newQuestion.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, newQuestion.Id);
+            }
+
             await _questionRepository.AddAsync(newQuestion);
             return true;
         }
@@ -146,7 +158,6 @@ namespace SDLS.Services.Services
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
             existing.Content = dto.Content;
-            existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
             existing.Type = dto.Type;
             existing.UpdateAt = now;
@@ -260,11 +271,22 @@ namespace SDLS.Services.Services
                 }
             }
 
+            // nếu có upload ảnh mới thì ghi đè ảnh cũ
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, id);
+            }
+
             await _questionRepository.UpdateAsync(existing);
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
+        {
+            return await DeleteSoftAsync(id);
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -272,18 +294,10 @@ namespace SDLS.Services.Services
 
             var now = DateTime.UtcNow.ToLocalTime();
 
-            // Lấy các question đang active trong cùng lesson để tìm node đứng trước
             var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-
-            // Node trước là node đang trỏ tới existing
-            var prevId = lessonQuestions
-                .FirstOrDefault(q => q.ParentId == existing.Id)
-                ?.Id;
-
-            // Node sau là node mà existing đang trỏ tới
+            var prevId = lessonQuestions.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
             var nextId = existing.ParentId;
 
-            // Nếu có node trước thì nối node trước -> node sau
             if (prevId.HasValue)
             {
                 var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
@@ -294,12 +308,17 @@ namespace SDLS.Services.Services
                 }
             }
 
-            // Soft delete
             existing.Status = 0;
             existing.UpdateAt = now;
-            existing.ParentId = null; // tách khỏi linked list sau khi xóa
+            existing.ParentId = null;
 
             await _questionRepository.UpdateAsync(existing);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _questionRepository.DeleteHardAsync(id);
             return true;
         }
 

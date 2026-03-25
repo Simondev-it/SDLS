@@ -9,6 +9,7 @@ namespace SDLS.Repositories.Interface
         Task<QuestionChapter?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(QuestionChapter chapter);
         Task UpdateAsync(QuestionChapter chapter);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

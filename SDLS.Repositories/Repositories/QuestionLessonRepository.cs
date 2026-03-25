@@ -16,6 +16,7 @@ namespace SDLS.Repositories.Repositories
             int? status = 1)
         {
             var query = _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -52,6 +53,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdAsync(Guid id)
         {
             return await _context.QuestionLessons
+                .Include(x => x.QuestionChapter)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
@@ -73,7 +75,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var lesson = await _context.QuestionLessons
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -83,6 +85,18 @@ namespace SDLS.Repositories.Repositories
 
             lesson.Status = 0;
             lesson.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var lesson = await _context.QuestionLessons
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (lesson == null)
+                return;
+
+            _context.QuestionLessons.Remove(lesson);
             await _context.SaveChangesAsync();
         }
 

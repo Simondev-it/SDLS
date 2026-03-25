@@ -42,7 +42,8 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<QuestionDTO>> Create([FromBody] QuestionCreateDTO dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<QuestionDTO>> Create([FromForm] QuestionCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -50,7 +51,8 @@ namespace SDLS.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromForm] QuestionUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
@@ -58,10 +60,17 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id)
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

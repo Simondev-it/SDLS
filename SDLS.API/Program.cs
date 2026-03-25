@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
@@ -36,6 +37,8 @@ namespace SDLS.API
                 config.AddProfile<MappingProfile>();
             });
 
+            builder.Services.AddScoped<IExecutionStrategyRepository, ExecutionStrategyRepository>();
+
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
@@ -59,6 +62,12 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IQuestionLessonRepository, QuestionLessonRepository>();
             builder.Services.AddScoped<IQuestionLessonService, QuestionLessonService>();
+
+
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IJwtService, JwtService>();
+
+            builder.Services.AddScoped<IAuthService, AuthService>();
 
             builder.Services.AddScoped<IForumPostRepository, ForumPostRepository>();
             builder.Services.AddScoped<IForumPostService, ForumPostService>();
@@ -110,6 +119,56 @@ namespace SDLS.API
                           .AllowCredentials();
                 });
             });
+            builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
+            builder.Services.AddScoped<ISimulationChapterService, SimulationChapterService>();
+
+            builder.Services.AddScoped<IUserLicenseRepository, UserLicenseRepository>();
+            builder.Services.AddScoped<IUserLicenseService, UserLicenseService>();
+
+            builder.Services.AddScoped<ILessonProgressRepository, LessonProgressRepository>();
+            builder.Services.AddScoped<ILessonProgressService, LessonProgressService>();
+
+            builder.Services.AddScoped<ISavedQuestionRepository, SavedQuestionRepository>();
+            builder.Services.AddScoped<ISavedQuestionService, SavedQuestionService>();
+
+            builder.Services.AddScoped<ISavedTrafficSignRepository, SavedTrafficSignRepository>();
+            builder.Services.AddScoped<ISavedTrafficSignService, SavedTrafficSignService>();
+
+            builder.Services.AddScoped<IPostReactRepository, PostReactRepository>();
+            builder.Services.AddScoped<IPostReactService, PostReactService>();
+
+            builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
+            builder.Services.AddScoped<ICommentVoteService, CommentVoteService>();
+
+            builder.Services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
+            builder.Services.AddScoped<IForumCommentService, ForumCommentService>();
+
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+
+            builder.Services.AddScoped<ISimulationScenarioRepository, SimulationScenarioRepository>();
+            builder.Services.AddScoped<ISimulationScenarioService, SimulationScenarioService>();
+
+            builder.Services.AddScoped<IReportRepository, ReportRepository>();
+            builder.Services.AddScoped<IReportService, ReportService>();
+
+            builder.Services.AddScoped<ITrafficSignRepository, TrafficSignRepository>();
+            builder.Services.AddScoped<ITrafficSignService, TrafficSignService>();
+
+            builder.Services.AddScoped<IResolveRepository, ResolveRepository>();
+            builder.Services.AddScoped<IResolveService, ResolveService>();
+
+            builder.Services.AddScoped<ISituationExamRepository, SituationExamRepository>();
+            builder.Services.AddScoped<ISituationExamService, SituationExamService>();
+
+            builder.Services.AddScoped<ISimulationSessionRepository, SimulationSessionRepository>();
+            builder.Services.AddScoped<ISimulationSessionService, SimulationSessionService>();
+
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
+
+
+            builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

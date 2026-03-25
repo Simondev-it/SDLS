@@ -2,11 +2,6 @@
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -31,9 +26,8 @@ namespace SDLS.Repositories.Repositories
 
         public async Task AddAsync(LearningProgress entity)
         {
-            //PrepareCreate(entity);
-            //await SaveAsync();
-            this.CreateAsync(entity);
+            await _context.LearningProgresses.AddAsync(entity);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(LearningProgress entity)
@@ -41,13 +35,29 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
-            var lp = await GetByIdAsync(id);
-            if (lp != null)
-            {
-                this.RemoveAsync(lp);
-            }
+            var existing = await _context.LearningProgresses
+                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+
+            if (existing == null)
+                return;
+
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.LearningProgresses
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            _context.LearningProgresses.Remove(existing);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<List<LearningProgress>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId)

@@ -1,6 +1,5 @@
+using SDLS.Model.DTOs.Exam;
 using SDLS.Model.DTOs.ExamDetail;
-using System;
-using System.Collections.Generic;
 
 namespace SDLS.Model.DTOs.ExamSession
 {
@@ -13,6 +12,7 @@ namespace SDLS.Model.DTOs.ExamSession
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
 
+        public ExamDTO? Exam { get; set; }
         public List<ExamDetailDTO> ExamDetails { get; set; } = new();
     }
 }

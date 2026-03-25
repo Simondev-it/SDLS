@@ -20,6 +20,7 @@ namespace SDLS.Services.Interfaces
         Task<ReportCategoryDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ReportCategoryCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }
