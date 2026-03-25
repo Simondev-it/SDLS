@@ -187,7 +187,7 @@ namespace SDLS.Services.Services
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
-            if (lesson == null)
+            if (lesson == null || lesson.Status != 1)
                 throw new KeyNotFoundException($"Không tìm thấy QuestionLesson với Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
