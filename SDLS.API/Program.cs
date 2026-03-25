@@ -92,7 +92,24 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Accept payloads that contain a trailing comma to reduce client-side parsing failures.
+                    options.JsonSerializerOptions.AllowTrailingCommas = true;
+                });
+
+            // CORS: allow frontend dev server
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("LocalFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -119,6 +136,10 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
+
+            // Enable CORS for requests from local frontend
+            app.UseCors("LocalFrontend");
+
             app.UseAuthorization();
 
             app.MapControllers();

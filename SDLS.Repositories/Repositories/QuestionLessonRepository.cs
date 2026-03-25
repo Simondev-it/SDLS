@@ -59,7 +59,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionLessons
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(QuestionLesson lesson)
