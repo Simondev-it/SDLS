@@ -13,6 +13,6 @@ namespace SDLS.Model.Constants
 
         public static readonly Guid USER_ROLE_ID = Guid.Parse("a764b8eb-b030-4387-a27f-a0242b6dd0b0");
 
-        public static readonly Guid ADMIN_ROLE_ID = Guid.Parse("d6b974b2-f2e1-435e-8a5a-08fa0ca24fe5");
+        public static readonly Guid ADMIN_ROLE_ID = Guid.Parse("d6b974b2-f2e1-435e-8a5a-08fa0ca24fe5"); 
     }
 }
