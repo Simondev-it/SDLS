@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.QuestionChapter;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System.Globalization;
@@ -12,11 +14,16 @@ namespace SDLS.Services.Services
     public class QuestionChapterService : IQuestionChapterService
     {
         private readonly IQuestionChapterRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public QuestionChapterService(IQuestionChapterRepository repository, IMapper mapper)
+        public QuestionChapterService(
+            IQuestionChapterRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -25,27 +32,14 @@ namespace SDLS.Services.Services
             Guid? drivingLicenseId = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (drivingLicenseId.HasValue)
-                filtered = filtered.Where(x => x.DrivingLicenseId == drivingLicenseId.Value);
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
-
-            if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
-
-            if (status.HasValue)
-                filtered = filtered.Where(x => x.Status == status.Value);
+            var filtered = await _repository.GetAllAsync(
+                id, drivingLicenseId, name, description, status, role);
 
             var total = filtered.Count();
 
@@ -64,43 +58,11 @@ namespace SDLS.Services.Services
             };
         }
 
-        private static bool ContainsNormalized(string? source, string? keyword)
-        {
-            var left = NormalizeText(source);
-            var right = NormalizeText(keyword);
-
-            if (string.IsNullOrWhiteSpace(right))
-                return true;
-
-            return left.Contains(right, StringComparison.Ordinal);
-        }
-
-        private static string NormalizeText(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return string.Empty;
-
-            var formD = input.Trim().Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder();
-
-            foreach (var c in formD)
-            {
-                var uc = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (uc != UnicodeCategory.NonSpacingMark)
-                    sb.Append(c);
-            }
-
-            var normalized = sb.ToString().Normalize(NormalizationForm.FormC)
-                .Replace('đ', 'd')
-                .Replace('Đ', 'D');
-
-            normalized = string.Join(' ', normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-            return normalized.ToLowerInvariant();
-        }
-
         public async Task<QuestionChapterDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

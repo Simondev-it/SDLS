@@ -11,6 +11,7 @@ namespace SDLS.Services.Interfaces
             string? name = null,
             string? code = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

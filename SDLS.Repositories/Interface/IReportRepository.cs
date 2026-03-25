@@ -14,9 +14,10 @@ namespace SDLS.Repositories.Interface
             Guid? questionId = null,
             string? title = null,
             string? content = null,
-            int? status = null);
+            int? status = null,
+            string? role = null);
 
-        Task<Report?> GetByIdAsync(Guid id);
+        Task<Report?> GetByIdAsync(Guid id, string? role = null);
         Task<Report?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Report entity);
         Task UpdateAsync(Report entity);

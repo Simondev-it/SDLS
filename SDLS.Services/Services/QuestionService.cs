@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
 using SDLS.Model.Enumerations;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System;
@@ -19,14 +21,17 @@ namespace SDLS.Services.Services
         private readonly IQuestionRepository _questionRepository;
         private readonly IStorageService _storageService;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
             IStorageService storageService,
+            IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
             _storageService = storageService;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -37,18 +42,23 @@ namespace SDLS.Services.Services
             Guid? QuestionCategoryId = null,
             List<Guid>? tagIds = null,
             string? searchContent = null,
+            int? status = null,
             int page = 1,
             int pageSize = 10)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 10 : pageSize;
 
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
             var filteredQuestions = await _questionRepository.GetFilteredForListAsync(
                 lessonId,
                 topicId,
                 QuestionCategoryId,
                 tagIds,
-                searchContent);
+                searchContent,
+                status,
+                role);
 
             var orderedList = BuildOrderedLinkedList(filteredQuestions);
             var total = orderedList.Count;
@@ -78,7 +88,9 @@ namespace SDLS.Services.Services
 
         public async Task<QuestionDTO> GetByIdAsync(Guid id)
         {
-            var question = await _questionRepository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var question = await _questionRepository.GetByIdAsync(id, role);
             if (question == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

@@ -5,9 +5,12 @@ namespace SDLS.Repositories.Interface
 {
     public interface IQuestionRepository
     {
-        Task<Question> GetByIdAsync(Guid id);
-        Task<Question> GetByIdForUpdateAsync(Guid id);
-        Task<IEnumerable<Question>> GetAllAsync();
+        Task<Question?> GetByIdAsync(Guid id, string? role = null);
+        Task<Question?> GetByIdForUpdateAsync(Guid id);
+        Task<IEnumerable<Question>> GetAllAsync(
+            int? status = null,
+            string? role = null);
+
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
         Task DeleteSoftAsync(Guid id);
@@ -26,6 +29,8 @@ namespace SDLS.Repositories.Interface
             Guid? topicId = null,
             Guid? questionCategoryId = null,
             List<Guid>? tagIds = null,
-            string? searchContent = null);
+            string? searchContent = null,
+            int? status = null,
+            string? role = null);
     }
 }

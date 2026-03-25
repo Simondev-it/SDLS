@@ -10,6 +10,7 @@ namespace SDLS.Services.Interfaces
             Guid? forumPostId = null,
             Guid? userId = null,
             string? content = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

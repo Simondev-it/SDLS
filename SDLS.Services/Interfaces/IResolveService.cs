@@ -11,7 +11,7 @@ namespace SDLS.Services.Interfaces
             Guid? userId = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

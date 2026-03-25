@@ -21,10 +21,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? situationExamId,
             [FromQuery] Guid? userId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(id, situationExamId, userId, page, pageSize);
+            var result = await _service.GetAllAsync(id, situationExamId, userId, status, page, pageSize);
             return Ok(result);
         }
 

@@ -10,6 +10,7 @@ namespace SDLS.Services.Interfaces
             Guid? simulationChapterId = null,
             Guid? simulationDifficultyLevelId = null,
             string? name = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

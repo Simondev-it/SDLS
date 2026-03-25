@@ -17,9 +17,13 @@ namespace SDLS.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<LearningProgressDTO>>> GetAll()
+        public async Task<ActionResult<IEnumerable<LearningProgressDTO>>> GetAll(
+            [FromQuery] Guid? id,
+            [FromQuery] Guid? userId,
+            [FromQuery] Guid? questionId,
+            [FromQuery] int? status = null)
         {
-            var items = await _service.GetAllAsync();
+            var items = await _service.GetAllAsync(id, userId, questionId, status);
             return Ok(items);
         }
 
@@ -35,12 +39,13 @@ namespace SDLS.API.Controllers
         [HttpGet("user-question")]
         public async Task<ActionResult<List<LearningProgressDTO>>> GetByUserAndQuestion(
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? questionId)
+            [FromQuery] Guid? questionId,
+            [FromQuery] int? status = null)
         {
             if (!userId.HasValue && !questionId.HasValue)
                 return BadRequest("Cần cung cấp ít nhất một trong hai tham số: userId hoặc questionId");
 
-            var items = await _service.GetByUserAndQuestionAsync(userId, questionId);
+            var items = await _service.GetByUserAndQuestionAsync(userId, questionId, status);
 
             if (!items.Any())
                 return NotFound("Không tìm thấy LearningProgress nào phù hợp");

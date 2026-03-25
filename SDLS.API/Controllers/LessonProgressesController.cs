@@ -21,17 +21,20 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<LessonProgressDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? questionLessonId)
+            [FromQuery] Guid? questionLessonId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, questionLessonId);
+            var result = await _service.GetAllAsync(id, userId, questionLessonId, status);
             return Ok(result);
         }
 
         //[Authorize]
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<List<LessonProgressDTO>>> GetByUserId(Guid userId)
+        public async Task<ActionResult<List<LessonProgressDTO>>> GetByUserId(
+            Guid userId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetByUserIdAsync(userId);
+            var result = await _service.GetByUserIdAsync(userId, status);
             return Ok(result);
         }
 
@@ -40,10 +43,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? questionLessonId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, questionLessonId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, questionLessonId, status, page, pageSize);
             return Ok(result);
         }
 

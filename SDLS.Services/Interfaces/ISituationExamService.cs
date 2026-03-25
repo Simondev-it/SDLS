@@ -10,6 +10,7 @@ namespace SDLS.Services.Interfaces
             string? title = null,
             string? description = null,
             bool? isRandom = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

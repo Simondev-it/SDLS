@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SimulationScenario;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,11 +12,16 @@ namespace SDLS.Services.Services
     public class SimulationScenarioService : ISimulationScenarioService
     {
         private readonly ISimulationScenarioRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public SimulationScenarioService(ISimulationScenarioRepository repository, IMapper mapper)
+        public SimulationScenarioService(
+            ISimulationScenarioRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -23,24 +30,14 @@ namespace SDLS.Services.Services
             Guid? simulationChapterId = null,
             Guid? simulationDifficultyLevelId = null,
             string? name = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
-            if (simulationCategoryId.HasValue)
-                filtered = filtered.Where(x => x.SimulationCategoryId == simulationCategoryId.Value);
-
-            if (simulationChapterId.HasValue)
-                filtered = filtered.Where(x => x.SimulationChapterId == simulationChapterId.Value);
-
-            if (simulationDifficultyLevelId.HasValue)
-                filtered = filtered.Where(x => x.SimulationDifficultyLevelId == simulationDifficultyLevelId.Value);
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Name)
-                    && x.Name.Contains(name.Trim(), StringComparison.OrdinalIgnoreCase));
+            var filtered = await _repository.GetAllAsync(
+                simulationCategoryId, simulationChapterId, simulationDifficultyLevelId, name, status, role);
 
             var total = filtered.Count();
 
@@ -49,11 +46,9 @@ namespace SDLS.Services.Services
                 .Take(pageSize)
                 .ToList();
 
-            var pagedDtos = _mapper.Map<List<SimulationScenarioDTO>>(pagedEntities);
-
             return new PagedResult<SimulationScenarioDTO>
             {
-                Items = pagedDtos,
+                Items = _mapper.Map<List<SimulationScenarioDTO>>(pagedEntities),
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -63,7 +58,9 @@ namespace SDLS.Services.Services
 
         public async Task<SimulationScenarioDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

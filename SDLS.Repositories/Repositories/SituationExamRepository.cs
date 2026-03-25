@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
@@ -11,14 +12,19 @@ namespace SDLS.Repositories.Repositories
             Guid? id = null,
             string? title = null,
             string? description = null,
-            bool? isRandom = null)
+            bool? isRandom = null,
+            int? status = null,
+            string? role = null)
         {
-            var query = _context.SituationExams
-                .Include(x => x.SimulationExams.Where(se => se.Status == 1))
-                    .ThenInclude(se => se.Simulation)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
-                .AsQueryable();
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<SituationExam> query = isPrivileged
+                ? _context.SituationExams
+                    .Include(x => x.SimulationExams)
+                        .ThenInclude(se => se.Simulation)
+                : _context.SituationExams
+                    .Include(x => x.SimulationExams.Where(se => se.Status != 0))
+                        .ThenInclude(se => se.Simulation);
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -38,24 +44,49 @@ namespace SDLS.Repositories.Repositories
             if (isRandom.HasValue)
                 query = query.Where(x => x.IsRandom == isRandom.Value);
 
-            return await query.ToListAsync();
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(x =>
+                    x.SimulationExams.All(se => se.Simulation == null || se.Simulation.Status != 0));
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<SituationExam?> GetByIdAsync(Guid id)
+        public async Task<SituationExam?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.SituationExams
-                .Include(x => x.SimulationExams.Where(se => se.Status == 1))
-                    .ThenInclude(se => se.Simulation)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<SituationExam> query = isPrivileged
+                ? _context.SituationExams
+                    .Include(x => x.SimulationExams)
+                        .ThenInclude(se => se.Simulation)
+                : _context.SituationExams
+                    .Include(x => x.SimulationExams.Where(se => se.Status != 0))
+                        .ThenInclude(se => se.Simulation);
+
+            query = query.Where(x => x.Id == id)
+                         .ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(x =>
+                    x.SimulationExams.All(se => se.Simulation == null || se.Simulation.Status != 0));
+            }
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<SituationExam?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.SituationExams
                 .Include(x => x.SimulationExams)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(SituationExam entity)

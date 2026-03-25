@@ -8,12 +8,14 @@ namespace SDLS.Services.Interfaces
         Task<List<ForumTopicDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null);
+            string? description = null,
+            int? status = null);
 
         Task<PagedResult<ForumTopicDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

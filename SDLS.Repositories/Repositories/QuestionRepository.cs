@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
+using SDLS.Repositories.Helper;
 using System.Globalization;
 using System.Text;
 
@@ -10,17 +11,36 @@ namespace SDLS.Repositories.Repositories
 {
     public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
-        public async Task<Question> GetByIdAsync(Guid id)
+        public async Task<Question?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.Questions
-                .Include(q => q.Answers.Where(a => a.Status == 1))
-                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
-                .Include(q => q.QuestionLesson)
-                    .ThenInclude(ql => ql.QuestionChapter)
-                .Include(q => q.QuestionTopic)
-                .Include(q => q.QuestionCategory)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Question> query = isPrivileged
+                ? _context.Questions
+                    .Include(q => q.Answers)
+                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory)
+                : _context.Questions
+                    .Include(q => q.Answers.Where(a => a.Status != 0))
+                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0))
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory);
+
+            query = query.Where(q => q.Id == id)
+                         .ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(q =>
+                    (q.QuestionLesson == null || q.QuestionLesson.Status != 0) &&
+                    (q.QuestionTopic == null || q.QuestionTopic.Status != 0) &&
+                    (q.QuestionCategory == null || q.QuestionCategory.Status != 0));
+            }
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<Question> GetByIdForUpdateAsync(Guid id)
@@ -32,22 +52,43 @@ namespace SDLS.Repositories.Repositories
                     .ThenInclude(ql => ql.QuestionChapter)
                 .Include(q => q.QuestionTopic)
                 .Include(q => q.QuestionCategory)
-                .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
+                .FirstOrDefaultAsync(q => q.Id == id);
         }
 
-        public async Task<IEnumerable<Question>> GetAllAsync()
+        public async Task<IEnumerable<Question>> GetAllAsync(int? status = null, string? role = null)
         {
-            return await _context.Questions
-                .Include(q => q.Answers.Where(a => a.Status == 1))
-                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
-                .Include(q => q.QuestionLesson)
-                    .ThenInclude(ql => ql.QuestionChapter)
-                .Include(q => q.QuestionTopic)
-                .Include(q => q.QuestionCategory)
-                .Include(q => q.InverseParent)
-                .Where(q => q.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Question> query = isPrivileged
+                ? _context.Questions
+                    .Include(q => q.Answers)
+                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory)
+                    .Include(q => q.InverseParent)
+                : _context.Questions
+                    .Include(q => q.Answers.Where(a => a.Status != 0))
+                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0))
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory)
+                    .Include(q => q.InverseParent.Where(ip => ip.Status != 0));
+
+            if (status.HasValue)
+                query = query.Where(q => q.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(q =>
+                    (q.QuestionLesson == null || q.QuestionLesson.Status != 0) &&
+                    (q.QuestionTopic == null || q.QuestionTopic.Status != 0) &&
+                    (q.QuestionCategory == null || q.QuestionCategory.Status != 0));
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task AddAsync(Question question)
@@ -120,7 +161,7 @@ namespace SDLS.Repositories.Repositories
 
         public async Task<Question?> GetChildQuestionAsync(Guid parentId)
         {
-            return this.GetById(parentId)?.InverseParent.FirstOrDefault(q => q.Status == 1);
+            return this.GetById(parentId)?.InverseParent.FirstOrDefault();
         }
 
         public async Task<List<Question>> GetAllByLessonAsync(Guid lessonId)
@@ -132,7 +173,7 @@ namespace SDLS.Repositories.Repositories
                     .ThenInclude(ql => ql.QuestionChapter)
                 .Include(q => q.QuestionTopic)
                 .Include(q => q.QuestionCategory)
-                .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
+                .Where(q => q.QuestionLessonId == lessonId)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -146,7 +187,7 @@ namespace SDLS.Repositories.Repositories
                     .ThenInclude(ql => ql.QuestionChapter)
                 .Include(q => q.QuestionTopic)
                 .Include(q => q.QuestionCategory)
-                .FirstOrDefaultAsync(q => q.Id == id && q.Status == 1);
+                .FirstOrDefaultAsync(q => q.Id == id);
         }
 
         public async Task UpdateParentIdAsync(Guid questionId, Guid? newParentId)
@@ -161,7 +202,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<List<Question>> GetLessonQuestionsForReorderAsync(Guid lessonId)
         {
             return await _context.Questions
-                .Where(q => q.QuestionLessonId == lessonId && q.Status == 1)
+                .Where(q => q.QuestionLessonId == lessonId)
                 .Select(q => new Question { Id = q.Id, ParentId = q.ParentId })
                 .AsNoTracking()
                 .ToListAsync();
@@ -172,15 +213,18 @@ namespace SDLS.Repositories.Repositories
             Guid? topicId = null,
             Guid? questionCategoryId = null,
             List<Guid>? tagIds = null,
-            string? searchContent = null)
+            string? searchContent = null,
+            int? status = null,
+            string? role = null)
         {
             var normalizedTagIds = tagIds?
                 .Where(x => x != Guid.Empty)
                 .Distinct()
                 .ToList() ?? new List<Guid>();
 
-            var query = _context.Questions
-                .Where(q => q.Status == 1);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Question> query = _context.Questions;
 
             if (lessonId.HasValue)
                 query = query.Where(q => q.QuestionLessonId == lessonId.Value);
@@ -191,23 +235,35 @@ namespace SDLS.Repositories.Repositories
             if (questionCategoryId.HasValue)
                 query = query.Where(q => q.QuestionCategoryId == questionCategoryId.Value);
 
+            if (status.HasValue)
+                query = query.Where(q => q.Status == status.Value);
+
             if (normalizedTagIds.Count > 0)
             {
                 var requiredTagCount = normalizedTagIds.Count;
 
                 query = query.Where(q =>
                     q.QuestionTags
-                        .Where(qt => qt.Status == 1 && normalizedTagIds.Contains(qt.TagId))
+                        .Where(qt => normalizedTagIds.Contains(qt.TagId))
                         .Select(qt => qt.TagId)
                         .Distinct()
                         .Count() == requiredTagCount);
             }
 
+            query = query.ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(q =>
+                    (q.QuestionLesson == null || q.QuestionLesson.Status != 0) &&
+                    (q.QuestionTopic == null || q.QuestionTopic.Status != 0) &&
+                    (q.QuestionCategory == null || q.QuestionCategory.Status != 0));
+            }
+
             var list = await query
-                .Include(q => q.Answers.Where(a => a.Status == 1))
-                .Include(q => q.QuestionTags.Where(qt => qt.Status == 1))
-                .Include(q => q.QuestionLesson)
-                    .ThenInclude(ql => ql.QuestionChapter)
+                .Include(q => isPrivileged ? q.Answers : q.Answers.Where(a => a.Status != 0))
+                .Include(q => isPrivileged ? q.QuestionTags : q.QuestionTags.Where(qt => qt.Status != 0))
+                .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                 .Include(q => q.QuestionTopic)
                 .Include(q => q.QuestionCategory)
                 .AsSplitQuery()

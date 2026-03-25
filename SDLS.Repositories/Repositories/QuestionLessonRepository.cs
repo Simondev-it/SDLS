@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
@@ -13,11 +14,11 @@ namespace SDLS.Repositories.Repositories
             string? name = null,
             string? description = null,
             string? content = null,
-            int? status = 1)
+            int? status = null,
+            string? role = null)
         {
             var query = _context.QuestionLessons
                 .Include(x => x.QuestionChapter)
-                .AsNoTracking()
                 .AsQueryable();
 
             if (id.HasValue)
@@ -47,22 +48,32 @@ namespace SDLS.Repositories.Repositories
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
 
-            return await query.ToListAsync();
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.QuestionChapter == null || x.QuestionChapter.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<QuestionLesson?> GetByIdAsync(Guid id)
+        public async Task<QuestionLesson?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.QuestionLessons
+            var query = _context.QuestionLessons
                 .Include(x => x.QuestionChapter)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.QuestionChapter == null || x.QuestionChapter.Status != 0);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionLessons
                 .Include(x => x.QuestionChapter)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(QuestionLesson lesson)
@@ -101,21 +112,22 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<LessonImage>> GetLessonImagesByLessonIdsAsync(List<Guid> lessonIds)
+        public async Task<List<LessonImage>> GetLessonImagesByLessonIdsAsync(List<Guid> lessonIds, string? role = null)
         {
             if (lessonIds == null || lessonIds.Count == 0)
                 return new List<LessonImage>();
 
-            return await _context.LessonImages
-                .Where(x => lessonIds.Contains(x.QuestionLessonId) && x.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
+            var query = _context.LessonImages
+                .Where(x => lessonIds.Contains(x.QuestionLessonId))
+                .ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<List<LessonImage>> GetLessonImagesByLessonIdForUpdateAsync(Guid lessonId)
         {
             return await _context.LessonImages
-                .Where(x => x.QuestionLessonId == lessonId && x.Status == 1)
+                .Where(x => x.QuestionLessonId == lessonId)
                 .ToListAsync();
         }
 

@@ -22,9 +22,10 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumPostId,
-            [FromQuery] string? reactType)
+            [FromQuery] string? reactType,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, forumPostId, reactType);
+            var result = await _service.GetAllAsync(id, userId, forumPostId, reactType, status);
             return Ok(result);
         }
 
@@ -34,10 +35,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumPostId,
             [FromQuery] string? reactType,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, forumPostId, reactType, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, forumPostId, reactType, status, page, pageSize);
             return Ok(result);
         }
 

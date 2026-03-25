@@ -22,10 +22,11 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<PagedResult<ExamSessionDTO>>> GetAll(
             [FromQuery] Guid? examId,
             [FromQuery] Guid? userId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(examId, userId, page, pageSize);
+            var result = await _service.GetAllAsync(examId, userId, status, page, pageSize);
             return Ok(result);
         }
 

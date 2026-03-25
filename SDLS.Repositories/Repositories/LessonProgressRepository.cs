@@ -1,41 +1,26 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class LessonProgressRepository : GenericRepository<LessonProgress>, ILessonProgressRepository
     {
-        public async Task<List<LessonProgress>> GetAllAsync()
-        {
-            return await _context.LessonProgresses
-                .Include(x => x.QuestionLesson)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task<LessonProgress?> GetByIdAsync(Guid id)
-        {
-            return await _context.LessonProgresses
-                .Include(x => x.QuestionLesson)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
-        }
-
-        public async Task<LessonProgress?> GetByIdForUpdateAsync(Guid id)
-        {
-            return await _context.LessonProgresses
-                .Include(x => x.QuestionLesson)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
-        }
-
-        public async Task<List<LessonProgress>> GetByUserAndQuestionLessonAsync(Guid? userId, Guid? questionLessonId)
+        public async Task<List<LessonProgress>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionLessonId = null,
+            int? status = null,
+            string? role = null)
         {
             var query = _context.LessonProgresses
                 .Include(x => x.QuestionLesson)
-                .Where(x => x.Status == 1);
+                .AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -43,9 +28,62 @@ namespace SDLS.Repositories.Repositories
             if (questionLessonId.HasValue)
                 query = query.Where(x => x.QuestionLessonId == questionLessonId.Value);
 
-            return await query
-                .AsNoTracking()
-                .ToListAsync();
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.QuestionLesson == null || x.QuestionLesson.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
+        }
+
+        public async Task<LessonProgress?> GetByIdAsync(Guid id, string? role = null)
+        {
+            var query = _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.QuestionLesson == null || x.QuestionLesson.Status != 0);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
+        }
+
+        public async Task<LessonProgress?> GetByIdForUpdateAsync(Guid id)
+        {
+            return await _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task<List<LessonProgress>> GetByUserAndQuestionLessonAsync(
+            Guid? userId,
+            Guid? questionLessonId,
+            int? status = null,
+            string? role = null)
+        {
+            var query = _context.LessonProgresses
+                .Include(x => x.QuestionLesson)
+                .AsQueryable();
+
+            if (userId.HasValue)
+                query = query.Where(x => x.UserId == userId.Value);
+
+            if (questionLessonId.HasValue)
+                query = query.Where(x => x.QuestionLessonId == questionLessonId.Value);
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.QuestionLesson == null || x.QuestionLesson.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task AddAsync(LessonProgress entity)

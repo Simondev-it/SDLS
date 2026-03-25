@@ -23,7 +23,7 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? drivingLicenseId,
             [FromQuery] string? name,
             [FromQuery] string? description,
-            [FromQuery] int? status = 1,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
@@ -17,17 +18,24 @@ namespace SDLS.Repositories.Repositories
             Guid? questionId = null,
             string? title = null,
             string? content = null,
-            int? status = null)
+            int? status = null,
+            string? role = null)
         {
-            var query = _context.Reports
-                .Include(x => x.ReportCategory)
-                .Include(x => x.ForumComment)
-                .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
-                .Include(x => x.Question)
-                .Include(x => x.Simulation)
-                .Where(x => x.Status.HasValue && (x.Status == -1 || x.Status == 1 || x.Status == 2))
-                .AsNoTracking()
-                .AsQueryable();
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Report> query = isPrivileged
+                ? _context.Reports
+                    .Include(x => x.ReportCategory)
+                    .Include(x => x.ForumComment)
+                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                    .Include(x => x.Question)
+                    .Include(x => x.Simulation)
+                : _context.Reports
+                    .Include(x => x.ReportCategory)
+                    .Include(x => x.ForumComment)
+                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
+                    .Include(x => x.Question)
+                    .Include(x => x.Simulation);
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -65,30 +73,61 @@ namespace SDLS.Repositories.Repositories
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
 
-            return await query.ToListAsync();
+            query = query.ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(x =>
+                    (x.ReportCategory == null || x.ReportCategory.Status != 0) &&
+                    (x.ForumComment == null || x.ForumComment.Status != 0) &&
+                    (x.ForumPost == null || x.ForumPost.Status != 0) &&
+                    (x.Question == null || x.Question.Status != 0) &&
+                    (x.Simulation == null || x.Simulation.Status != 0));
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<Report?> GetByIdAsync(Guid id)
+        public async Task<Report?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.Reports
-                .Include(x => x.ReportCategory)
-                .Include(x => x.ForumComment)
-                .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
-                .Include(x => x.Question)
-                .Include(x => x.Simulation)
-                .Include(x => x.Resolves.Where(r => r.Status == 1))
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id
-                    && x.Status.HasValue
-                    && (x.Status == -1 || x.Status == 1 || x.Status == 2));
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Report> query = isPrivileged
+                ? _context.Reports
+                    .Include(x => x.ReportCategory)
+                    .Include(x => x.ForumComment)
+                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                    .Include(x => x.Question)
+                    .Include(x => x.Simulation)
+                    .Include(x => x.Resolves)
+                : _context.Reports
+                    .Include(x => x.ReportCategory)
+                    .Include(x => x.ForumComment)
+                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
+                    .Include(x => x.Question)
+                    .Include(x => x.Simulation)
+                    .Include(x => x.Resolves.Where(r => r.Status != 0));
+
+            query = query.Where(x => x.Id == id)
+                         .ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(x =>
+                    (x.ReportCategory == null || x.ReportCategory.Status != 0) &&
+                    (x.ForumComment == null || x.ForumComment.Status != 0) &&
+                    (x.ForumPost == null || x.ForumPost.Status != 0) &&
+                    (x.Question == null || x.Question.Status != 0) &&
+                    (x.Simulation == null || x.Simulation.Status != 0));
+            }
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<Report?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.Reports
-                .FirstOrDefaultAsync(x => x.Id == id
-                    && x.Status.HasValue
-                    && (x.Status == -1 || x.Status == 1 || x.Status == 2));
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(Report entity)

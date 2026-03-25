@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumComment;
@@ -17,19 +18,22 @@ namespace SDLS.Services.Services
         private readonly IForumPostRepository _forumPostRepository;
         private readonly IExecutionStrategyRepository _executionStrategy;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ForumCommentService(
             IForumCommentRepository repository,
             INotificationService notificationService,
             IForumPostRepository forumPostRepository,
             IExecutionStrategyRepository executionStrategyService,
-            IMapper mapper)
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor)
         {
             _repository = repository;
             _notificationService = notificationService;
             _forumPostRepository = forumPostRepository;
             _executionStrategy = executionStrategyService;
             _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<PagedResult<ForumCommentDTO>> GetAllAsync(
@@ -37,56 +41,30 @@ namespace SDLS.Services.Services
             Guid? forumPostId = null,
             Guid? userId = null,
             string? content = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
-            var all = (await _repository.GetAllAsync()).ToList();
-            var filtered = all.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
+            var all = (await _repository.GetAllAsync(id, forumPostId, userId, content, status, role)).ToList();
 
-            if (forumPostId.HasValue)
-                filtered = filtered.Where(x => x.ForumPostId == forumPostId.Value);
-
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                var keyword = content.Trim();
-                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Content)
-                    && x.Content.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var ordered = filtered
-                .OrderBy(x => x.CreateAt)
-                .ThenBy(x => x.Id)
-                .ToList();
+            var ordered = all.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList();
 
             var replyLookup = ordered
                 .Where(x => x.ReplyId.HasValue)
                 .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
+                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
 
-            var roots = ordered
-                .Where(x => x.ReplyId == null)
-                .ToList();
+            var roots = ordered.Where(x => x.ReplyId == null).ToList();
 
             var total = roots.Count;
-            var pageRoots = roots
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var pageRoots = roots.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var dtos = pageRoots
-                .Select(x => BuildCommentTree(x, replyLookup))
-                .ToList();
+            var dtos = pageRoots.Select(x => BuildCommentTree(x, replyLookup)).ToList();
 
             return new PagedResult<ForumCommentDTO>
             {
@@ -100,18 +78,21 @@ namespace SDLS.Services.Services
 
         public async Task<ForumCommentDTO> GetByIdAsync(Guid id)
         {
-            var all = (await _repository.GetAllAsync()).ToList();
-            var target = all.FirstOrDefault(x => x.Id == id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
+            var target = await _repository.GetByIdAsync(id, role);
             if (target == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
+
+            var all = (await _repository.GetAllAsync(
+                forumPostId: target.ForumPostId,
+                status: null,
+                role: role)).ToList();
 
             var replyLookup = all
                 .Where(x => x.ReplyId.HasValue)
                 .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
+                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
 
             return BuildCommentTree(target, replyLookup);
         }

@@ -21,9 +21,10 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<CommentVoteDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? forumCommentId)
+            [FromQuery] Guid? forumCommentId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, forumCommentId);
+            var result = await _service.GetAllAsync(id, userId, forumCommentId, status);
             return Ok(result);
         }
 
@@ -32,10 +33,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumCommentId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, forumCommentId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, forumCommentId, status, page, pageSize);
             return Ok(result);
         }
 

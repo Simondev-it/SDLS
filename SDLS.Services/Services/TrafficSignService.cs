@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
 using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -12,12 +14,18 @@ namespace SDLS.Services.Services
     {
         private readonly ITrafficSignRepository _repository;
         private readonly IStorageService _storageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public TrafficSignService(ITrafficSignRepository repository, IStorageService storageService, IMapper mapper)
+        public TrafficSignService(
+            ITrafficSignRepository repository,
+            IStorageService storageService,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
             _storageService = storageService;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -27,20 +35,20 @@ namespace SDLS.Services.Services
             string? name = null,
             string? code = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
-            var filtered = await _repository.GetAllAsync(id, signCategoryId, name, code, description);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var filtered = await _repository.GetAllAsync(id, signCategoryId, name, code, description, status, role);
+
             var ordered = filtered.OrderBy(x => x.Code).ThenBy(x => x.Name).ToList();
             var total = ordered.Count;
 
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedResult<TrafficSignDTO>
             {
@@ -54,7 +62,8 @@ namespace SDLS.Services.Services
 
         public async Task<TrafficSignDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 

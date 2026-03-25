@@ -8,12 +8,14 @@ namespace SDLS.Services.Interfaces
         Task<List<UserLicenseDTO>> GetAllAsync(
             Guid? id = null,
             Guid? userId = null,
-            Guid? drivingLicenseId = null);
+            Guid? drivingLicenseId = null,
+            int? status = null);
 
         Task<PagedResult<UserLicenseDTO>> GetPagedAsync(
             Guid? id = null,
             Guid? userId = null,
             Guid? drivingLicenseId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

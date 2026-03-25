@@ -25,11 +25,12 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? QuestionCategoryId,
             [FromQuery] List<Guid>? tagIds,
             [FromQuery] string? searchContent,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, page, pageSize);
+                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize);
 
             return Ok(result);
         }

@@ -8,6 +8,7 @@ namespace SDLS.Services.Interfaces
         Task<PagedResult<ExamSessionDTO>> GetAllAsync(
             Guid? examId = null,
             Guid? userId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

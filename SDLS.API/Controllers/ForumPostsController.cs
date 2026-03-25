@@ -25,7 +25,7 @@ namespace SDLS.API.Controllers
             [FromQuery] string? name,
             [FromQuery] string? title,
             [FromQuery] string? content,
-            [FromQuery] int? status = 1,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {

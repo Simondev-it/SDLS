@@ -1,34 +1,60 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class CommentVoteRepository : GenericRepository<CommentVote>, ICommentVoteRepository
     {
-        public async Task<List<CommentVote>> GetAllAsync()
+        public async Task<List<CommentVote>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? forumCommentId = null,
+            int? status = null,
+            string? role = null)
         {
-            return await _context.CommentVotes
+            var query = _context.CommentVotes
                 .Include(x => x.ForumComment)
-                .Where(x => x.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
+                .AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
+
+            if (userId.HasValue)
+                query = query.Where(x => x.UserId == userId.Value);
+
+            if (forumCommentId.HasValue)
+                query = query.Where(x => x.ForumCommentId == forumCommentId.Value);
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.ForumComment == null || x.ForumComment.Status != 0);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<CommentVote?> GetByIdAsync(Guid id)
+        public async Task<CommentVote?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.CommentVotes
+            var query = _context.CommentVotes
                 .Include(x => x.ForumComment)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            if (!QueryableRoleFilterExtensions.IsPrivilegedRole(role))
+                query = query.Where(x => x.ForumComment == null || x.ForumComment.Status != 0);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<List<CommentVote>> GetByUserAndForumCommentAsync(Guid? userId, Guid? forumCommentId)
         {
-            var query = _context.CommentVotes
-                .Include(x => x.ForumComment)
-                .Where(x => x.Status == 1);
+            IQueryable<CommentVote> query = _context.CommentVotes.Include(x => x.ForumComment);
 
             if (userId.HasValue)
                 query = query.Where(x => x.UserId == userId.Value);
@@ -53,11 +79,8 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteSoftAsync(Guid id)
         {
-            var existing = await _context.CommentVotes
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
-
-            if (existing == null)
-                return;
+            var existing = await _context.CommentVotes.FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            if (existing == null) return;
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
@@ -66,11 +89,8 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteHardAsync(Guid id)
         {
-            var existing = await _context.CommentVotes
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (existing == null)
-                return;
+            var existing = await _context.CommentVotes.FirstOrDefaultAsync(x => x.Id == id);
+            if (existing == null) return;
 
             _context.CommentVotes.Remove(existing);
             await _context.SaveChangesAsync();

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Resolve;
@@ -15,6 +16,7 @@ namespace SDLS.Services.Services
         private readonly IExecutionStrategyRepository _executionStrategyRepository;
         private readonly IReportRepository _reportRepository;
         private readonly INotificationService _notificationService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public ResolveService(
@@ -22,12 +24,14 @@ namespace SDLS.Services.Services
             IExecutionStrategyRepository executionStrategyRepository,
             IReportRepository reportRepository,
             INotificationService notificationService,
+            IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
             _executionStrategyRepository = executionStrategyRepository;
             _reportRepository = reportRepository;
             _notificationService = notificationService;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -37,21 +41,20 @@ namespace SDLS.Services.Services
             Guid? userId = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
-            var all = await _repository.GetAllAsync(id, reportId, userId, title, content, status);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var all = await _repository.GetAllAsync(id, reportId, userId, title, content, status, role);
             var ordered = all.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
 
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedResult<ResolveDTO>
             {
@@ -65,7 +68,8 @@ namespace SDLS.Services.Services
 
         public async Task<ResolveDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<ResolveDTO>(entity) : null;
         }
 

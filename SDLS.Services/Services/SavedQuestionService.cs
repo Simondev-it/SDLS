@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SavedQuestion;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,34 +12,39 @@ namespace SDLS.Services.Services
     public class SavedQuestionService : ISavedQuestionService
     {
         private readonly ISavedQuestionRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public SavedQuestionService(ISavedQuestionRepository repository, IMapper mapper)
+        public SavedQuestionService(
+            ISavedQuestionRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
-        public async Task<List<SavedQuestionDTO>> GetAllAsync(Guid? id = null, Guid? userId = null, Guid? questionId = null)
+        public async Task<List<SavedQuestionDTO>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            if (questionId.HasValue)
-                filtered = filtered.Where(x => x.QuestionId == questionId.Value);
-
-            return _mapper.Map<List<SavedQuestionDTO>>(filtered.ToList());
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetAllAsync(id, userId, questionId, status, role);
+            return _mapper.Map<List<SavedQuestionDTO>>(entities);
         }
 
-        public async Task<PagedResult<SavedQuestionDTO>> GetPagedAsync(Guid? id = null, Guid? userId = null, Guid? questionId = null, int page = 1, int pageSize = 20)
+        public async Task<PagedResult<SavedQuestionDTO>> GetPagedAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            int page = 1,
+            int pageSize = 20)
         {
-            var items = await GetAllAsync(id, userId, questionId);
+            var items = await GetAllAsync(id, userId, questionId, status);
             var total = items.Count;
 
             return new PagedResult<SavedQuestionDTO>
@@ -52,7 +59,8 @@ namespace SDLS.Services.Services
 
         public async Task<SavedQuestionDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<SavedQuestionDTO>(entity) : null;
         }
 

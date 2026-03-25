@@ -14,6 +14,7 @@ namespace SDLS.Services.Interfaces
             Guid? QuestionCategoryId = null,
             List<Guid>? tagIds = null,
             string? searchContent = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 

@@ -20,9 +20,10 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<SavedQuestionDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? questionId)
+            [FromQuery] Guid? questionId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, questionId);
+            var result = await _service.GetAllAsync(id, userId, questionId, status);
             return Ok(result);
         }
 
@@ -31,10 +32,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? questionId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, questionId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, questionId, status, page, pageSize);
             return Ok(result);
         }
 

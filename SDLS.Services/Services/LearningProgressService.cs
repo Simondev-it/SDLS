@@ -1,36 +1,44 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Services.Services
 {
     public class LearningProgressService : ILearningProgressService
     {
         private readonly ILearningProgressRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public LearningProgressService(ILearningProgressRepository repository, IMapper mapper)
+        public LearningProgressService(
+            ILearningProgressRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<LearningProgressDTO>> GetAllAsync()
+        public async Task<IEnumerable<LearningProgressDTO>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null)
         {
-            var entities = await _repository.GetAllAsync();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetAllAsync(id, userId, questionId, status, role);
             return _mapper.Map<List<LearningProgressDTO>>(entities);
         }
 
         public async Task<LearningProgressDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<LearningProgressDTO>(entity) : null;
         }
 
@@ -55,20 +63,17 @@ namespace SDLS.Services.Services
 
         public async Task<bool> UpdateAsync(Guid id, LearningProgressUpdateDTO dto)
         {
-            var existing = await _repository.GetByIdAsync(id);
+            var existing = await _repository.GetByIdAsync(id, null);
             if (existing == null) return false;
 
-            // Kiểm tra nếu thay đổi UserId hoặc QuestionId → tránh trùng lặp
-            bool isChangingKeys = existing.UserId != dto.UserId || existing.QuestionId != dto.QuestionId;
-
+            var isChangingKeys = existing.UserId != dto.UserId || existing.QuestionId != dto.QuestionId;
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndQuestionAsync(dto.UserId, dto.QuestionId);
-                if (conflict != null && conflict.Any(lp => lp.Id != id)) // loại trừ chính bản thân
+                if (conflict != null && conflict.Any(lp => lp.Id != id))
                     throw new InvalidOperationException("Cặp UserId và QuestionId mới đã tồn tại ở record khác.");
             }
 
-            // Update fields
             existing.QuestionId = dto.QuestionId;
             existing.UserId = dto.UserId;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
@@ -90,9 +95,13 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<List<LearningProgressDTO>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId)
+        public async Task<List<LearningProgressDTO>> GetByUserAndQuestionAsync(
+            Guid? userId,
+            Guid? questionId,
+            int? status = null)
         {
-            var entities = await _repository.GetByUserAndQuestionAsync(userId, questionId);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetByUserAndQuestionAsync(userId, questionId, status, role);
             return _mapper.Map<List<LearningProgressDTO>>(entities);
         }
     }
