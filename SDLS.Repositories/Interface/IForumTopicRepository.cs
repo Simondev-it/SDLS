@@ -9,6 +9,7 @@ namespace SDLS.Repositories.Interface
         Task<ForumTopic?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ForumTopic entity);
         Task UpdateAsync(ForumTopic entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

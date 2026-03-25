@@ -10,6 +10,7 @@ namespace SDLS.Services.Interfaces
         Task<SavedTrafficSignDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SavedTrafficSignCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SavedTrafficSignUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

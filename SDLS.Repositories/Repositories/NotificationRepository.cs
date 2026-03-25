@@ -43,15 +43,32 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.Notifications
                 .FirstOrDefaultAsync(n => n.Id == id && n.Status == 1);
 
-            if (existing == null) return;
+            if (existing == null)
+                return;
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.Notifications
+                .Include(n => n.UserNotifications)
+                .FirstOrDefaultAsync(n => n.Id == id);
+
+            if (existing == null)
+                return;
+
+            if (existing.UserNotifications.Any())
+                _context.UserNotifications.RemoveRange(existing.UserNotifications);
+
+            _context.Notifications.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

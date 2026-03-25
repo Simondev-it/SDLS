@@ -38,7 +38,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.SimulationDifficultyLevels
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -48,7 +48,18 @@ namespace SDLS.Repositories.Repositories
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
 
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.SimulationDifficultyLevels
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            _context.SimulationDifficultyLevels.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
@@ -41,7 +41,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.DrivingLicenses
                 .Include(x => x.Vehicles)
@@ -61,6 +61,22 @@ namespace SDLS.Repositories.Repositories
                 vehicle.UpdateAt = now;
             }
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.DrivingLicenses
+                .Include(x => x.Vehicles)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            if (existing.Vehicles.Any())
+                _context.Vehicles.RemoveRange(existing.Vehicles);
+
+            _context.DrivingLicenses.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

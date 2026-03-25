@@ -1,4 +1,4 @@
-using SDLS.Model.Models;
+﻿using SDLS.Model.Models;
 
 namespace SDLS.Repositories.Interface
 {
@@ -9,6 +9,7 @@ namespace SDLS.Repositories.Interface
         Task<List<CommentVote>> GetByUserAndForumCommentAsync(Guid? userId, Guid? forumCommentId);
         Task AddAsync(CommentVote entity);
         Task UpdateAsync(CommentVote entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

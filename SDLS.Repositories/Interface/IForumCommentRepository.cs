@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
-using SDLS.Model.Models;
 
 namespace SDLS.Repositories.Interface
 {
@@ -11,7 +10,9 @@ namespace SDLS.Repositories.Interface
         Task<ForumComment?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ForumComment entity);
         Task UpdateAsync(ForumComment entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
+
         Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

@@ -207,6 +207,11 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            return await DeleteSoftAsync(id);
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
                 throw new KeyNotFoundException($"Khong tim thay ForumPost voi Id {id}");
@@ -218,6 +223,12 @@ namespace SDLS.Services.Services
             await _repository.SoftDeletePostImagesAsync(id, now);
             await _repository.UpdateAsync(forumPost);
 
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
 

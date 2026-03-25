@@ -1,4 +1,4 @@
-using SDLS.Model.Models;
+﻿using SDLS.Model.Models;
 
 namespace SDLS.Repositories.Interface
 {
@@ -9,6 +9,7 @@ namespace SDLS.Repositories.Interface
         Task<DrivingLicense?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(DrivingLicense entity);
         Task UpdateAsync(DrivingLicense entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

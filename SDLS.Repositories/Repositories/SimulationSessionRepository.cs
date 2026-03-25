@@ -58,7 +58,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.SimulationSessions
                 .Include(x => x.SimulationSessionDetails)
@@ -77,6 +77,22 @@ namespace SDLS.Repositories.Repositories
                 detail.UpdateAt = now;
             }
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.SimulationSessions
+                .Include(x => x.SimulationSessionDetails)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            if (existing.SimulationSessionDetails.Any())
+                _context.SimulationSessionDetails.RemoveRange(existing.SimulationSessionDetails);
+
+            _context.SimulationSessions.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

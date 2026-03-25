@@ -10,6 +10,7 @@ namespace SDLS.Repositories.Interface
         Task<List<LessonProgress>> GetByUserAndQuestionLessonAsync(Guid? userId, Guid? questionLessonId);
         Task AddAsync(LessonProgress entity);
         Task UpdateAsync(LessonProgress entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

@@ -179,6 +179,11 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            return await DeleteSoftAsync(id);
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null)
                 throw new KeyNotFoundException($"Không tìm thấy QuestionLesson với Id {id}");
@@ -191,6 +196,12 @@ namespace SDLS.Services.Services
             await _repository.SoftDeleteLessonImagesAsync(id, now);
             await _repository.UpdateAsync(lesson);
 
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
 

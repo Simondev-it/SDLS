@@ -13,6 +13,7 @@ namespace SDLS.Repositories.Interface
         Task<SimulationSession?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SimulationSession entity);
         Task UpdateAsync(SimulationSession entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

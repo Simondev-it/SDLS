@@ -2,10 +2,6 @@
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -59,7 +55,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Id == id && e.Status == 1);
             if (exam == null)
@@ -67,6 +63,34 @@ namespace SDLS.Repositories.Repositories
 
             exam.Status = 0;
             exam.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var exam = await _context.Exams
+                .Include(e => e.ExamQuestions)
+                .Include(e => e.ExamSessions)
+                    .ThenInclude(es => es.ExamDetails)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (exam == null)
+                return;
+
+            var allExamDetails = exam.ExamSessions
+                .SelectMany(x => x.ExamDetails)
+                .ToList();
+
+            if (allExamDetails.Any())
+                _context.ExamDetails.RemoveRange(allExamDetails);
+
+            if (exam.ExamSessions.Any())
+                _context.ExamSessions.RemoveRange(exam.ExamSessions);
+
+            if (exam.ExamQuestions.Any())
+                _context.ExamQuestions.RemoveRange(exam.ExamQuestions);
+
+            _context.Exams.Remove(exam);
             await _context.SaveChangesAsync();
         }
     }

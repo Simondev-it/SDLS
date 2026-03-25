@@ -58,14 +58,29 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.UserLicenses.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            var existing = await _context.UserLicenses
+                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+
+            if (existing == null)
+                return;
+
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var entity = await _context.UserLicenses
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (entity == null)
+                return;
+
+            _context.UserLicenses.Remove(entity);
+            await _context.SaveChangesAsync();
         }
     }
 }

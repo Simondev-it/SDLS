@@ -9,6 +9,7 @@ namespace SDLS.Repositories.Interface
         Task<List<SavedTrafficSign>> GetByUserAndTrafficSignAsync(Guid? userId, Guid? trafficSignId);
         Task AddAsync(SavedTrafficSign entity);
         Task UpdateAsync(SavedTrafficSign entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

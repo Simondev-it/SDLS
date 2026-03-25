@@ -15,6 +15,7 @@ namespace SDLS.Repositories.Interface
         Task<TrafficSign?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(TrafficSign entity);
         Task UpdateAsync(TrafficSign entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }
