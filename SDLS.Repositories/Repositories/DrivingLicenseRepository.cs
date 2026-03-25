@@ -10,7 +10,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<DrivingLicense>> GetAllAsync()
         {
             return await _context.DrivingLicenses
-                .Include(x => x.Vehicles.Where(v => v.Status == 1))
+                .Include(x => x.Vehicles)
                 .AsNoTracking()
                 .ToListAsync();
         }
@@ -18,7 +18,7 @@ namespace SDLS.Repositories.Repositories
         public async Task<DrivingLicense?> GetByIdAsync(Guid id)
         {
             return await _context.DrivingLicenses
-                .Include(x => x.Vehicles.Where(v => v.Status == 1))
+                .Include(x => x.Vehicles)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
         }
