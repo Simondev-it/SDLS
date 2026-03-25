@@ -1,7 +1,9 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
@@ -13,11 +15,13 @@ namespace SDLS.Services.Services
     {
         private readonly IForumPostRepository _repository;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ForumPostService(IForumPostRepository repository, IMapper mapper)
+        public ForumPostService(IForumPostRepository repository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _repository = repository;
             _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<PagedResult<ForumPostDTO>> GetAllAsync(
@@ -27,47 +31,33 @@ namespace SDLS.Services.Services
             string? name = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
             var filtered = await _repository.GetAllAsync(
-                id,
-                forumTopicId,
-                userId,
-                name,
-                title,
-                content,
-                status);
+                id, forumTopicId, userId, name, title, content, status, role);
 
-            var ordered = filtered
-                .OrderByDescending(x => x.CreateAt)
-                .ThenByDescending(x => x.Id)
-                .ToList();
-
+            var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
 
-            var pageEntities = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var pageEntities = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             var postIds = pageEntities.Select(x => x.Id).ToList();
-            var postImages = await _repository.GetPostImagesByPostIdsAsync(postIds);
-            var imageLookup = postImages
-                .GroupBy(x => x.ForumPostId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            var postImages = await _repository.GetPostImagesByPostIdsAsync(postIds, role);
+
+            var imageLookup = postImages.GroupBy(x => x.ForumPostId).ToDictionary(g => g.Key, g => g.ToList());
 
             var dtos = _mapper.Map<List<ForumPostDTO>>(pageEntities);
             foreach (var dto in dtos)
             {
                 if (imageLookup.TryGetValue(dto.Id, out var images))
-                {
                     dto.PostImages = _mapper.Map<List<ForumPostImageDTO>>(images);
-                }
             }
 
             return new PagedResult<ForumPostDTO>
@@ -82,12 +72,14 @@ namespace SDLS.Services.Services
 
         public async Task<ForumPostDTO> GetByIdAsync(Guid id)
         {
-            var forumPost = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var forumPost = await _repository.GetByIdAsync(id, role);
             if (forumPost == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
             var dto = _mapper.Map<ForumPostDTO>(forumPost);
-            var images = await _repository.GetPostImagesByPostIdsAsync(new List<Guid> { id });
+            var images = await _repository.GetPostImagesByPostIdsAsync(new List<Guid> { id }, role);
             dto.PostImages = _mapper.Map<List<ForumPostImageDTO>>(images);
 
             return dto;
@@ -108,7 +100,7 @@ namespace SDLS.Services.Services
                 ViewCount = 0,
                 CreateAt = now,
                 UpdateAt = now,
-                Status = 1
+                Status = -1
             };
 
             await _repository.AddAsync(forumPost);
@@ -207,6 +199,11 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            return await DeleteSoftAsync(id);
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
                 throw new KeyNotFoundException($"Khong tim thay ForumPost voi Id {id}");
@@ -218,6 +215,12 @@ namespace SDLS.Services.Services
             await _repository.SoftDeletePostImagesAsync(id, now);
             await _repository.UpdateAsync(forumPost);
 
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
 

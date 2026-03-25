@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SavedTrafficSign;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -10,34 +12,39 @@ namespace SDLS.Services.Services
     public class SavedTrafficSignService : ISavedTrafficSignService
     {
         private readonly ISavedTrafficSignRepository _repository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public SavedTrafficSignService(ISavedTrafficSignRepository repository, IMapper mapper)
+        public SavedTrafficSignService(
+            ISavedTrafficSignRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
-        public async Task<List<SavedTrafficSignDTO>> GetAllAsync(Guid? id = null, Guid? userId = null, Guid? trafficSignId = null)
+        public async Task<List<SavedTrafficSignDTO>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? trafficSignId = null,
+            int? status = null)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
-
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            if (trafficSignId.HasValue)
-                filtered = filtered.Where(x => x.TrafficSignId == trafficSignId.Value);
-
-            return _mapper.Map<List<SavedTrafficSignDTO>>(filtered.ToList());
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entities = await _repository.GetAllAsync(id, userId, trafficSignId, status, role);
+            return _mapper.Map<List<SavedTrafficSignDTO>>(entities);
         }
 
-        public async Task<PagedResult<SavedTrafficSignDTO>> GetPagedAsync(Guid? id = null, Guid? userId = null, Guid? trafficSignId = null, int page = 1, int pageSize = 20)
+        public async Task<PagedResult<SavedTrafficSignDTO>> GetPagedAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? trafficSignId = null,
+            int? status = null,
+            int page = 1,
+            int pageSize = 20)
         {
-            var items = await GetAllAsync(id, userId, trafficSignId);
+            var items = await GetAllAsync(id, userId, trafficSignId, status);
             var total = items.Count;
 
             return new PagedResult<SavedTrafficSignDTO>
@@ -52,7 +59,8 @@ namespace SDLS.Services.Services
 
         public async Task<SavedTrafficSignDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<SavedTrafficSignDTO>(entity) : null;
         }
 
@@ -101,9 +109,15 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
-            await _repository.DeleteAsync(id);
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
     }

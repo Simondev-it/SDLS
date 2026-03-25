@@ -1,11 +1,7 @@
-﻿using SDLS.Model.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -18,12 +14,41 @@ namespace SDLS.Repositories.Repositories
 
         public async Task UpdateAsync(Answer answer)
         {
-            this.Update(answer);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        
+
+        public async Task DeleteSoftAsync(Guid id)
         {
-            this.Remove(this.GetById(id));
+            var existing = await _context.Answers
+                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+
+            if (existing == null)
+                return;
+
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.Answers
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            var examDetails = await _context.ExamDetails
+                .Where(x => x.AnswerId == id)
+                .ToListAsync();
+
+            if (examDetails.Count > 0)
+                _context.ExamDetails.RemoveRange(examDetails);
+
+            _context.Answers.Remove(existing);
+            await _context.SaveChangesAsync();
         }
     }
 }

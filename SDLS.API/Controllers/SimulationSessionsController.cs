@@ -21,10 +21,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? situationExamId,
             [FromQuery] Guid? userId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(id, situationExamId, userId, page, pageSize);
+            var result = await _service.GetAllAsync(id, situationExamId, userId, status, page, pageSize);
             return Ok(result);
         }
 
@@ -52,10 +53,17 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

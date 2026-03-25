@@ -1,9 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ExamSession;
 using SDLS.Services.Interfaces;
-using System;
-using System.Threading.Tasks;
 
 namespace SDLS.API.Controllers
 {
@@ -18,17 +17,20 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ExamSessionDTO>>> GetAll(
             [FromQuery] Guid? examId,
             [FromQuery] Guid? userId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(examId, userId, page, pageSize);
+            var result = await _service.GetAllAsync(examId, userId, status, page, pageSize);
             return Ok(result);
         }
 
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ExamSessionDTO>> GetById(Guid id)
         {
@@ -37,6 +39,7 @@ namespace SDLS.API.Controllers
             return Ok(examSession);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ExamSessionCreateDTO dto)
         {
@@ -45,6 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ExamSessionUpdateDTO dto)
         {
@@ -54,10 +58,19 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id)
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        //[Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

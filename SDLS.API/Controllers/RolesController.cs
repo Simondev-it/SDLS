@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Role;
@@ -16,18 +17,36 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
+        [HttpGet("all")]
+        public async Task<ActionResult<List<RoleDTO>>> GetList(
+            [FromQuery] Guid? id,
+            [FromQuery] string? name,
+            [FromQuery] string? description,
+            [FromQuery] int? status = null)
+        {
+            var result = await _service.GetListAsync(id, name, description, status);
+            return Ok(result);
+        }
+
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<RoleDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] string? name,
             [FromQuery] string? description,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(id, name, description, page, pageSize);
+            var result = await _service.GetAllAsync(id, name, description, status, page, pageSize);
             return Ok(result);
         }
 
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<RoleDTO>> GetById(Guid id)
         {
@@ -35,6 +54,8 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] RoleCreateDTO dto)
         {
@@ -43,6 +64,8 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] RoleUpdateDTO dto)
         {
@@ -51,10 +74,21 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        //[Authorize(Roles = "Admin")]
+        //[Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

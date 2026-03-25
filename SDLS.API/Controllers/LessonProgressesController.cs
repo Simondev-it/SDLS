@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LessonProgress;
@@ -20,9 +21,20 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<LessonProgressDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? questionLessonId)
+            [FromQuery] Guid? questionLessonId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, questionLessonId);
+            var result = await _service.GetAllAsync(id, userId, questionLessonId, status);
+            return Ok(result);
+        }
+
+        //[Authorize]
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<List<LessonProgressDTO>>> GetByUserId(
+            Guid userId,
+            [FromQuery] int? status = null)
+        {
+            var result = await _service.GetByUserIdAsync(userId, status);
             return Ok(result);
         }
 
@@ -31,10 +43,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? questionLessonId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, questionLessonId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, questionLessonId, status, page, pageSize);
             return Ok(result);
         }
 
@@ -46,15 +59,16 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] LessonProgressCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] LessonProgressUpdateDTO dto)
         {
@@ -66,10 +80,19 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        //[Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

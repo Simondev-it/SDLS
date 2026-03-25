@@ -1,19 +1,26 @@
 ﻿using SDLS.Model.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Interface
 {
     public interface ILearningProgressRepository
     {
-        Task<LearningProgress?> GetByIdAsync(Guid id);
-        Task<List<LearningProgress>> GetAllAsync();
+        Task<LearningProgress?> GetByIdAsync(Guid id, string? role = null);
+        Task<List<LearningProgress>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            string? role = null);
+
         Task AddAsync(LearningProgress entity);
         Task UpdateAsync(LearningProgress entity);
-        Task DeleteAsync(Guid id); // soft delete
-        Task<List<LearningProgress>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
+
+        Task<List<LearningProgress>> GetByUserAndQuestionAsync(
+            Guid? userId,
+            Guid? questionId,
+            int? status = null,
+            string? role = null);
     }
 }

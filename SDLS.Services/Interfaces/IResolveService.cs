@@ -11,13 +11,14 @@ namespace SDLS.Services.Interfaces
             Guid? userId = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 
         Task<ResolveDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ResolveCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ResolveUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

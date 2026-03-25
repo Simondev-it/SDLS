@@ -1,30 +1,57 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
 {
     public class ForumTopicRepository : GenericRepository<ForumTopic>, IForumTopicRepository
     {
-        public async Task<List<ForumTopic>> GetAllAsync()
+        public async Task<List<ForumTopic>> GetAllAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null,
+            string? role = null)
         {
-            return await _context.ForumTopics
-                .AsNoTracking()
-                .ToListAsync();
+            var query = _context.ForumTopics.AsQueryable();
+
+            if (id.HasValue)
+                query = query.Where(x => x.Id == id.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var keyword = name.Trim();
+                query = query.Where(x => x.Name != null && EF.Functions.ILike(x.Name, $"%{keyword}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                var keyword = description.Trim();
+                query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{keyword}%"));
+            }
+
+            if (status.HasValue)
+                query = query.Where(x => x.Status == status.Value);
+
+            query = query.ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<ForumTopic?> GetByIdAsync(Guid id)
+        public async Task<ForumTopic?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.ForumTopics
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var query = _context.ForumTopics
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<ForumTopic?> GetByIdForUpdateAsync(Guid id)
         {
-            return await _context.ForumTopics
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            return await _context.ForumTopics.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(ForumTopic entity)
@@ -38,14 +65,22 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.ForumTopics.FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
             if (existing == null) return;
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
 
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.ForumTopics.FirstOrDefaultAsync(x => x.Id == id);
+            if (existing == null) return;
+
+            _context.ForumTopics.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumPost;
@@ -24,21 +25,11 @@ namespace SDLS.API.Controllers
             [FromQuery] string? name,
             [FromQuery] string? title,
             [FromQuery] string? content,
-            [FromQuery] int? status = 1,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(
-                id,
-                forumTopicId,
-                userId,
-                name,
-                title,
-                content,
-                status,
-                page,
-                pageSize);
-
+            var result = await _service.GetAllAsync(id, forumTopicId, userId, name, title, content, status, page, pageSize);
             return Ok(result);
         }
 
@@ -46,36 +37,41 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<ForumPostDTO>> GetById(Guid id)
         {
             var forumPost = await _service.GetByIdAsync(id);
-            if (forumPost == null)
-                return NotFound();
-
+            if (forumPost == null) return NotFound();
             return Ok(forumPost);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ForumPostCreateDTO dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumPostUpdateDTO dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(Guid id)
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        //[Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

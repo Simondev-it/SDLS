@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.PostReact;
@@ -21,9 +22,10 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumPostId,
-            [FromQuery] string? reactType)
+            [FromQuery] string? reactType,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, forumPostId, reactType);
+            var result = await _service.GetAllAsync(id, userId, forumPostId, reactType, status);
             return Ok(result);
         }
 
@@ -33,10 +35,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? userId,
             [FromQuery] Guid? forumPostId,
             [FromQuery] string? reactType,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, forumPostId, reactType, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, forumPostId, reactType, status, page, pageSize);
             return Ok(result);
         }
 
@@ -48,6 +51,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] PostReactCreateDTO dto)
         {
@@ -56,6 +60,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] PostReactUpdateDTO dto)
         {
@@ -65,10 +70,19 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        //[Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

@@ -10,12 +10,14 @@ namespace SDLS.Services.Interfaces
             Guid? simulationChapterId = null,
             Guid? simulationDifficultyLevelId = null,
             string? name = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 
         Task<SimulationScenarioDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SimulationScenarioCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

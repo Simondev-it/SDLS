@@ -11,13 +11,16 @@ namespace SDLS.Repositories.Interface
             Guid? userId = null,
             string? title = null,
             string? content = null,
-            int? status = 1);
+            int? status = null,
+            string? role = null);
 
-        Task<Resolve?> GetByIdAsync(Guid id);
+        Task<Resolve?> GetByIdAsync(Guid id, string? role = null);
         Task<Resolve?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Resolve entity);
         Task UpdateAsync(Resolve entity);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
+
         Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

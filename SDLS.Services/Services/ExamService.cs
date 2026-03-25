@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Exam;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System;
@@ -14,28 +16,31 @@ namespace SDLS.Services.Services
     public class ExamService : IExamService
     {
         private readonly IExamRepository _examRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public ExamService(IExamRepository examRepository, IMapper mapper)
+        public ExamService(
+            IExamRepository examRepository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _examRepository = examRepository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
         public async Task<PagedResult<ExamDTO>> GetAllAsync(
             Guid? userId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var allExams = await _examRepository.GetAllAsync();
-            var filtered = allExams.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var allExams = await _examRepository.GetAllAsync(userId, status, role);
 
-            if (userId.HasValue)
-                filtered = filtered.Where(e => e.UserId == userId.Value);
+            var total = allExams.Count();
 
-            var total = filtered.Count();
-
-            var pagedEntities = filtered
+            var pagedEntities = allExams
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -54,7 +59,8 @@ namespace SDLS.Services.Services
 
         public async Task<ExamDTO> GetByIdAsync(Guid id)
         {
-            var exam = await _examRepository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var exam = await _examRepository.GetByIdAsync(id, role);
             if (exam == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
@@ -140,9 +146,15 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
-            await _examRepository.DeleteAsync(id);
+            await _examRepository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _examRepository.DeleteHardAsync(id);
             return true;
         }
     }

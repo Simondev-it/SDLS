@@ -9,7 +9,7 @@ namespace SDLS.Services.Interfaces
             Guid? id = null,
             string? name = null,
             string? description = null,
-            int? status = 1,
+            int? status = null,
             string? vehicleName = null,
             int page = 1,
             int pageSize = 20);
@@ -17,6 +17,7 @@ namespace SDLS.Services.Interfaces
         Task<DrivingLicenseDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(DrivingLicenseCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

@@ -7,11 +7,16 @@ namespace SDLS.Repositories.Interface
 {
     public interface IExamRepository
     {
-        Task<IEnumerable<Exam>> GetAllAsync();
-        Task<Exam?> GetByIdAsync(Guid id);
+        Task<IEnumerable<Exam>> GetAllAsync(
+            Guid? userId = null,
+            int? status = null,
+            string? role = null);
+
+        Task<Exam?> GetByIdAsync(Guid id, string? role = null);
         Task<Exam?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Exam exam);
         Task UpdateAsync(Exam exam);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

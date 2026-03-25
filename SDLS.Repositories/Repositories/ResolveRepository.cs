@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 
 namespace SDLS.Repositories.Repositories
@@ -13,11 +14,10 @@ namespace SDLS.Repositories.Repositories
             Guid? userId = null,
             string? title = null,
             string? content = null,
-            int? status = 1)
+            int? status = null,
+            string? role = null)
         {
-            var query = _context.Resolves
-                .AsNoTracking()
-                .AsQueryable();
+            var query = _context.Resolves.AsQueryable();
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -43,20 +43,24 @@ namespace SDLS.Repositories.Repositories
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
 
-            return await query.ToListAsync();
+            query = query.ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<Resolve?> GetByIdAsync(Guid id)
+        public async Task<Resolve?> GetByIdAsync(Guid id, string? role = null)
         {
             return await _context.Resolves
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync();
         }
 
         public async Task<Resolve?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.Resolves
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(Resolve entity)
@@ -70,7 +74,8 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+
+        public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.Resolves
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -80,6 +85,18 @@ namespace SDLS.Repositories.Repositories
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.Resolves
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            _context.Resolves.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

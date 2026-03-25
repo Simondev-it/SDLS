@@ -8,18 +8,21 @@ namespace SDLS.Services.Interfaces
         Task<List<SimulationDifficultyLevelDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null);
+            string? description = null,
+            int? status = null);
 
         Task<PagedResult<SimulationDifficultyLevelDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 
         Task<SimulationDifficultyLevelDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SimulationDifficultyLevelCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SimulationDifficultyLevelUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

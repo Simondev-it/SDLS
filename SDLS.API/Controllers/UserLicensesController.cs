@@ -20,9 +20,10 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<List<UserLicenseDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? drivingLicenseId)
+            [FromQuery] Guid? drivingLicenseId,
+            [FromQuery] int? status = null)
         {
-            var result = await _service.GetAllAsync(id, userId, drivingLicenseId);
+            var result = await _service.GetAllAsync(id, userId, drivingLicenseId, status);
             return Ok(result);
         }
 
@@ -31,10 +32,11 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
             [FromQuery] Guid? drivingLicenseId,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetPagedAsync(id, userId, drivingLicenseId, page, pageSize);
+            var result = await _service.GetPagedAsync(id, userId, drivingLicenseId, status, page, pageSize);
             return Ok(result);
         }
 
@@ -66,10 +68,17 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

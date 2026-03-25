@@ -1,22 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using SDLS.Model.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Interface
 {
     public interface IQuestionRepository
     {
-        Task<Question> GetByIdAsync(Guid id);
-        Task<Question> GetByIdForUpdateAsync(Guid id);
-        Task<IEnumerable<Question>> GetAllAsync();
-        //Task<List<Question>> GetAllOrderedAsync();
+        Task<Question?> GetByIdAsync(Guid id, string? role = null);
+        Task<Question?> GetByIdForUpdateAsync(Guid id);
+        Task<IEnumerable<Question>> GetAllAsync(
+            int? status = null,
+            string? role = null);
+
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
-        Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
+
         Task<Question?> GetChildQuestionAsync(Guid parentId);
         Task<List<Question>> GetAllByLessonAsync(Guid lessonId);
         Task<Question?> GetByIdWithLinksAsync(Guid id);
@@ -30,6 +29,8 @@ namespace SDLS.Repositories.Interface
             Guid? topicId = null,
             Guid? questionCategoryId = null,
             List<Guid>? tagIds = null,
-            string? searchContent = null);
+            string? searchContent = null,
+            int? status = null,
+            string? role = null);
     }
 }

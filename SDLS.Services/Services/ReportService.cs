@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Report;
 using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -12,12 +14,18 @@ namespace SDLS.Services.Services
     {
         private readonly IReportRepository _repository;
         private readonly IStorageService _storageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
-        public ReportService(IReportRepository repository, IStorageService storageService, IMapper mapper)
+        public ReportService(
+            IReportRepository repository,
+            IStorageService storageService,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
             _storageService = storageService;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
@@ -38,16 +46,15 @@ namespace SDLS.Services.Services
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 20 : pageSize;
 
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
             var filtered = await _repository.GetAllAsync(
-                id, userId, reportCategoryId, simulationId, forumPostId, forumCommentId, questionId, title, content, status);
+                id, userId, reportCategoryId, simulationId, forumPostId, forumCommentId, questionId, title, content, status, role);
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
 
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedResult<ReportDTO>
             {
@@ -61,7 +68,9 @@ namespace SDLS.Services.Services
 
         public async Task<ReportDTO> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
@@ -119,9 +128,15 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
-            await _repository.DeleteAsync(id);
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
     }

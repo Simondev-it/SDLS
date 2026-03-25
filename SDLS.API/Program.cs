@@ -105,6 +105,24 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Accept payloads that contain a trailing comma to reduce client-side parsing failures.
+                    options.JsonSerializerOptions.AllowTrailingCommas = true;
+                });
+
+            // CORS: allow frontend dev server
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("LocalFrontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
             builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
             builder.Services.AddScoped<ISimulationChapterService, SimulationChapterService>();
 
@@ -153,6 +171,7 @@ namespace SDLS.API
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
 
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -242,7 +261,14 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
+<<<<<<< HEAD
             app.UseAuthentication();
+=======
+
+            // Enable CORS for requests from local frontend
+            app.UseCors("LocalFrontend");
+
+>>>>>>> 4741d5fdf77a675702d477296955ecfa7036bcec
             app.UseAuthorization();
 
             app.MapControllers();

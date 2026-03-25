@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
+using SDLS.Repositories.Helper;
 
 namespace SDLS.Repositories.Repositories
 {
@@ -14,11 +15,10 @@ namespace SDLS.Repositories.Repositories
             string? name = null,
             string? title = null,
             string? content = null,
-            int? status = 1)
+            int? status = null,
+            string? role = null)
         {
-            var query = _context.ForumPosts
-                .AsNoTracking()
-                .AsQueryable();
+            var query = _context.ForumPosts.AsQueryable();
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -50,20 +50,24 @@ namespace SDLS.Repositories.Repositories
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
 
-            return await query.ToListAsync();
+            query = query.ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<ForumPost?> GetByIdAsync(Guid id)
+        public async Task<ForumPost?> GetByIdAsync(Guid id, string? role = null)
         {
-            return await _context.ForumPosts
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var query = _context.ForumPosts
+                .Where(x => x.Id == id)
+                .ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().FirstOrDefaultAsync();
         }
 
         public async Task<ForumPost?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.ForumPosts
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(ForumPost forumPost)
@@ -77,7 +81,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteSoftAsync(Guid id)
         {
             var forumPost = await _context.ForumPosts
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -90,21 +94,34 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<PostImage>> GetPostImagesByPostIdsAsync(List<Guid> postIds)
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var forumPost = await _context.ForumPosts
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (forumPost == null)
+                return;
+
+            _context.ForumPosts.Remove(forumPost);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<PostImage>> GetPostImagesByPostIdsAsync(List<Guid> postIds, string? role = null)
         {
             if (postIds == null || postIds.Count == 0)
                 return new List<PostImage>();
 
-            return await _context.PostImages
-                .Where(x => postIds.Contains(x.ForumPostId) && x.Status == 1)
-                .AsNoTracking()
-                .ToListAsync();
+            var query = _context.PostImages.Where(x => postIds.Contains(x.ForumPostId));
+
+            query = query.ApplyRoleFilter(role);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<List<PostImage>> GetPostImagesByPostIdForUpdateAsync(Guid postId)
         {
             return await _context.PostImages
-                .Where(x => x.ForumPostId == postId && x.Status == 1)
+                .Where(x => x.ForumPostId == postId)
                 .ToListAsync();
         }
 

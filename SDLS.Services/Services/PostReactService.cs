@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.PostReact;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 
@@ -11,37 +13,49 @@ namespace SDLS.Services.Services
     {
         private readonly IPostReactRepository _repository;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public PostReactService(IPostReactRepository repository, IMapper mapper)
+        public PostReactService(
+            IPostReactRepository repository,
+            IHttpContextAccessor httpContextAccessor,
+            IMapper mapper)
         {
             _repository = repository;
+            _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
 
-        public async Task<List<PostReactDTO>> GetAllAsync(Guid? id = null, Guid? userId = null, Guid? forumPostId = null, string? reactType = null)
+        public async Task<List<PostReactDTO>> GetAllAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? forumPostId = null,
+            string? reactType = null,
+            int? status = null)
         {
-            var all = await _repository.GetAllAsync();
-            var filtered = all.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
-            if (id.HasValue)
-                filtered = filtered.Where(x => x.Id == id.Value);
-
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            if (forumPostId.HasValue)
-                filtered = filtered.Where(x => x.ForumPostId == forumPostId.Value);
+            var filtered = (await _repository.GetAllAsync(id, userId, forumPostId, status, role)).AsEnumerable();
 
             if (!string.IsNullOrWhiteSpace(reactType))
+            {
+                var keyword = reactType.Trim();
                 filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.ReactType)
-                    && x.ReactType.Contains(reactType.Trim(), StringComparison.OrdinalIgnoreCase));
+                    && x.ReactType.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+            }
 
             return _mapper.Map<List<PostReactDTO>>(filtered.ToList());
         }
 
-        public async Task<PagedResult<PostReactDTO>> GetPagedAsync(Guid? id = null, Guid? userId = null, Guid? forumPostId = null, string? reactType = null, int page = 1, int pageSize = 20)
+        public async Task<PagedResult<PostReactDTO>> GetPagedAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? forumPostId = null,
+            string? reactType = null,
+            int? status = null,
+            int page = 1,
+            int pageSize = 20)
         {
-            var items = await GetAllAsync(id, userId, forumPostId, reactType);
+            var items = await GetAllAsync(id, userId, forumPostId, reactType, status);
             var total = items.Count;
 
             return new PagedResult<PostReactDTO>
@@ -56,7 +70,8 @@ namespace SDLS.Services.Services
 
         public async Task<PostReactDTO?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
             return entity != null ? _mapper.Map<PostReactDTO>(entity) : null;
         }
 
@@ -107,9 +122,15 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
-            await _repository.DeleteAsync(id);
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
             return true;
         }
     }

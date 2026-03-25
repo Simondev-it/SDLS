@@ -12,13 +12,16 @@ namespace SDLS.Services.Interfaces
             string? name = null,
             string? title = null,
             string? content = null,
-            int? status = 1,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 
         Task<ForumPostDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ForumPostCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ForumPostUpdateDTO dto);
+
         Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

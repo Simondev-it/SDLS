@@ -8,18 +8,21 @@ namespace SDLS.Services.Interfaces
         Task<List<ReportCategoryDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null);
+            string? description = null,
+            int? status = null);
 
         Task<PagedResult<ReportCategoryDTO>> GetPagedAsync(
             Guid? id = null,
             string? name = null,
             string? description = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20);
 
         Task<ReportCategoryDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ReportCategoryCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto);
-        Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

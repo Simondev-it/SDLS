@@ -22,6 +22,7 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? simulationChapterId,
             [FromQuery] Guid? simulationDifficultyLevelId,
             [FromQuery] string? name,
+            [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
@@ -30,6 +31,7 @@ namespace SDLS.API.Controllers
                 simulationChapterId,
                 simulationDifficultyLevelId,
                 name,
+                status,
                 page,
                 pageSize);
 
@@ -61,10 +63,17 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> SoftDelete(Guid id)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteSoftAsync(id);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> HardDelete(Guid id)
+        {
+            await _service.DeleteHardAsync(id);
             return NoContent();
         }
     }

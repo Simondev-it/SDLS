@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ExamSession;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
 using System;
@@ -15,31 +17,28 @@ namespace SDLS.Services.Services
     {
         private readonly IExamSessionRepository _examSessionRepository;
         private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ExamSessionService(IExamSessionRepository examSessionRepository, IMapper mapper)
+        public ExamSessionService(IExamSessionRepository examSessionRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _examSessionRepository = examSessionRepository;
             _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<PagedResult<ExamSessionDTO>> GetAllAsync(
             Guid? examId = null,
             Guid? userId = null,
+            int? status = null,
             int page = 1,
             int pageSize = 20)
         {
-            var allSessions = await _examSessionRepository.GetAllAsync();
-            var filtered = allSessions.AsEnumerable();
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var allSessions = await _examSessionRepository.GetAllAsync(examId, userId, status, role);
 
-            if (examId.HasValue)
-                filtered = filtered.Where(x => x.ExamId == examId.Value);
+            var total = allSessions.Count();
 
-            if (userId.HasValue)
-                filtered = filtered.Where(x => x.UserId == userId.Value);
-
-            var total = filtered.Count();
-
-            var pagedEntities = filtered
+            var pagedEntities = allSessions
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -58,7 +57,9 @@ namespace SDLS.Services.Services
 
         public async Task<ExamSessionDTO> GetByIdAsync(Guid id)
         {
-            var examSession = await _examSessionRepository.GetByIdAsync(id);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var examSession = await _examSessionRepository.GetByIdAsync(id, role);
+
             if (examSession == null)
                 throw new KeyNotFoundException($"Not found with ID {id}");
 
@@ -142,9 +143,15 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteSoftAsync(Guid id)
         {
-            await _examSessionRepository.DeleteAsync(id);
+            await _examSessionRepository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _examSessionRepository.DeleteHardAsync(id);
             return true;
         }
     }
