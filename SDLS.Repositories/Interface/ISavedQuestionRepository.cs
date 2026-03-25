@@ -9,6 +9,9 @@ namespace SDLS.Repositories.Interface
         Task<List<SavedQuestion>> GetByUserAndQuestionAsync(Guid? userId, Guid? questionId);
         Task AddAsync(SavedQuestion entity);
         Task UpdateAsync(SavedQuestion entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

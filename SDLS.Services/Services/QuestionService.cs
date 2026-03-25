@@ -283,24 +283,21 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            return await DeleteSoftAsync(id);
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
                 throw new KeyNotFoundException($"Không tìm thấy câu hỏi với Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
-            // Lấy các question đang active trong cùng lesson để tìm node đứng trước
             var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-
-            // Node trước là node đang trỏ tới existing
-            var prevId = lessonQuestions
-                .FirstOrDefault(q => q.ParentId == existing.Id)
-                ?.Id;
-
-            // Node sau là node mà existing đang trỏ tới
+            var prevId = lessonQuestions.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
             var nextId = existing.ParentId;
 
-            // Nếu có node trước thì nối node trước -> node sau
             if (prevId.HasValue)
             {
                 var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
@@ -311,12 +308,17 @@ namespace SDLS.Services.Services
                 }
             }
 
-            // Soft delete
             existing.Status = 0;
             existing.UpdateAt = now;
-            existing.ParentId = null; // tách khỏi linked list sau khi xóa
+            existing.ParentId = null;
 
             await _questionRepository.UpdateAsync(existing);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _questionRepository.DeleteHardAsync(id);
             return true;
         }
 

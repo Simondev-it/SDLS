@@ -79,6 +79,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
+            await DeleteSoftAsync(id);
+        }
+
+        public async Task DeleteSoftAsync(Guid id)
+        {
             var forumPost = await _context.ForumPosts
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
 
@@ -87,6 +92,18 @@ namespace SDLS.Repositories.Repositories
 
             forumPost.Status = 0;
             forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var forumPost = await _context.ForumPosts
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (forumPost == null)
+                return;
+
+            _context.ForumPosts.Remove(forumPost);
             await _context.SaveChangesAsync();
         }
 

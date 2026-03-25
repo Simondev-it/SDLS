@@ -10,6 +10,9 @@ namespace SDLS.Services.Interfaces
         Task<CommentVoteDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(CommentVoteCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, CommentVoteUpdateDTO dto);
+
         Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

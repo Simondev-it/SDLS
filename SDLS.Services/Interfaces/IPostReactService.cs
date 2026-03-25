@@ -11,5 +11,7 @@ namespace SDLS.Services.Interfaces
         Task<bool> CreateAsync(PostReactCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, PostReactUpdateDTO dto);
         Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

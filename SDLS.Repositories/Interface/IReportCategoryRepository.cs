@@ -9,6 +9,9 @@ namespace SDLS.Repositories.Interface
         Task<ReportCategory?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ReportCategory entity);
         Task UpdateAsync(ReportCategory entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

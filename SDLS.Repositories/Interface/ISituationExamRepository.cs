@@ -14,6 +14,9 @@ namespace SDLS.Repositories.Interface
         Task<SituationExam?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SituationExam entity);
         Task UpdateAsync(SituationExam entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

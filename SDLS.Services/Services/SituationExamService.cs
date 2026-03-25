@@ -178,6 +178,18 @@ namespace SDLS.Services.Services
             return true;
         }
 
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
+            return true;
+        }
+
         private static void ValidateSimulationExamList(List<SimulationExamCreateDTO> items)
         {
             var duplicate = items

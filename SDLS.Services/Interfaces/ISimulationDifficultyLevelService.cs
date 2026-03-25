@@ -20,6 +20,9 @@ namespace SDLS.Services.Interfaces
         Task<SimulationDifficultyLevelDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SimulationDifficultyLevelCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SimulationDifficultyLevelUpdateDTO dto);
+
         Task<bool> DeleteAsync(Guid id);
+        Task<bool> DeleteSoftAsync(Guid id);
+        Task<bool> DeleteHardAsync(Guid id);
     }
 }

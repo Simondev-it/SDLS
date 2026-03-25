@@ -9,6 +9,9 @@ namespace SDLS.Repositories.Interface
         Task<SimulationDifficultyLevel?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SimulationDifficultyLevel entity);
         Task UpdateAsync(SimulationDifficultyLevel entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

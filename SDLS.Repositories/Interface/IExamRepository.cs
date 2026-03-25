@@ -12,6 +12,12 @@ namespace SDLS.Repositories.Interface
         Task<Exam?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Exam exam);
         Task UpdateAsync(Exam exam);
+
+        // Giữ hành vi cũ (soft delete)
         Task DeleteAsync(Guid id);
+
+        // Mới
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

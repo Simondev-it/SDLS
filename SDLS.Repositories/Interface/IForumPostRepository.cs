@@ -17,7 +17,10 @@ namespace SDLS.Repositories.Interface
         Task<ForumPost?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ForumPost forumPost);
         Task UpdateAsync(ForumPost forumPost);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
 
         Task<List<PostImage>> GetPostImagesByPostIdsAsync(List<Guid> postIds);
         Task<List<PostImage>> GetPostImagesByPostIdForUpdateAsync(Guid postId);

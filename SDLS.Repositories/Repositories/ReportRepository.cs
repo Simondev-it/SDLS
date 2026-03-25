@@ -104,6 +104,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
+            await DeleteSoftAsync(id);
+        }
+
+        public async Task DeleteSoftAsync(Guid id)
+        {
             var existing = await _context.Reports
                 .FirstOrDefaultAsync(x => x.Id == id
                     && x.Status.HasValue
@@ -114,6 +119,22 @@ namespace SDLS.Repositories.Repositories
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.Reports
+                .Include(x => x.Resolves)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            if (existing.Resolves.Any())
+                _context.Resolves.RemoveRange(existing.Resolves);
+
+            _context.Reports.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

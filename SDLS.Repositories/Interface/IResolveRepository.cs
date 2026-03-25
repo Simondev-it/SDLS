@@ -17,7 +17,11 @@ namespace SDLS.Repositories.Interface
         Task<Resolve?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Resolve entity);
         Task UpdateAsync(Resolve entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
+
         Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }

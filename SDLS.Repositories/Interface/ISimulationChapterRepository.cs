@@ -9,6 +9,9 @@ namespace SDLS.Repositories.Interface
         Task<SimulationChapter?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SimulationChapter entity);
         Task UpdateAsync(SimulationChapter entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

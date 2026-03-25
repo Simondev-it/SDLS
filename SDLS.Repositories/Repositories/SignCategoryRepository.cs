@@ -40,6 +40,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
+            await DeleteSoftAsync(id);
+        }
+
+        public async Task DeleteSoftAsync(Guid id)
+        {
             var existing = await _context.SignCategories
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
 
@@ -48,6 +53,18 @@ namespace SDLS.Repositories.Repositories
 
             existing.Status = 0;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.SignCategories
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            _context.SignCategories.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

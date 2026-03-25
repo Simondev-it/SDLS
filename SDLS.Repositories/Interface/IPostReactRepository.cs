@@ -9,6 +9,9 @@ namespace SDLS.Repositories.Interface
         Task<List<PostReact>> GetByUserAndForumPostAsync(Guid? userId, Guid? forumPostId);
         Task AddAsync(PostReact entity);
         Task UpdateAsync(PostReact entity);
+
         Task DeleteAsync(Guid id);
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

@@ -71,6 +71,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
+            await DeleteSoftAsync(id);
+        }
+
+        public async Task DeleteSoftAsync(Guid id)
+        {
             var existing = await _context.SituationExams
                 .Include(x => x.SimulationExams)
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
@@ -88,6 +93,42 @@ namespace SDLS.Repositories.Repositories
                 child.UpdateAt = now;
             }
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var existing = await _context.SituationExams
+                .Include(x => x.SimulationExams)
+                    .ThenInclude(se => se.SimulationSessionDetails)
+                .Include(x => x.SimulationSessions)
+                    .ThenInclude(ss => ss.SimulationSessionDetails)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return;
+
+            var detailsFromSimulationExams = existing.SimulationExams
+                .SelectMany(x => x.SimulationSessionDetails)
+                .ToList();
+
+            if (detailsFromSimulationExams.Any())
+                _context.SimulationSessionDetails.RemoveRange(detailsFromSimulationExams);
+
+            if (existing.SimulationExams.Any())
+                _context.SimulationExams.RemoveRange(existing.SimulationExams);
+
+            var detailsFromSessions = existing.SimulationSessions
+                .SelectMany(x => x.SimulationSessionDetails)
+                .ToList();
+
+            if (detailsFromSessions.Any())
+                _context.SimulationSessionDetails.RemoveRange(detailsFromSessions);
+
+            if (existing.SimulationSessions.Any())
+                _context.SimulationSessions.RemoveRange(existing.SimulationSessions);
+
+            _context.SituationExams.Remove(existing);
             await _context.SaveChangesAsync();
         }
     }

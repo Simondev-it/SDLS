@@ -1,9 +1,4 @@
 ﻿using SDLS.Model.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Interface
 {
@@ -11,6 +6,12 @@ namespace SDLS.Repositories.Interface
     {
         Task AddAsync(Answer answer);
         Task UpdateAsync(Answer answer);
+
+        // Giữ hành vi cũ (hard delete)
         Task DeleteAsync(Guid id);
+
+        // Mới
+        Task DeleteSoftAsync(Guid id);
+        Task DeleteHardAsync(Guid id);
     }
 }

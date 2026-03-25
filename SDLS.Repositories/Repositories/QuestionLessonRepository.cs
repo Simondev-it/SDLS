@@ -78,6 +78,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteAsync(Guid id)
         {
+            await DeleteSoftAsync(id);
+        }
+
+        public async Task DeleteSoftAsync(Guid id)
+        {
             var lesson = await _context.QuestionLessons
                 .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
 
@@ -86,6 +91,18 @@ namespace SDLS.Repositories.Repositories
 
             lesson.Status = 0;
             lesson.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteHardAsync(Guid id)
+        {
+            var lesson = await _context.QuestionLessons
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (lesson == null)
+                return;
+
+            _context.QuestionLessons.Remove(lesson);
             await _context.SaveChangesAsync();
         }
 
