@@ -108,7 +108,7 @@ namespace SDLS.Services.Services
                 ViewCount = 0,
                 CreateAt = now,
                 UpdateAt = now,
-                Status = 1
+                Status = -1
             };
 
             await _repository.AddAsync(forumPost);

@@ -1,4 +1,4 @@
-﻿    using AutoMapper;
+﻿using AutoMapper;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LessonProgress;
 using SDLS.Model.Models;
@@ -62,6 +62,15 @@ namespace SDLS.Services.Services
         {
             var entity = await _repository.GetByIdAsync(id);
             return entity != null ? _mapper.Map<LessonProgressDTO>(entity) : null;
+        }
+
+        public async Task<List<LessonProgressDTO>> GetByUserIdAsync(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new ArgumentException("UserId không được rỗng");
+
+            var entities = await _repository.GetByUserAndQuestionLessonAsync(userId, null);
+            return _mapper.Map<List<LessonProgressDTO>>(entities);
         }
 
         public async Task<bool> CreateAsync(LessonProgressCreateDTO dto)

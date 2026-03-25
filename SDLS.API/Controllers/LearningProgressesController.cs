@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Services.Interfaces;
 
@@ -30,6 +31,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpGet("user-question")]
         public async Task<ActionResult<List<LearningProgressDTO>>> GetByUserAndQuestion(
             [FromQuery] Guid? userId,
@@ -46,6 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(items);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] LearningProgressCreateDTO dto)
         {
@@ -54,6 +57,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] LearningProgressUpdateDTO dto)
         {
@@ -65,6 +69,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -72,6 +77,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

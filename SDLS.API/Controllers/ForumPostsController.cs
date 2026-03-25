@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumPost;
@@ -40,6 +41,7 @@ namespace SDLS.API.Controllers
             return Ok(forumPost);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ForumPostCreateDTO dto)
         {
@@ -48,6 +50,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumPostUpdateDTO dto)
         {
@@ -56,6 +59,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -63,6 +67,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

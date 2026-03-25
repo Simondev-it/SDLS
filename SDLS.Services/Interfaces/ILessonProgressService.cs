@@ -18,8 +18,10 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<LessonProgressDTO?> GetByIdAsync(Guid id);
+        Task<List<LessonProgressDTO>> GetByUserIdAsync(Guid userId);
         Task<bool> CreateAsync(LessonProgressCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, LessonProgressUpdateDTO dto);
+
         Task<bool> DeleteSoftAsync(Guid id);
         Task<bool> DeleteHardAsync(Guid id);
     }

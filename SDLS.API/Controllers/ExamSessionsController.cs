@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ExamSession;
@@ -16,6 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ExamSessionDTO>>> GetAll(
             [FromQuery] Guid? examId,
@@ -27,6 +29,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ExamSessionDTO>> GetById(Guid id)
         {
@@ -35,6 +38,7 @@ namespace SDLS.API.Controllers
             return Ok(examSession);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ExamSessionCreateDTO dto)
         {
@@ -43,6 +47,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ExamSessionUpdateDTO dto)
         {
@@ -52,6 +57,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -59,6 +65,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

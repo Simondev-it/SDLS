@@ -18,16 +18,11 @@ namespace SDLS.Services.Services
             _mapper = mapper;
         }
 
-        public async Task<PagedResult<RoleDTO>> GetAllAsync(
+        public async Task<List<RoleDTO>> GetListAsync(
             Guid? id = null,
             string? name = null,
-            string? description = null,
-            int page = 1,
-            int pageSize = 20)
+            string? description = null)
         {
-            page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 20 : pageSize;
-
             var all = await _repository.GetAllAsync();
             var filtered = all.AsEnumerable().Where(x => x.Status == 1);
 
@@ -49,16 +44,25 @@ namespace SDLS.Services.Services
             }
 
             var ordered = filtered.OrderBy(x => x.Name).ThenBy(x => x.Id).ToList();
-            var total = ordered.Count;
+            return _mapper.Map<List<RoleDTO>>(ordered);
+        }
 
-            var items = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+        public async Task<PagedResult<RoleDTO>> GetAllAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int page = 1,
+            int pageSize = 20)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 20 : pageSize;
+
+            var items = await GetListAsync(id, name, description);
+            var total = items.Count;
 
             return new PagedResult<RoleDTO>
             {
-                Items = _mapper.Map<List<RoleDTO>>(items),
+                Items = items.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,

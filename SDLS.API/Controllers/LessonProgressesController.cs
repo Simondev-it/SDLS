@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LessonProgress;
@@ -26,6 +27,14 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        //[Authorize]
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<List<LessonProgressDTO>>> GetByUserId(Guid userId)
+        {
+            var result = await _service.GetByUserIdAsync(userId);
+            return Ok(result);
+        }
+
         [HttpGet]
         public async Task<ActionResult<PagedResult<LessonProgressDTO>>> GetPaged(
             [FromQuery] Guid? id,
@@ -46,6 +55,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] LessonProgressCreateDTO dto)
         {
@@ -54,6 +64,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] LessonProgressUpdateDTO dto)
         {
@@ -65,6 +76,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -72,6 +84,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

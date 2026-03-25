@@ -5,6 +5,11 @@ namespace SDLS.Services.Interfaces
 {
     public interface IRoleService
     {
+        Task<List<RoleDTO>> GetListAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null);
+
         Task<PagedResult<RoleDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,
