@@ -20,8 +20,6 @@ namespace SDLS.Repositories.Interface
         Task<Report?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Report entity);
         Task UpdateAsync(Report entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

@@ -6,11 +6,6 @@ namespace SDLS.Repositories.Interface
     {
         Task AddAsync(Answer answer);
         Task UpdateAsync(Answer answer);
-
-        // Giữ hành vi cũ (hard delete)
-        Task DeleteAsync(Guid id);
-
-        // Mới
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

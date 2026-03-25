@@ -10,8 +10,6 @@ namespace SDLS.Repositories.Interface
         Task<ForumComment?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ForumComment entity);
         Task UpdateAsync(ForumComment entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
 

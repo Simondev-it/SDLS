@@ -9,8 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<SignCategory?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SignCategory entity);
         Task UpdateAsync(SignCategory entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

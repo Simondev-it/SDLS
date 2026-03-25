@@ -10,8 +10,6 @@ namespace SDLS.Services.Interfaces
         Task<SavedQuestionDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SavedQuestionCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SavedQuestionUpdateDTO dto);
-
-        Task<bool> DeleteAsync(Guid id);
         Task<bool> DeleteSoftAsync(Guid id);
         Task<bool> DeleteHardAsync(Guid id);
     }

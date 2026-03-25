@@ -55,12 +55,6 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        // Giữ hành vi cũ: soft delete
-        public async Task DeleteAsync(Guid id)
-        {
-            await DeleteSoftAsync(id);
-        }
-
         public async Task DeleteSoftAsync(Guid id)
         {
             var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Id == id && e.Status == 1);

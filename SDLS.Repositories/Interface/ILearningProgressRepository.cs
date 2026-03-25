@@ -8,8 +8,6 @@ namespace SDLS.Repositories.Interface
         Task<List<LearningProgress>> GetAllAsync();
         Task AddAsync(LearningProgress entity);
         Task UpdateAsync(LearningProgress entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
 

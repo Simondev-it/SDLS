@@ -20,8 +20,6 @@ namespace SDLS.Services.Interfaces
         Task<SimulationCategoryDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(SimulationCategoryCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, SimulationCategoryUpdateDTO dto);
-
-        Task<bool> DeleteAsync(Guid id);
         Task<bool> DeleteSoftAsync(Guid id);
         Task<bool> DeleteHardAsync(Guid id);
     }

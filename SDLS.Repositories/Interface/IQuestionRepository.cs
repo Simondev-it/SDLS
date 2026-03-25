@@ -10,8 +10,6 @@ namespace SDLS.Repositories.Interface
         Task<IEnumerable<Question>> GetAllAsync();
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
 

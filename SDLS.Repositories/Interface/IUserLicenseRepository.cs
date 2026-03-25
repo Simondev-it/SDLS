@@ -10,8 +10,6 @@ namespace SDLS.Repositories.Interface
         Task<List<UserLicense>> GetByUserAndDrivingLicenseAsync(Guid? userId, Guid? drivingLicenseId);
         Task AddAsync(UserLicense entity);
         Task UpdateAsync(UserLicense entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

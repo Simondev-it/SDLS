@@ -9,8 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<Role?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Role entity);
         Task UpdateAsync(Role entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

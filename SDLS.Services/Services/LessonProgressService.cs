@@ -105,12 +105,6 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            await _repository.DeleteAsync(id);
-            return true;
-        }
-
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
             await _repository.DeleteSoftAsync(id);

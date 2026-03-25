@@ -17,11 +17,7 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        // Giữ hành vi cũ: hard delete
-        public async Task DeleteAsync(Guid id)
-        {
-            await DeleteHardAsync(id);
-        }
+        
 
         public async Task DeleteSoftAsync(Guid id)
         {

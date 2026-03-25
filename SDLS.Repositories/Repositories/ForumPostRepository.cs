@@ -77,11 +77,6 @@ namespace SDLS.Repositories.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
-        {
-            await DeleteSoftAsync(id);
-        }
-
         public async Task DeleteSoftAsync(Guid id)
         {
             var forumPost = await _context.ForumPosts

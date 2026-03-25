@@ -76,11 +76,6 @@ namespace SDLS.Repositories.Repositories
             await SaveAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
-        {
-            await DeleteSoftAsync(id);
-        }
-
         public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.Questions.FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);

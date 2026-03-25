@@ -8,8 +8,6 @@ namespace SDLS.Services.Interfaces
         Task<LearningProgressDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(LearningProgressCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, LearningProgressUpdateDTO dto);
-
-        Task<bool> DeleteAsync(Guid id);
         Task<bool> DeleteSoftAsync(Guid id);
         Task<bool> DeleteHardAsync(Guid id);
 

@@ -9,8 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<SimulationScenario?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(SimulationScenario entity);
         Task UpdateAsync(SimulationScenario entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

@@ -12,11 +12,6 @@ namespace SDLS.Repositories.Interface
         Task<ExamSession?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(ExamSession examSession);
         Task UpdateAsync(ExamSession examSession);
-
-        // Giữ hành vi cũ (soft delete)
-        Task DeleteAsync(Guid id);
-
-        // Mới
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

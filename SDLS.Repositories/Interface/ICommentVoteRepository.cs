@@ -9,11 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<List<CommentVote>> GetByUserAndForumCommentAsync(Guid? userId, Guid? forumCommentId);
         Task AddAsync(CommentVote entity);
         Task UpdateAsync(CommentVote entity);
-
-        // Giữ hành vi cũ (hard delete)
-        Task DeleteAsync(Guid id);
-
-        // Mới
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

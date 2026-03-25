@@ -15,8 +15,6 @@ namespace SDLS.Repositories.Interface
         Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(QuestionLesson lesson);
         Task UpdateAsync(QuestionLesson lesson);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
 

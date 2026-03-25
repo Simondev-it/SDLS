@@ -22,8 +22,6 @@ namespace SDLS.Services.Interfaces
         Task<ReportDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ReportCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ReportUpdateDTO dto);
-
-        Task<bool> DeleteAsync(Guid id);
         Task<bool> DeleteSoftAsync(Guid id);
         Task<bool> DeleteHardAsync(Guid id);
     }

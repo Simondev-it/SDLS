@@ -9,8 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<QuestionCategory?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(QuestionCategory entity);
         Task UpdateAsync(QuestionCategory entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }

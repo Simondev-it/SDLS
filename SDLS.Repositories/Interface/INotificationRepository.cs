@@ -9,8 +9,6 @@ namespace SDLS.Repositories.Interface
         Task<Notification?> GetByIdForUpdateAsync(Guid id);
         Task AddAsync(Notification entity);
         Task UpdateAsync(Notification entity);
-
-        Task DeleteAsync(Guid id);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
     }
