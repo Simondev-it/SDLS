@@ -72,7 +72,6 @@ namespace SDLS.Repositories.Repositories
         public async Task<QuestionLesson?> GetByIdForUpdateAsync(Guid id)
         {
             return await _context.QuestionLessons
-                .Include(x => x.QuestionChapter)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
