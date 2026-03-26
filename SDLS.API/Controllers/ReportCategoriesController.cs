@@ -48,7 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ReportCategoryCreateDTO dto)
@@ -58,7 +58,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ReportCategoryUpdateDTO dto)
@@ -68,7 +68,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
@@ -77,7 +77,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)

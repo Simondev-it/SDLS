@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -33,6 +34,30 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entities = await _repository.GetAllAsync(id, userId, questionId, status, role);
             return _mapper.Map<List<LearningProgressDTO>>(entities);
+        }
+
+        public async Task<PagedResult<LearningProgressDTO>> GetPagedAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            int page = 1,
+            int pageSize = 20)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 20 : pageSize;
+
+            var items = (await GetAllAsync(id, userId, questionId, status)).ToList();
+            var total = items.Count;
+
+            return new PagedResult<LearningProgressDTO>
+            {
+                Items = items.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
         }
 
         public async Task<LearningProgressDTO?> GetByIdAsync(Guid id)

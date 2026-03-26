@@ -48,7 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] QuestionLessonCreateDTO dto)
@@ -58,7 +58,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] QuestionLessonUpdateDTO dto)
@@ -68,7 +68,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
@@ -77,7 +77,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)

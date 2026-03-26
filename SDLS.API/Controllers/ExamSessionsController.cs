@@ -17,7 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ExamSessionDTO>>> GetAll(
             [FromQuery] Guid? examId,
@@ -30,7 +30,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ExamSessionDTO>> GetById(Guid id)
         {
@@ -39,7 +39,7 @@ namespace SDLS.API.Controllers
             return Ok(examSession);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ExamSessionCreateDTO dto)
         {
@@ -48,7 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ExamSessionUpdateDTO dto)
         {
@@ -58,7 +58,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -66,7 +66,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {
