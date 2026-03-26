@@ -11,8 +11,5 @@ namespace SDLS.Model.DTOs.LearningProgress
     {
         [NotEmptyGuid]
         public Guid QuestionId { get; set; }
-
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
     }
 }

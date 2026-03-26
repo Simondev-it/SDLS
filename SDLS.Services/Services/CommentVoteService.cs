@@ -64,9 +64,65 @@ namespace SDLS.Services.Services
             return entity != null ? _mapper.Map<CommentVoteDTO>(entity) : null;
         }
 
-        public async Task<bool> CreateAsync(CommentVoteCreateDTO dto) { /* giữ nguyên */ throw new NotImplementedException(); }
-        public async Task<bool> UpdateAsync(Guid id, CommentVoteUpdateDTO dto) { /* giữ nguyên */ throw new NotImplementedException(); }
-        public async Task<bool> DeleteSoftAsync(Guid id) { await _repository.DeleteSoftAsync(id); return true; }
-        public async Task<bool> DeleteHardAsync(Guid id) { await _repository.DeleteHardAsync(id); return true; }
+        public async Task<bool> CreateAsync(CommentVoteCreateDTO dto)
+        {
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            if (dto.ForumCommentId == Guid.Empty)
+                throw new ArgumentException("ForumCommentId không được rỗng");
+
+            var existing = await _repository.GetByUserAndForumCommentAsync(currentUserId, dto.ForumCommentId);
+            if (existing != null && existing.Any())
+                throw new InvalidOperationException("CommentVote cho User và ForumComment này đã tồn tại.");
+
+            var entity = new CommentVote
+            {
+                Id = Guid.NewGuid(),
+                UserId = currentUserId,
+                ForumCommentId = dto.ForumCommentId,
+                CreateAt = DateTime.UtcNow.ToLocalTime(),
+                UpdateAt = DateTime.UtcNow.ToLocalTime(),
+                Status = 1
+            };
+
+            await _repository.AddAsync(entity);
+            return true;
+        }
+
+        public async Task<bool> UpdateAsync(Guid id, CommentVoteUpdateDTO dto)
+        {
+            var existing = await _repository.GetByIdAsync(id, null);
+            if (existing == null) return false;
+
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var isChangingKeys = existing.UserId != currentUserId || existing.ForumCommentId != dto.ForumCommentId;
+            if (isChangingKeys)
+            {
+                var conflict = await _repository.GetByUserAndForumCommentAsync(currentUserId, dto.ForumCommentId);
+                if (conflict != null && conflict.Any(x => x.Id != id))
+                    throw new InvalidOperationException("Cặp UserId và ForumCommentId mới đã tồn tại ở record khác.");
+            }
+
+            existing.UserId = currentUserId;
+            existing.ForumCommentId = dto.ForumCommentId;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.Status = dto.Status ?? existing.Status;
+
+            await _repository.UpdateAsync(existing);
+            return true;
+        }
+
+        public async Task<bool> DeleteSoftAsync(Guid id)
+        {
+            await _repository.DeleteSoftAsync(id);
+            return true;
+        }
+
+        public async Task<bool> DeleteHardAsync(Guid id)
+        {
+            await _repository.DeleteHardAsync(id);
+            return true;
+        }
     }
 }

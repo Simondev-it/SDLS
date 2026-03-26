@@ -14,9 +14,6 @@ namespace SDLS.Model.DTOs.Report
         [NotEmptyGuid]
         public Guid ReportCategoryId { get; set; }
 
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
-
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Title { get; set; } = null!;

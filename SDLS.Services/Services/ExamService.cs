@@ -72,10 +72,12 @@ namespace SDLS.Services.Services
             if (dto.ExamQuestions == null || !dto.ExamQuestions.Any())
                 throw new ArgumentException("Exam must have at least 1 exam question");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             var newExam = _mapper.Map<Exam>(dto);
             newExam.Id = Guid.NewGuid();
+            newExam.UserId = currentUserId;
             newExam.CreateAt = now;
             newExam.UpdateAt = now;
             newExam.Status = 1;
@@ -98,9 +100,10 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw new KeyNotFoundException("Không tìm thấy exam");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Title = dto.Title;
             existing.Description = dto.Description;
             existing.Duration = dto.Duration;

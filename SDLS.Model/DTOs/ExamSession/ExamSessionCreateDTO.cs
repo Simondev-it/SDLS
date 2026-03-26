@@ -9,9 +9,6 @@ namespace SDLS.Model.DTOs.ExamSession
         [NotEmptyGuid]
         public Guid ExamId { get; set; }
 
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
-
         [Range(0, 100, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Score { get; set; }
 

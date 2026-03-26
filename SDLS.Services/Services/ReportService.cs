@@ -82,10 +82,12 @@ namespace SDLS.Services.Services
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                 throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             var entity = _mapper.Map<Report>(dto);
             entity.Id = Guid.NewGuid();
+            entity.UserId = currentUserId;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = -1;
@@ -108,12 +110,14 @@ namespace SDLS.Services.Services
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                 throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
             existing.SimulationId = dto.SimulationId;
             existing.ForumPostId = dto.ForumPostId;
             existing.ForumCommentId = dto.ForumCommentId;
             existing.QuestionId = dto.QuestionId;
             existing.ReportCategoryId = dto.ReportCategoryId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Title = dto.Title;
             existing.Content = dto.Content;
             existing.Status = dto.Status ?? existing.Status ?? 1;

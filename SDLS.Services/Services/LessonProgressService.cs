@@ -76,15 +76,18 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(LessonProgressCreateDTO dto)
         {
-            if (dto.UserId == Guid.Empty || dto.QuestionLessonId == Guid.Empty)
-                throw new ArgumentException("UserId và QuestionLessonId không được rỗng");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
-            var existing = await _repository.GetByUserAndQuestionLessonAsync(dto.UserId, dto.QuestionLessonId);
+            if (dto.QuestionLessonId == Guid.Empty)
+                throw new ArgumentException("QuestionLessonId không được rỗng");
+
+            var existing = await _repository.GetByUserAndQuestionLessonAsync(currentUserId, dto.QuestionLessonId);
             if (existing != null && existing.Any())
                 throw new InvalidOperationException("LessonProgress cho UserId và QuestionLessonId này đã tồn tại.");
 
             var entity = _mapper.Map<LessonProgress>(dto);
             entity.Id = Guid.NewGuid();
+            entity.UserId = currentUserId;
             entity.CreateAt = DateTime.UtcNow.ToLocalTime();
             entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
             entity.Status = 1;
@@ -98,15 +101,17 @@ namespace SDLS.Services.Services
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var isChangingKeys = existing.UserId != dto.UserId || existing.QuestionLessonId != dto.QuestionLessonId;
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var isChangingKeys = existing.UserId != currentUserId || existing.QuestionLessonId != dto.QuestionLessonId;
             if (isChangingKeys)
             {
-                var conflict = await _repository.GetByUserAndQuestionLessonAsync(dto.UserId, dto.QuestionLessonId);
+                var conflict = await _repository.GetByUserAndQuestionLessonAsync(currentUserId, dto.QuestionLessonId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
                     throw new InvalidOperationException("Cặp UserId và QuestionLessonId mới đã tồn tại ở record khác.");
             }
 
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.QuestionLessonId = dto.QuestionLessonId;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
             existing.Status = dto.Status ?? existing.Status;

@@ -26,5 +26,20 @@ namespace SDLS.Repositories.Helper
             return accessor.HttpContext?.User?
                 .FindFirst(ClaimTypes.Role)?.Value;
         }
+
+        public static Guid? GetCurrentUserId(IHttpContextAccessor accessor)
+        {
+            var rawUserId = GetUserId(accessor);
+            return Guid.TryParse(rawUserId, out var userId) ? userId : null;
+        }
+
+        public static Guid GetRequiredCurrentUserId(IHttpContextAccessor accessor)
+        {
+            var currentUserId = GetCurrentUserId(accessor);
+            if (!currentUserId.HasValue || currentUserId.Value == Guid.Empty)
+                throw new UnauthorizedAccessException("Không xác định được UserId từ JWT.");
+
+            return currentUserId.Value;
+        }
     }
 }
