@@ -87,13 +87,14 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(ForumPostCreateDTO dto)
         {
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             var forumPost = new ForumPostModel
             {
                 Id = Guid.NewGuid(),
                 ForumTopicId = dto.ForumTopicId,
-                UserId = dto.UserId,
+                UserId = currentUserId,
                 Name = dto.Name,
                 Title = dto.Title,
                 Content = dto.Content,
@@ -116,6 +117,7 @@ namespace SDLS.Services.Services
             if (forumPost == null)
                 throw new KeyNotFoundException("Khong tim thay ForumPost");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
             var changed = false;
 
@@ -131,16 +133,10 @@ namespace SDLS.Services.Services
                 }
             }
 
-            if (dto.UserId.HasValue)
+            if (forumPost.UserId != currentUserId)
             {
-                if (dto.UserId.Value == Guid.Empty)
-                    throw new ArgumentException("UserId khong hop le.");
-
-                if (forumPost.UserId != dto.UserId.Value)
-                {
-                    forumPost.UserId = dto.UserId.Value;
-                    changed = true;
-                }
+                forumPost.UserId = currentUserId;
+                changed = true;
             }
 
             if (dto.Name != null && !string.Equals(forumPost.Name, dto.Name, StringComparison.Ordinal))

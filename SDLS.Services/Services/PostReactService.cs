@@ -77,17 +77,19 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(PostReactCreateDTO dto)
         {
-            if (dto.UserId == Guid.Empty || dto.ForumPostId == Guid.Empty)
-                throw new ArgumentException("UserId và ForumPostId không được rỗng");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
-            var existing = await _repository.GetByUserAndForumPostAsync(dto.UserId, dto.ForumPostId);
+            if (dto.ForumPostId == Guid.Empty)
+                throw new ArgumentException("ForumPostId không được rỗng");
+
+            var existing = await _repository.GetByUserAndForumPostAsync(currentUserId, dto.ForumPostId);
             if (existing != null && existing.Any())
                 throw new InvalidOperationException("PostReact cho UserId và ForumPostId này đã tồn tại.");
 
             var entity = new PostReact
             {
                 Id = Guid.NewGuid(),
-                UserId = dto.UserId,
+                UserId = currentUserId,
                 ForumPostId = dto.ForumPostId,
                 ReactType = dto.ReactType,
                 CreateAt = DateTime.UtcNow.ToLocalTime(),
@@ -104,15 +106,17 @@ namespace SDLS.Services.Services
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var isChangingKeys = existing.UserId != dto.UserId || existing.ForumPostId != dto.ForumPostId;
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var isChangingKeys = existing.UserId != currentUserId || existing.ForumPostId != dto.ForumPostId;
             if (isChangingKeys)
             {
-                var conflict = await _repository.GetByUserAndForumPostAsync(dto.UserId, dto.ForumPostId);
+                var conflict = await _repository.GetByUserAndForumPostAsync(currentUserId, dto.ForumPostId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
                     throw new InvalidOperationException("Cặp UserId và ForumPostId mới đã tồn tại ở record khác.");
             }
 
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.ForumPostId = dto.ForumPostId;
             existing.ReactType = dto.ReactType;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();

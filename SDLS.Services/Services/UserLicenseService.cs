@@ -66,15 +66,18 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(UserLicenseCreateDTO dto)
         {
-            if (dto.UserId == Guid.Empty || dto.DrivingLicenseId == Guid.Empty)
-                throw new ArgumentException("UserId và DrivingLicenseId không được rỗng");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
-            var existing = await _repository.GetByUserAndDrivingLicenseAsync(dto.UserId, dto.DrivingLicenseId);
+            if (dto.DrivingLicenseId == Guid.Empty)
+                throw new ArgumentException("DrivingLicenseId không được rỗng");
+
+            var existing = await _repository.GetByUserAndDrivingLicenseAsync(currentUserId, dto.DrivingLicenseId);
             if (existing != null && existing.Any())
                 throw new InvalidOperationException("UserLicense cho UserId và DrivingLicenseId này đã tồn tại.");
 
             var entity = _mapper.Map<UserLicense>(dto);
             entity.Id = Guid.NewGuid();
+            entity.UserId = currentUserId;
             entity.CreateAt = DateTime.UtcNow.ToLocalTime();
             entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
             entity.Status = 1;
@@ -88,15 +91,17 @@ namespace SDLS.Services.Services
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null) return false;
 
-            var isChangingKeys = existing.UserId != dto.UserId || existing.DrivingLicenseId != dto.DrivingLicenseId;
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var isChangingKeys = existing.UserId != currentUserId || existing.DrivingLicenseId != dto.DrivingLicenseId;
             if (isChangingKeys)
             {
-                var conflict = await _repository.GetByUserAndDrivingLicenseAsync(dto.UserId, dto.DrivingLicenseId);
+                var conflict = await _repository.GetByUserAndDrivingLicenseAsync(currentUserId, dto.DrivingLicenseId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
                     throw new InvalidOperationException("Cặp UserId và DrivingLicenseId mới đã tồn tại ở record khác.");
             }
 
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.DrivingLicenseId = dto.DrivingLicenseId;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
             existing.Status = dto.Status ?? existing.Status;

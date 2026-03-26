@@ -75,8 +75,10 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(ResolveCreateDTO dto)
         {
-            if (dto.ReportId == Guid.Empty || dto.UserId == Guid.Empty)
-                throw new ArgumentException("ReportId và UserId không được rỗng.");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            if (dto.ReportId == Guid.Empty)
+                throw new ArgumentException("ReportId không được rỗng.");
 
             await _executionStrategyRepository.ExecuteAsync(async () =>
             {
@@ -93,7 +95,7 @@ namespace SDLS.Services.Services
                     {
                         Id = Guid.NewGuid(),
                         ReportId = dto.ReportId,
-                        UserId = dto.UserId,
+                        UserId = currentUserId,
                         Title = dto.Title,
                         Content = dto.Content,
                         CreateAt = now,
@@ -141,8 +143,10 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw new KeyNotFoundException("Không tìm thấy Resolve");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
             existing.ReportId = dto.ReportId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Title = dto.Title;
             existing.Content = dto.Content;
             existing.Status = dto.Status ?? existing.Status ?? 1;

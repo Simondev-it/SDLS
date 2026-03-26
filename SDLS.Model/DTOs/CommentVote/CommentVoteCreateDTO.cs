@@ -6,8 +6,5 @@ namespace SDLS.Model.DTOs.CommentVote
     {
         [NotEmptyGuid]
         public Guid ForumCommentId { get; set; }
-
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
     }
 }
