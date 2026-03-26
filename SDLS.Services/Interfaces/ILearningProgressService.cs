@@ -1,4 +1,5 @@
-﻿using SDLS.Model.DTOs.LearningProgress;
+﻿using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.LearningProgress;
 
 namespace SDLS.Services.Interfaces
 {
@@ -9,6 +10,14 @@ namespace SDLS.Services.Interfaces
             Guid? userId = null,
             Guid? questionId = null,
             int? status = null);
+
+        Task<PagedResult<LearningProgressDTO>> GetPagedAsync(
+            Guid? id = null,
+            Guid? userId = null,
+            Guid? questionId = null,
+            int? status = null,
+            int page = 1,
+            int pageSize = 20);
 
         Task<LearningProgressDTO?> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(LearningProgressCreateDTO dto);

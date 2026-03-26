@@ -225,7 +225,7 @@ namespace SDLS.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                // 🔥 cấu hình Bearer Token
+                //cấu hình Bearer Token
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Description = "Nhập token theo dạng: {token}",
@@ -261,14 +261,8 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
-<<<<<<< HEAD
             app.UseAuthentication();
-=======
-
-            // Enable CORS for requests from local frontend
             app.UseCors("LocalFrontend");
-
->>>>>>> 4741d5fdf77a675702d477296955ecfa7036bcec
             app.UseAuthorization();
 
             app.MapControllers();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
@@ -41,6 +42,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Create([FromForm] TrafficSignCreateDTO dto)
@@ -50,6 +52,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromForm] TrafficSignUpdateDTO dto)
@@ -59,6 +62,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -66,6 +70,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

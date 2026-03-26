@@ -17,7 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<NotificationDTO>>> GetAll(
             [FromQuery] Guid? userId,
@@ -32,7 +32,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<NotificationDTO>> GetById(Guid id)
         {
@@ -41,7 +41,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Create([FromForm] NotificationCreateDTO dto)
@@ -51,7 +51,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromForm] NotificationUpdateDTO dto)
@@ -62,7 +62,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -70,7 +70,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LearningProgress;
 using SDLS.Services.Interfaces;
 
@@ -16,7 +17,8 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
-        [HttpGet]
+        [Authorize]
+        [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<LearningProgressDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
@@ -27,6 +29,21 @@ namespace SDLS.API.Controllers
             return Ok(items);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<ActionResult<PagedResult<LearningProgressDTO>>> GetPaged(
+            [FromQuery] Guid? id,
+            [FromQuery] Guid? userId,
+            [FromQuery] Guid? questionId,
+            [FromQuery] int? status = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var items = await _service.GetPagedAsync(id, userId, questionId, status, page, pageSize);
+            return Ok(items);
+        }
+
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<LearningProgressDTO>> GetById(Guid id)
         {
@@ -35,7 +52,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("user-question")]
         public async Task<ActionResult<List<LearningProgressDTO>>> GetByUserAndQuestion(
             [FromQuery] Guid? userId,
@@ -53,7 +70,7 @@ namespace SDLS.API.Controllers
             return Ok(items);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] LearningProgressCreateDTO dto)
         {
@@ -62,7 +79,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] LearningProgressUpdateDTO dto)
         {
@@ -74,7 +91,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -82,7 +99,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

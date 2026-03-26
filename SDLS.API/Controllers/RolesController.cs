@@ -17,7 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpGet("all")]
         public async Task<ActionResult<List<RoleDTO>>> GetList(
@@ -30,7 +30,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<RoleDTO>>> GetAll(
@@ -45,7 +45,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<RoleDTO>> GetById(Guid id)
@@ -54,7 +54,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] RoleCreateDTO dto)
@@ -64,7 +64,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] RoleUpdateDTO dto)
@@ -74,7 +74,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
@@ -83,7 +83,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
