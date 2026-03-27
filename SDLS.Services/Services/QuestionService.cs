@@ -4,7 +4,6 @@ using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
-using SDLS.Model.Enumerations;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
@@ -19,18 +18,15 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly IStorageService _storageService;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
-            IStorageService storageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
-            _storageService = storageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -113,6 +109,7 @@ namespace SDLS.Services.Services
             newQuestion.CreateAt = now;
             newQuestion.UpdateAt = now;
             newQuestion.Status = 1;
+            newQuestion.Image = dto.Image;
 
             foreach (var ans in newQuestion.Answers)
             {
@@ -148,12 +145,6 @@ namespace SDLS.Services.Services
                 prevTracked.UpdateAt = now;
             }
 
-            // trong CreateAsync, sau khi newQuestion.Id = Guid.NewGuid();
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                newQuestion.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, newQuestion.Id);
-            }
-
             await _questionRepository.AddAsync(newQuestion);
             return true;
         }
@@ -170,6 +161,7 @@ namespace SDLS.Services.Services
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
             existing.Content = dto.Content;
+            existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
             existing.Type = dto.Type;
             existing.UpdateAt = now;
@@ -281,12 +273,6 @@ namespace SDLS.Services.Services
                         newPrevTracked.UpdateAt = now;
                     }
                 }
-            }
-
-            // nếu có upload ảnh mới thì ghi đè ảnh cũ
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.QuestionImage, id);
             }
 
             await _questionRepository.UpdateAsync(existing);

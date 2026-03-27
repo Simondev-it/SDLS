@@ -44,10 +44,8 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize(Roles = "Instructor")]
-        //[Authorize]
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<QuestionDTO>> Create([FromForm] QuestionCreateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Create([FromBody] QuestionCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -57,8 +55,7 @@ namespace SDLS.API.Controllers
         [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromForm] QuestionUpdateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);

@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
-using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -13,18 +12,15 @@ namespace SDLS.Services.Services
     public class TrafficSignService : ITrafficSignService
     {
         private readonly ITrafficSignRepository _repository;
-        private readonly IStorageService _storageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public TrafficSignService(
             ITrafficSignRepository repository,
-            IStorageService storageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _storageService = storageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -79,11 +75,7 @@ namespace SDLS.Services.Services
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.TrafficSign, entity.Id);
-            }
+            entity.Image = dto.Image;
 
             await _repository.AddAsync(entity);
             return true;
@@ -100,13 +92,9 @@ namespace SDLS.Services.Services
             existing.Code = dto.Code;
             existing.Description = dto.Description;
             existing.VectorData = dto.VectorData;
+            existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.TrafficSign, id);
-            }
 
             await _repository.UpdateAsync(existing);
             return true;
