@@ -9,8 +9,8 @@ public class MediaImageService : IMediaImageService
 {
     private readonly IStorageService _storageService;
 
-    private const long MaxFileSizeBytes = 5 * 1024 * 1024;   // 5MB
-    private const long MaxTotalSizeBytes = 50 * 1024 * 1024; // 50MB
+    private const long MaxFileSizeBytes = 3 * 1024 * 1024;   // 3MB
+    private const long MaxTotalSizeBytes = 10 * 1024 * 1024; // 10MB
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -120,11 +120,11 @@ public class MediaImageService : IMediaImageService
                 throw new ArgumentException($"File ở vị trí {i + 1} không hợp lệ.");
 
             if (file.Length > MaxFileSizeBytes)
-                throw new ArgumentException($"Dung lượng file '{file.FileName}' vượt quá 5MB.");
+                throw new ArgumentException($"Dung lượng file '{file.FileName}' vượt quá 3MB.");
 
             totalSize += file.Length;
             if (totalSize > MaxTotalSizeBytes)
-                throw new ArgumentException("Tổng dung lượng file vượt quá 50MB.");
+                throw new ArgumentException("Tổng dung lượng file vượt quá 10MB.");
 
             var ext = Path.GetExtension(file.FileName);
             if (string.IsNullOrWhiteSpace(ext) || !AllowedExtensions.Contains(ext))
