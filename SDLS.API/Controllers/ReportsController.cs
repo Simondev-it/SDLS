@@ -52,8 +52,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Create([FromForm] ReportCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] ReportCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -62,8 +61,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromForm] ReportUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ReportUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using SDLS.Model.Validations;
+﻿using SDLS.Model.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.TrafficSign
@@ -23,6 +22,6 @@ namespace SDLS.Model.DTOs.TrafficSign
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? VectorData { get; set; }
 
-        public IFormFile? ImageFile { get; set; }
+        public string? Image { get; set; }
     }
 }

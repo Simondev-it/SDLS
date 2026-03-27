@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Notification
 {
@@ -13,7 +12,7 @@ namespace SDLS.Model.DTOs.Notification
         [StringLength(255, ErrorMessage = "Vượt qua độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
-        public IFormFile? ImageFile { get; set; }
+        public string? Image { get; set; }
 
         public int Status { get; set; } = 1;
 

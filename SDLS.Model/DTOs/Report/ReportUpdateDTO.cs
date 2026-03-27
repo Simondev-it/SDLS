@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using SDLS.Model.Validations;
+﻿using SDLS.Model.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Report
@@ -22,7 +21,7 @@ namespace SDLS.Model.DTOs.Report
         [StringLength(1000, ErrorMessage = "Vượt quá độ dài tối đa 1000 ký tự.")]
         public string Content { get; set; } = null!;
 
-        public IFormFile? ImageFile { get; set; }
+        public string? Image { get; set; }
 
         [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Status { get; set; }

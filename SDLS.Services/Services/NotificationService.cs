@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
-using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -13,18 +12,15 @@ namespace SDLS.Services.Services
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _repository;
-        private readonly IStorageService _storageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public NotificationService(
             INotificationRepository repository,
-            IStorageService storageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _storageService = storageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -77,6 +73,7 @@ namespace SDLS.Services.Services
             entity.Id = Guid.NewGuid();
             entity.CreateAt = now;
             entity.UpdateAt = now;
+            entity.Image = dto.Image;
 
             foreach (var userNotification in entity.UserNotifications)
             {
@@ -84,11 +81,6 @@ namespace SDLS.Services.Services
                 userNotification.CreateAt = now;
                 userNotification.UpdateAt = now;
                 userNotification.Status = 1;
-            }
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, entity.Id);
             }
 
             await _repository.AddAsync(entity);
@@ -104,6 +96,7 @@ namespace SDLS.Services.Services
 
             existing.Title = dto.Title;
             existing.Content = dto.Content;
+            existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = now;
 
@@ -137,11 +130,6 @@ namespace SDLS.Services.Services
                         });
                     }
                 }
-            }
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.NotificationImage, id);
             }
 
             await _repository.UpdateAsync(existing);
