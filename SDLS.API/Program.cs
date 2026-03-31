@@ -72,7 +72,7 @@ namespace SDLS.API
             builder.Services.AddScoped<IJwtService, JwtService>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
-
+            
             builder.Services.AddScoped<IForumPostRepository, ForumPostRepository>();
             builder.Services.AddScoped<IForumPostService, ForumPostService>();
 
@@ -104,6 +104,8 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
+
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -261,14 +263,14 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
-<<<<<<< HEAD
+
             app.UseAuthentication();
-=======
+
 
             // Enable CORS for requests from local frontend
             app.UseCors("LocalFrontend");
 
->>>>>>> 4741d5fdf77a675702d477296955ecfa7036bcec
+
             app.UseAuthorization();
 
             app.MapControllers();
