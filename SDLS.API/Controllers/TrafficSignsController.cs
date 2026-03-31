@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
@@ -41,24 +42,25 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Create([FromForm] TrafficSignCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] TrafficSignCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromForm] TrafficSignUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] TrafficSignUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
             return Ok(updated);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -66,6 +68,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

@@ -74,8 +74,10 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(SimulationSessionCreateDTO dto)
         {
-            if (dto.SituationExamId == Guid.Empty || dto.UserId == Guid.Empty)
-                throw new ArgumentException("SituationExamId và UserId không được rỗng.");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            if (dto.SituationExamId == Guid.Empty)
+                throw new ArgumentException("SituationExamId không được rỗng.");
 
             ValidateDetailCreateList(dto.SimulationSessionDetails);
 
@@ -92,7 +94,7 @@ namespace SDLS.Services.Services
             {
                 Id = Guid.NewGuid(),
                 SituationExamId = dto.SituationExamId,
-                UserId = dto.UserId,
+                UserId = currentUserId,
                 TotalScore = totalScore,
                 TotalDuration = totalDuration,
                 IsPassed = totalScore >= passScore,
@@ -121,8 +123,10 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw new KeyNotFoundException("Không tìm thấy SimulationSession");
 
-            if (dto.SituationExamId == Guid.Empty || dto.UserId == Guid.Empty)
-                throw new ArgumentException("SituationExamId và UserId không được rỗng.");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            if (dto.SituationExamId == Guid.Empty)
+                throw new ArgumentException("SituationExamId không được rỗng.");
 
             ValidateDetailUpdateList(dto.SimulationSessionDetails);
 
@@ -134,7 +138,7 @@ namespace SDLS.Services.Services
             var now = DateTime.UtcNow.ToLocalTime();
 
             existing.SituationExamId = dto.SituationExamId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = now;
 

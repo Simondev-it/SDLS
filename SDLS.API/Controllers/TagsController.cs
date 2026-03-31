@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Tag;
@@ -49,6 +50,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] TagCreateDTO dto)
         {
@@ -57,6 +59,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] TagUpdateDTO dto)
         {
@@ -65,6 +68,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -72,6 +76,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

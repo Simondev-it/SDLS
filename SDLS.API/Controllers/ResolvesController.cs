@@ -17,7 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ResolveDTO>>> GetAll(
             [FromQuery] Guid? id,
@@ -35,7 +35,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ResolveDTO>> GetById(Guid id)
         {
@@ -44,7 +44,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ResolveCreateDTO dto)
@@ -54,7 +54,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ResolveUpdateDTO dto)
@@ -64,7 +64,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
@@ -73,7 +73,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)

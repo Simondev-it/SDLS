@@ -10,9 +10,6 @@ namespace SDLS.Model.DTOs.ForumComment
         [NotEmptyGuid]
         public Guid ForumPostId { get; set; }
 
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
-
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(1000, ErrorMessage = "Vượt quá độ dài tối đa 1000 ký tự.")]
         public string Content { get; set; } = null!;

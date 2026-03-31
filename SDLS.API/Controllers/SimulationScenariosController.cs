@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SimulationScenario;
@@ -46,6 +47,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] SimulationScenarioCreateDTO dto)
         {
@@ -54,6 +56,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] SimulationScenarioUpdateDTO dto)
         {
@@ -63,6 +66,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -70,6 +74,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Instructor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

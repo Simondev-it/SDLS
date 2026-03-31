@@ -18,7 +18,7 @@ namespace SDLS.API.Controllers
         }
 
         //[Authorize(Roles = "Instructor")]
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ReportDTO>>> GetAll(
             [FromQuery] Guid? id,
@@ -41,7 +41,7 @@ namespace SDLS.API.Controllers
         }
 
         //[Authorize(Roles = "Instructor")]
-        //[Authorize]
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ReportDTO>> GetById(Guid id)
         {
@@ -50,27 +50,25 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Create([FromForm] ReportCreateDTO dto)
+        public async Task<ActionResult<bool>> Create([FromBody] ReportCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromForm] ReportUpdateDTO dto)
+        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ReportUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
             return Ok(updated);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -78,7 +76,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

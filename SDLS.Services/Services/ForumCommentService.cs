@@ -104,6 +104,7 @@ namespace SDLS.Services.Services
                 await using var transaction = await _repository.BeginTransactionAsync();
                 try
                 {
+                    var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
                     Guid recipientUserId;
                     string notificationTitle;
                     string notificationContent;
@@ -145,7 +146,7 @@ namespace SDLS.Services.Services
                         Id = Guid.NewGuid(),
                         ReplyId = dto.ReplyId,
                         ForumPostId = dto.ForumPostId,
-                        UserId = dto.UserId,
+                        UserId = currentUserId,
                         Content = dto.Content.Trim(),
                         CreateAt = now,
                         UpdateAt = now,
@@ -187,6 +188,8 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw new KeyNotFoundException("Không tìm thấy ForumComment.");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
             if (dto.ReplyId.HasValue)
             {
                 if (dto.ReplyId.Value == Guid.Empty || dto.ReplyId.Value == id)
@@ -202,7 +205,7 @@ namespace SDLS.Services.Services
 
             existing.ReplyId = dto.ReplyId;
             existing.ForumPostId = dto.ForumPostId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Content = dto.Content.Trim();
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
