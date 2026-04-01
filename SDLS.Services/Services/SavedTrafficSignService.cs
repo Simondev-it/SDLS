@@ -66,17 +66,19 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(SavedTrafficSignCreateDTO dto)
         {
-            if (dto.UserId == Guid.Empty || dto.TrafficSignId == Guid.Empty)
-                throw new ArgumentException("UserId và TrafficSignId không được rỗng");
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
-            var existing = await _repository.GetByUserAndTrafficSignAsync(dto.UserId, dto.TrafficSignId);
+            if (dto.TrafficSignId == Guid.Empty)
+                throw new ArgumentException("TrafficSignId không được rỗng");
+
+            var existing = await _repository.GetByUserAndTrafficSignAsync(currentUserId, dto.TrafficSignId);
             if (existing != null && existing.Any())
                 throw new InvalidOperationException("SavedTrafficSign cho UserId và TrafficSignId này đã tồn tại.");
 
             var entity = new SavedTrafficSign
             {
                 Id = Guid.NewGuid(),
-                UserId = dto.UserId,
+                UserId = currentUserId,
                 TrafficSignId = dto.TrafficSignId,
                 CreateAt = DateTime.UtcNow.ToLocalTime(),
                 UpdateAt = DateTime.UtcNow.ToLocalTime(),
@@ -92,15 +94,17 @@ namespace SDLS.Services.Services
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var isChangingKeys = existing.UserId != dto.UserId || existing.TrafficSignId != dto.TrafficSignId;
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var isChangingKeys = existing.UserId != currentUserId || existing.TrafficSignId != dto.TrafficSignId;
             if (isChangingKeys)
             {
-                var conflict = await _repository.GetByUserAndTrafficSignAsync(dto.UserId, dto.TrafficSignId);
+                var conflict = await _repository.GetByUserAndTrafficSignAsync(currentUserId, dto.TrafficSignId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
                     throw new InvalidOperationException("Cặp UserId và TrafficSignId mới đã tồn tại ở record khác.");
             }
 
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.TrafficSignId = dto.TrafficSignId;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
             existing.Status = dto.Status ?? existing.Status;

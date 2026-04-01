@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs.User;
 using SDLS.Services.Interfaces;
 
@@ -31,6 +32,12 @@ namespace SDLS.API.Controllers
         {
             var result = await _auth.Register(dto);
             return Ok(result);
+        }
+        [Authorize]
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok("Đã xác thực thành công");
         }
     }
 }

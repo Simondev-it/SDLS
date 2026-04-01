@@ -18,7 +18,6 @@ namespace SDLS.Repositories.Interface
 
         Task<Question?> GetChildQuestionAsync(Guid parentId);
         Task<List<Question>> GetAllByLessonAsync(Guid lessonId);
-        Task<Question?> GetByIdWithLinksAsync(Guid id);
         Task DeleteAnswersByQuestionIdAsync(Guid questionId);
         void RemoveQuestionTags(IEnumerable<QuestionTag> questionTags);
         Task<IDbContextTransaction> BeginTransactionAsync();

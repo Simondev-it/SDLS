@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SavedQuestion;
@@ -16,6 +17,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        [Authorize]
         [HttpGet("all")]
         public async Task<ActionResult<List<SavedQuestionDTO>>> GetAll(
             [FromQuery] Guid? id,
@@ -27,6 +29,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<SavedQuestionDTO>>> GetPaged(
             [FromQuery] Guid? id,
@@ -40,6 +43,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<SavedQuestionDTO>> GetById(Guid id)
         {
@@ -48,6 +52,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] SavedQuestionCreateDTO dto)
         {
@@ -56,6 +61,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] SavedQuestionUpdateDTO dto)
         {
@@ -65,6 +71,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -72,6 +79,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

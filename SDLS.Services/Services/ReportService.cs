@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Report;
-using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -13,18 +12,15 @@ namespace SDLS.Services.Services
     public class ReportService : IReportService
     {
         private readonly IReportRepository _repository;
-        private readonly IStorageService _storageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public ReportService(
             IReportRepository repository,
-            IStorageService storageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _storageService = storageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -82,18 +78,16 @@ namespace SDLS.Services.Services
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                 throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             var entity = _mapper.Map<Report>(dto);
             entity.Id = Guid.NewGuid();
+            entity.UserId = currentUserId;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = -1;
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                entity.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.ReportImage, entity.Id);
-            }
+            entity.Image = dto.Image;
 
             await _repository.AddAsync(entity);
             return true;
@@ -108,21 +102,19 @@ namespace SDLS.Services.Services
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                 throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
             existing.SimulationId = dto.SimulationId;
             existing.ForumPostId = dto.ForumPostId;
             existing.ForumCommentId = dto.ForumCommentId;
             existing.QuestionId = dto.QuestionId;
             existing.ReportCategoryId = dto.ReportCategoryId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Title = dto.Title;
             existing.Content = dto.Content;
+            existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
-
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                existing.Image = await _storageService.UploadImageAsync(dto.ImageFile, ImageTarget.ReportImage, id);
-            }
 
             await _repository.UpdateAsync(existing);
             return true;

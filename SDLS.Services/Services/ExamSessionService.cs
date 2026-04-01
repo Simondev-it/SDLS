@@ -71,10 +71,12 @@ namespace SDLS.Services.Services
             if (dto.ExamDetails == null || !dto.ExamDetails.Any())
                 throw new ArgumentException("ExamSession must have at least 1 exam detail");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             var newExamSession = _mapper.Map<ExamSession>(dto);
             newExamSession.Id = Guid.NewGuid();
+            newExamSession.UserId = currentUserId;
             newExamSession.CreateAt = now;
             newExamSession.UpdateAt = now;
             newExamSession.Status = 1;
@@ -97,10 +99,11 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw new KeyNotFoundException("Không tìm thấy exam session");
 
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
             existing.ExamId = dto.ExamId;
-            existing.UserId = dto.UserId;
+            existing.UserId = currentUserId;
             existing.Score = dto.Score;
             existing.IsPassed = dto.IsPassed;
             existing.UpdateAt = now;

@@ -1,6 +1,9 @@
-using AutoMapper;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -9,6 +12,7 @@ using SDLS.Repositories.Interface.ImageInterfaces;
 using SDLS.Repositories.Repositories;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Services;
+using System.Text;
 
 namespace SDLS.API
 {
@@ -68,7 +72,7 @@ namespace SDLS.API
             builder.Services.AddScoped<IJwtService, JwtService>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
-
+            
             builder.Services.AddScoped<IForumPostRepository, ForumPostRepository>();
             builder.Services.AddScoped<IForumPostService, ForumPostService>();
 
@@ -101,7 +105,11 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+<<<<<<< HEAD
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+=======
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+>>>>>>> a8a344414c56f39c6eb5a0fa59dd91fc0ffcd5c1
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -175,6 +183,34 @@ namespace SDLS.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidAudience = jwtSettings["Audience"],
+
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
             //Add supabase 
             var supabaseUrl = builder.Configuration["Supabase:Url"];
             var supabaseServiceRoleKey = builder.Configuration["Supabase:ServiceRoleKey"];
@@ -189,6 +225,39 @@ namespace SDLS.API
 
             builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
+            builder.Services.AddAuthorization();
+
+            // ================= SWAGGER =================
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                //cấu hình Bearer Token
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "Nhập token theo dạng: {token}",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -198,6 +267,10 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
+<<<<<<< HEAD
+
+            app.UseAuthentication();
+
 
 
             app.UseAuthentication();
@@ -207,10 +280,17 @@ namespace SDLS.API
             app.UseCors("LocalFrontend");
 
 
+<<<<<<< HEAD
 
             app.UseAuthentication();
             app.UseCors("LocalFrontend");
 
+=======
+=======
+            app.UseAuthentication();
+            app.UseCors("LocalFrontend");
+>>>>>>> c08a1e31d5e2d31ca3fe4b86a779991417503f92
+>>>>>>> a8a344414c56f39c6eb5a0fa59dd91fc0ffcd5c1
             app.UseAuthorization();
 
             app.MapControllers();

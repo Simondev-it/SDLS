@@ -1,4 +1,9 @@
+<<<<<<< HEAD
+    using Microsoft.AspNetCore.Mvc;
+=======
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+>>>>>>> c08a1e31d5e2d31ca3fe4b86a779991417503f92
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Services.Interfaces;
@@ -16,6 +21,7 @@ namespace SDLS.API.Controllers
             _service = service;
         }
 
+        [Authorize]
         [HttpGet("all")]
         public async Task<ActionResult<List<UserLicenseDTO>>> GetAll(
             [FromQuery] Guid? id,
@@ -27,6 +33,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<UserLicenseDTO>>> GetPaged(
             [FromQuery] Guid? id,
@@ -40,6 +47,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<UserLicenseDTO>> GetById(Guid id)
         {
@@ -48,6 +56,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] UserLicenseCreateDTO dto)
         {
@@ -57,6 +66,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] UserLicenseUpdateDTO dto)
         {
@@ -68,6 +78,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -75,6 +86,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {

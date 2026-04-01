@@ -178,18 +178,6 @@ namespace SDLS.Repositories.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Question?> GetByIdWithLinksAsync(Guid id)
-        {
-            return await _context.Questions
-                .Include(q => q.Answers)
-                .Include(q => q.InverseParent)
-                .Include(q => q.QuestionLesson)
-                    .ThenInclude(ql => ql.QuestionChapter)
-                .Include(q => q.QuestionTopic)
-                .Include(q => q.QuestionCategory)
-                .FirstOrDefaultAsync(q => q.Id == id);
-        }
-
         public async Task UpdateParentIdAsync(Guid questionId, Guid? newParentId)
         {
             await _context.Questions
@@ -260,12 +248,28 @@ namespace SDLS.Repositories.Repositories
                     (q.QuestionCategory == null || q.QuestionCategory.Status != 0));
             }
 
-            var list = await query
-                .Include(q => isPrivileged ? q.Answers : q.Answers.Where(a => a.Status != 0))
-                .Include(q => isPrivileged ? q.QuestionTags : q.QuestionTags.Where(qt => qt.Status != 0))
-                .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
-                .Include(q => q.QuestionTopic)
-                .Include(q => q.QuestionCategory)
+            IQueryable<Question> includeQuery;
+
+            if (isPrivileged)
+            {
+                includeQuery = query
+                    .Include(q => q.Answers)
+                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory);
+            }
+            else
+            {
+                includeQuery = query
+                    .Include(q => q.Answers.Where(a => a.Status != 0))
+                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0))
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory);
+            }
+
+            var list = await includeQuery
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync();

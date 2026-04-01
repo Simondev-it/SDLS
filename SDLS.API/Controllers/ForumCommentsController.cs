@@ -39,7 +39,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] ForumCommentCreateDTO dto)
         {
@@ -48,7 +48,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumCommentUpdateDTO dto)
         {

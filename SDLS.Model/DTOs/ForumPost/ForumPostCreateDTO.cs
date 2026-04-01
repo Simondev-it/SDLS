@@ -8,9 +8,6 @@ namespace SDLS.Model.DTOs.ForumPost
         [NotEmptyGuid]
         public Guid ForumTopicId { get; set; }
 
-        [NotEmptyGuid]
-        public Guid UserId { get; set; }
-
         [StringLength(255, ErrorMessage = "Vuot qua do dai toi da 255 ky tu.")]
         public string? Name { get; set; }
 

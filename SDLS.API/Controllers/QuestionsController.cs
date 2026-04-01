@@ -43,22 +43,19 @@ namespace SDLS.API.Controllers
             return Ok(question);
         }
 
-        //[Authorize(Roles = "Instructor")]
-        //[Authorize]
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<QuestionDTO>> Create([FromForm] QuestionCreateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Create([FromBody] QuestionCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromForm] QuestionUpdateDTO dto)
+        public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
@@ -66,7 +63,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
@@ -75,7 +72,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)

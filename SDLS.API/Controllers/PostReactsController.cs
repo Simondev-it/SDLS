@@ -51,7 +51,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<bool>> Create([FromBody] PostReactCreateDTO dto)
         {
@@ -60,7 +60,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] PostReactUpdateDTO dto)
         {
@@ -70,7 +70,7 @@ namespace SDLS.API.Controllers
             return Ok(true);
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
@@ -78,7 +78,7 @@ namespace SDLS.API.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> HardDelete(Guid id)
         {
