@@ -193,6 +193,32 @@ namespace SDLS.Services.Services
             return true;
         }
 
+        public async Task<bool> ApproveAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw new KeyNotFoundException("Khong tim thay ForumPost");
+
+            forumPost.Status = 1;
+            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _repository.UpdateAsync(forumPost);
+
+            return true;
+        }
+
+        public async Task<bool> DisapproveAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw new KeyNotFoundException("Khong tim thay ForumPost");
+
+            forumPost.Status = 3;
+            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _repository.UpdateAsync(forumPost);
+
+            return true;
+        }
+
         public async Task<bool> DeleteAsync(Guid id)
         {
             return await DeleteSoftAsync(id);
