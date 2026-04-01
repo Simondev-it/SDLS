@@ -224,6 +224,8 @@ namespace SDLS.Services.Services
                 throw new KeyNotFoundException("Có SimulationScenario không tồn tại hoặc không active.");
 
             return scenarios.Sum(x => x.TotalTime);
+
+            //sua ham nay lai theo double di 
         }
     }
 }
