@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace SDLS.Model.Models;
 
 [Table("Vehicle")]
-[Index("Name", Name = "Vehicle_name_key", IsUnique = true)]
+//[Index("Name", Name = "Vehicle_name_key", IsUnique = true)]
 public partial class Vehicle
 {
     [Key]

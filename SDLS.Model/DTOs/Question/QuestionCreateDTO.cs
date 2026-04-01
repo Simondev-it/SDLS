@@ -31,6 +31,7 @@ namespace SDLS.Model.DTOs.Question
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Explanation { get; set; }
 
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(20, ErrorMessage = "Vượt quá độ dài tối đa 20 ký tự.")]
         public string? Type { get; set; }
 

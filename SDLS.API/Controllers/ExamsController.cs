@@ -36,7 +36,7 @@ namespace SDLS.API.Controllers
             return Ok(exam);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Student")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<ExamDTO>> Create([FromBody] ExamCreateDTO dto)
