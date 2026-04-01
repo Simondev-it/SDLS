@@ -1,50 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("SimulationSession")]
 public partial class SimulationSession
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("situationExamId")]
     public Guid SituationExamId { get; set; }
 
-    [Column("userId")]
     public Guid UserId { get; set; }
 
-    [Column("totalScore")]
     public int? TotalScore { get; set; }
 
-    [Column("totalDuration")]
-    public int? TotalDuration { get; set; }
+    public double? TotalDuration { get; set; }
 
-    [Column("isPassed")]
     public bool IsPassed { get; set; }
 
-    [Column("createAt", TypeName = "timestamp without time zone")]
     public DateTime? CreateAt { get; set; }
 
-    [Column("updateAt", TypeName = "timestamp without time zone")]
     public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [InverseProperty("SimulationSession")]
     public virtual ICollection<SimulationSessionDetail> SimulationSessionDetails { get; set; } = new List<SimulationSessionDetail>();
 
-    [ForeignKey("SituationExamId")]
-    [InverseProperty("SimulationSessions")]
     public virtual SituationExam SituationExam { get; set; } = null!;
 
-    [ForeignKey("UserId")]
-    [InverseProperty("SimulationSessions")]
     public virtual User User { get; set; } = null!;
 }

@@ -101,6 +101,8 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+            //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -197,7 +199,16 @@ namespace SDLS.API
 
             app.UseHttpsRedirection();
 
+
+            app.UseAuthentication();
+
+
             // Enable CORS for requests from local frontend
+            app.UseCors("LocalFrontend");
+
+
+
+            app.UseAuthentication();
             app.UseCors("LocalFrontend");
 
             app.UseAuthorization();
