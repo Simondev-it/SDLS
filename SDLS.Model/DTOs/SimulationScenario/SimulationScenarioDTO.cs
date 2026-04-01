@@ -13,9 +13,9 @@ namespace SDLS.Model.DTOs.SimulationScenario
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public string? Video { get; set; }
-        public int TotalTime { get; set; }
-        public int StartPoint { get; set; }
-        public int EndPoint { get; set; }
+        public double TotalTime { get; set; }
+        public double StartPoint { get; set; }
+        public double EndPoint { get; set; }
         public int? Status { get; set; }
 
         //public SimulationDifficultyLevelBriefDTO? SimulationDifficultyLevel { get; set; }
