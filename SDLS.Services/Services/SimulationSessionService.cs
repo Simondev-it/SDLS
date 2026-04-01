@@ -88,7 +88,7 @@ namespace SDLS.Services.Services
 
             var now = DateTime.UtcNow.ToLocalTime();
             var totalScore = dto.SimulationSessionDetails.Sum(x => x.Score ?? 0);
-            var totalDuration = dto.SimulationSessionDetails.Sum(x => x.DurationSecond ?? 0);
+            var totalDuration = dto.SimulationSessionDetails.Sum(x => x.DurationSecond ?? 0d);
 
             var entity = new SimulationSession
             {
@@ -194,7 +194,7 @@ namespace SDLS.Services.Services
                 .ToList();
 
             var totalScore = activeDetails.Sum(x => x.Score ?? 0);
-            var totalDuration = activeDetails.Sum(x => x.DurationSecond ?? 0);
+            var totalDuration = activeDetails.Sum(x => x.DurationSecond ?? 0d);
 
             existing.TotalScore = totalScore;
             existing.TotalDuration = totalDuration;

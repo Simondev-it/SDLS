@@ -113,6 +113,7 @@ namespace SDLS.Services.Services
 
             existing.UserId = currentUserId;
             existing.QuestionLessonId = dto.QuestionLessonId;
+            existing.Score = dto.Score ?? existing.Score;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
             existing.Status = dto.Status ?? existing.Status;
 
