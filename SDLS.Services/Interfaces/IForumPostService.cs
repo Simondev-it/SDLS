@@ -19,6 +19,8 @@ namespace SDLS.Services.Interfaces
         Task<ForumPostDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(ForumPostCreateDTO dto);
         Task<bool> UpdateAsync(Guid id, ForumPostUpdateDTO dto);
+        Task<bool> ApproveAsync(Guid id);
+        Task<bool> DisapproveAsync(Guid id);
 
         Task<bool> DeleteAsync(Guid id);
         Task<bool> DeleteSoftAsync(Guid id);

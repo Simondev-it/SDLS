@@ -12,15 +12,18 @@ namespace SDLS.Services.Services
     public class ReportService : IReportService
     {
         private readonly IReportRepository _repository;
+        private readonly IResolveRepository _resolveRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public ReportService(
             IReportRepository repository,
+            IResolveRepository resolveRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _resolveRepository = resolveRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -117,6 +120,66 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
+            return true;
+        }
+
+        public async Task<bool> ApproveAsync(Guid id, ReportResolveActionDTO dto)
+        {
+            var report = await _repository.GetByIdForUpdateAsync(id);
+            if (report == null)
+                throw new KeyNotFoundException("Không tìm thấy Report");
+
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+            var now = DateTime.UtcNow.ToLocalTime();
+
+            report.Status = 1;
+            report.UpdateAt = now;
+
+            await _repository.UpdateAsync(report);
+
+            var resolve = new Resolve
+            {
+                Id = Guid.NewGuid(),
+                ReportId = id,
+                UserId = currentUserId,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                CreateAt = now,
+                UpdateAt = now,
+                Status = 1
+            };
+
+            await _resolveRepository.AddAsync(resolve);
+            return true;
+        }
+
+        public async Task<bool> DisapproveAsync(Guid id, ReportResolveActionDTO dto)
+        {
+            var report = await _repository.GetByIdForUpdateAsync(id);
+            if (report == null)
+                throw new KeyNotFoundException("Không tìm thấy Report");
+
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+            var now = DateTime.UtcNow.ToLocalTime();
+
+            report.Status = 3;
+            report.UpdateAt = now;
+
+            await _repository.UpdateAsync(report);
+
+            var resolve = new Resolve
+            {
+                Id = Guid.NewGuid(),
+                ReportId = id,
+                UserId = currentUserId,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                CreateAt = now,
+                UpdateAt = now,
+                Status = 1
+            };
+
+            await _resolveRepository.AddAsync(resolve);
             return true;
         }
 
