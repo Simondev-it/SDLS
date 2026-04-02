@@ -13,5 +13,11 @@ namespace SDLS.Repositories.Interface
         Task<User> GetByIdAsync(Guid id);
         Task CreateAsync(User user);
         Task<int> SaveAsync();
+
+        Task<IEnumerable<User>> GetAllAsync();
+
+        Task AddAsync(User user);
+
+        Task UpdateAsync(User user);
     }
 }
