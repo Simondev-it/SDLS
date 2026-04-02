@@ -17,5 +17,11 @@ namespace SDLS.Repositories.Interface
         Task UpdateAsync(Role entity);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
+
+        Task<Role?> GetByIdAsync(Guid id);
+
+        Task<Role?> GetByNameAsync(string name);
+
+        Task<IEnumerable<Role>> GetAllAsync();
     }
 }

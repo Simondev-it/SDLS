@@ -37,5 +37,28 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.SaveChangesAsync();
         }
+        public async Task<IEnumerable<User>> GetAllAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .ToListAsync();
+        }
+
+        public async Task AddAsync(User user)
+        {
+            user.Id = Guid.NewGuid();
+            user.CreateAt = DateTime.UtcNow;
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(User user)
+        {
+            user.UpdateAt = DateTime.UtcNow;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }

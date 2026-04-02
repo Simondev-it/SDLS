@@ -89,5 +89,22 @@ namespace SDLS.Repositories.Repositories
             _context.Roles.Remove(existing);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Role?> GetByIdAsync(Guid id)
+        {
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.Id == id);
+        }
+
+        public async Task<Role?> GetByNameAsync(string name)
+        {
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.Name == name);
+        }
+
+        public async Task<IEnumerable<Role>> GetAllAsync()
+        {
+            return await _context.Roles.ToListAsync();
+        }
     }
 }
