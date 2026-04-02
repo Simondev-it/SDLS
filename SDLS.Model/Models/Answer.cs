@@ -1,38 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace SDLS.Model.Models;
 
-[Table("answer")]
-[Index("Questionid", Name = "idx_answer_question")]
 public partial class Answer
 {
-    [Key]
-    [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("questionid")]
-    public Guid? Questionid { get; set; }
+    public Guid QuestionId { get; set; }
 
-    [Column("content")]
     public string Content { get; set; } = null!;
 
-    [Column("iscorrect")]
-    public bool? Iscorrect { get; set; }
+    public bool IsCorrect { get; set; }
 
-    [Column("createat", TypeName = "timestamp without time zone")]
-    public DateTime? Createat { get; set; }
+    public DateTime? CreateAt { get; set; }
 
-    [Column("updateat", TypeName = "timestamp without time zone")]
-    public DateTime? Updateat { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("status")]
     public int? Status { get; set; }
 
-    [ForeignKey("Questionid")]
-    [InverseProperty("Answers")]
-    public virtual Question? Question { get; set; }
+    public virtual ICollection<ExamDetail> ExamDetails { get; set; } = new List<ExamDetail>();
+
+    public virtual Question Question { get; set; } = null!;
 }

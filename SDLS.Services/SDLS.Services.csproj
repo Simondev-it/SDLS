@@ -10,4 +10,11 @@
     <ProjectReference Include="..\SDLS.Repositories\SDLS.Repositories.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.9" />
+    <PackageReference Include="payOS" Version="2.1.0" />
+    <PackageReference Include="supabase-csharp" Version="0.16.2" />
+  </ItemGroup>
+
 </Project>
