@@ -59,6 +59,22 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/approve")]
+        public async Task<ActionResult<bool>> Approve(Guid id)
+        {
+            var result = await _service.ApproveAsync(id);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/disapprove")]
+        public async Task<ActionResult<bool>> Disapprove(Guid id)
+        {
+            var result = await _service.DisapproveAsync(id);
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPatch("{id}")]
         public async Task<IActionResult> SoftDelete(Guid id)

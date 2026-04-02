@@ -10,20 +10,18 @@ namespace SDLS.Repositories.Interface
 {
     public interface IPaymentRepository
     {
-        Task<Payment> GetFirstOrDefaultAsync(Expression<Func<Payment, bool>> predicate);
-
-        Task<Payment?> GetByBookingIdAsync(int bookingId);
-
-        Task<Payment> GetByOrderIdAsync(int orderId);
-
-        Task<Payment> GetAsync(Expression<Func<Payment, bool>> predicate);
-
-        Task AddAsync(Payment payment);
-
-        void RemoveRange(IEnumerable<Payment> payments);
+        Task<Payment?> GetAsync(Expression<Func<Payment, bool>> predicate);
 
         Task<IEnumerable<Payment>> GetAllAsync(Expression<Func<Payment, bool>> predicate);
 
-        Task UpdateAsync1(Payment payment);
+        Task<Payment?> GetByOrderCodeAsync(long orderCode);
+
+        Task<Payment?> GetPendingByUserIdAsync(Guid userId);
+
+        Task AddAsync(Payment payment);
+
+        Task UpdateAsync(Payment payment);
+
+        Task UpdateStatusByOrderCodeAsync(long orderCode, int status, string response);
     }
 }

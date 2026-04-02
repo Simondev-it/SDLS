@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-    using Microsoft.AspNetCore.Mvc;
-=======
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
->>>>>>> c08a1e31d5e2d31ca3fe4b86a779991417503f92
+using Microsoft.AspNetCore.Authorization;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Services.Interfaces;

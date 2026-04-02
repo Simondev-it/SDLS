@@ -8,7 +8,7 @@ namespace SDLS.Model.DTOs.SimulationSession
         public Guid SituationExamId { get; set; }
         public Guid UserId { get; set; }
         public int? TotalScore { get; set; }
-        public int? TotalDuration { get; set; }
+        public double? TotalDuration { get; set; }
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
 

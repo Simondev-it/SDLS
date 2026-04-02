@@ -10,8 +10,8 @@ namespace SDLS.Model.DTOs.SimulationSession
         [NotEmptyGuid]
         public Guid SimulationExamId { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
-        public int? DurationSecond { get; set; }
+        [Range(0d, double.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public double? DurationSecond { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Score { get; set; }
