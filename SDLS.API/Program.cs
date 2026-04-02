@@ -107,6 +107,8 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+
+
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -263,7 +265,6 @@ namespace SDLS.API
             }
 
             app.UseHttpsRedirection();
-<<<<<<< HEAD
 
             app.UseAuthentication();
 
@@ -272,10 +273,17 @@ namespace SDLS.API
             app.UseCors("LocalFrontend");
 
 
+<<<<<<< HEAD
+
+            app.UseAuthentication();
+            app.UseCors("LocalFrontend");
+
+=======
 =======
             app.UseAuthentication();
             app.UseCors("LocalFrontend");
 >>>>>>> c08a1e31d5e2d31ca3fe4b86a779991417503f92
+>>>>>>> a8a344414c56f39c6eb5a0fa59dd91fc0ffcd5c1
             app.UseAuthorization();
 
             app.MapControllers();
