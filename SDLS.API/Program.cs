@@ -287,10 +287,16 @@ namespace SDLS.API
 
             if (app.Environment.IsDevelopment())
             {
+                app.UseHttpsRedirection();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SDLS API");
+                c.RoutePrefix = "swagger";
+            });
 
             app.UseHttpsRedirection();
 
