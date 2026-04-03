@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using SDLS.Model.DTOs.Answer;
+﻿using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Validations;
 using System.ComponentModel.DataAnnotations;
@@ -17,13 +16,8 @@ namespace SDLS.Model.DTOs.Question
         [NotEmptyGuid]
         public Guid QuestionCategoryId { get; set; }
 
-        public Guid? ParentId { get; set; }
-
         [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Index { get; set; }
-
-        [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
-        public int? Position { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]

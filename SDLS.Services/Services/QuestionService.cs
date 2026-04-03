@@ -120,6 +120,17 @@ namespace SDLS.Services.Services
             newQuestion.Status = 1;
             newQuestion.Image = dto.Image;
 
+            if (dto.Index.HasValue)
+            {
+                newQuestion.Index = dto.Index.Value;
+            }
+            else
+            {
+                var allActive = await _questionRepository.GetAllAsync(status: 1);
+                var maxIndex = allActive.Max(q => q.Index ?? 0);
+                newQuestion.Index = maxIndex + 1;
+            }
+
             foreach (var ans in newQuestion.Answers)
             {
                 ans.QuestionId = newQuestion.Id;
@@ -136,26 +147,10 @@ namespace SDLS.Services.Services
                 questionTag.Status = 1;
             }
 
-            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(dto.QuestionLessonId);
-            var ordered = BuildOrderedLinkedList(lessonQuestions);
-
-            var position = NormalizePosition(dto.Position, ordered.Count);
-            ResolveInsertNeighbors(ordered, position, out var prevId, out var nextId);
-
-            newQuestion.Index = dto.Index ?? position;
-            newQuestion.ParentId = nextId;
-
-            if (prevId.HasValue)
-            {
-                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
-                if (prevTracked == null)
-                    throw new KeyNotFoundException($"Previous question not found: {prevId.Value}");
-
-                prevTracked.ParentId = newQuestion.Id;
-                prevTracked.UpdateAt = now;
-            }
+            newQuestion.ParentId = null;
 
             await _questionRepository.AddAsync(newQuestion);
+            await RebuildGlobalParentLinksAsync(now);
             return true;
         }
 
@@ -170,7 +165,7 @@ namespace SDLS.Services.Services
             existing.QuestionLessonId = dto.QuestionLessonId;
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
-            existing.Index = dto.Index ?? dto.Position ?? existing.Index;
+            existing.Index = dto.Index ?? existing.Index;
             existing.Content = dto.Content;
             existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
@@ -240,53 +235,8 @@ namespace SDLS.Services.Services
                 }
             }
 
-            // Reorder chỉ khi có Position
-            if (dto.Position.HasValue)
-            {
-                var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-                var ordered = BuildOrderedLinkedList(lessonQuestions);
-
-                var currentIndex = ordered.FindIndex(q => q.Id == existing.Id);
-                if (currentIndex < 0)
-                    throw new InvalidOperationException("Question không tồn tại trong chuỗi linked list hiện tại.");
-
-                // oldPrev là node đang trỏ tới existing
-                var oldPrevId = ordered.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
-                var oldNextId = existing.ParentId;
-
-                // Gỡ existing khỏi vị trí cũ: oldPrev -> oldNext
-                if (oldPrevId.HasValue)
-                {
-                    var oldPrevTracked = await _questionRepository.GetByIdForUpdateAsync(oldPrevId.Value);
-                    if (oldPrevTracked != null)
-                    {
-                        oldPrevTracked.ParentId = oldNextId;
-                        oldPrevTracked.UpdateAt = now;
-                    }
-                }
-
-                // Remove existing khỏi list để tính vị trí mới
-                ordered.RemoveAt(currentIndex);
-
-                var newPosition = NormalizePosition(dto.Position, ordered.Count);
-                ResolveInsertNeighbors(ordered, newPosition, out var newPrevId, out var newNextId);
-
-                // existing -> newNext
-                existing.ParentId = newNextId;
-
-                // newPrev -> existing
-                if (newPrevId.HasValue)
-                {
-                    var newPrevTracked = await _questionRepository.GetByIdForUpdateAsync(newPrevId.Value);
-                    if (newPrevTracked != null)
-                    {
-                        newPrevTracked.ParentId = existing.Id;
-                        newPrevTracked.UpdateAt = now;
-                    }
-                }
-            }
-
             await _questionRepository.UpdateAsync(existing);
+            await RebuildGlobalParentLinksAsync(now);
             return true;
         }
 
@@ -303,25 +253,12 @@ namespace SDLS.Services.Services
 
             var now = DateTime.UtcNow.ToLocalTime();
 
-            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-            var prevId = lessonQuestions.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
-            var nextId = existing.ParentId;
-
-            if (prevId.HasValue)
-            {
-                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
-                if (prevTracked != null)
-                {
-                    prevTracked.ParentId = nextId;
-                    prevTracked.UpdateAt = now;
-                }
-            }
-
             existing.Status = 0;
             existing.UpdateAt = now;
             existing.ParentId = null;
 
             await _questionRepository.UpdateAsync(existing);
+            await RebuildGlobalParentLinksAsync(now);
             return true;
         }
 
@@ -338,7 +275,7 @@ namespace SDLS.Services.Services
                 "QuestionLessonName",
                 "QuestionTopicName",
                 "QuestionCategoryName",
-                "Position",
+                "Index",
                 "Content",
                 "Image",
                 "Explanation",
@@ -436,90 +373,50 @@ namespace SDLS.Services.Services
 
         // private method
 
-        private static int NormalizePosition(int? inputPosition, int currentCount)
-        {
-            if (!inputPosition.HasValue)
-                return currentCount + 1;
-
-            if (inputPosition.Value < 1)
-                return 1;
-
-            if (inputPosition.Value > currentCount + 1)
-                return currentCount + 1;
-
-            return inputPosition.Value;
-        }
-
-        private static void ResolveInsertNeighbors(List<Question> ordered, int position, out Guid? prevId, out Guid? nextId)
-        {
-            prevId = null;
-            nextId = null;
-
-            if (ordered.Count == 0)
-                return;
-
-            if (position == 1)
-            {
-                nextId = ordered[0].Id;
-                return;
-            }
-
-            if (position == ordered.Count + 1)
-            {
-                prevId = ordered[^1].Id;
-                return;
-            }
-
-            prevId = ordered[position - 2].Id;
-            nextId = ordered[position - 1].Id;
-        }
-
         private List<Question> BuildOrderedLinkedList(IEnumerable<Question> all)
         {
-            var allList = all.ToList();
-            if (allList.Count == 0)
-                return new List<Question>();
+            return all
+                .OrderBy(q => q.Index ?? int.MaxValue)
+                .ThenBy(q => q.CreateAt ?? DateTime.MinValue)
+                .ThenBy(q => q.Id)
+                .ToList();
+        }
 
-            var byId = allList.ToDictionary(q => q.Id, q => q);
-            var referencedAsNext = allList
-                .Where(q => q.ParentId.HasValue)
-                .Select(q => q.ParentId!.Value)
-                .ToHashSet();
-
-            // Head: question không nằm trong ParentId của question khác
-            var heads = allList
-                .Where(q => !referencedAsNext.Contains(q.Id))
+        private async Task RebuildGlobalParentLinksAsync(DateTime now)
+        {
+            var allActive = await _questionRepository.GetAllAsync(status: 1);
+            var ordered = allActive
+                .OrderBy(q => q.Index ?? int.MaxValue)
+                .ThenBy(q => q.CreateAt ?? DateTime.MinValue)
+                .ThenBy(q => q.Id)
                 .ToList();
 
-            if (!heads.Any())
-                heads.Add(allList[0]);
+            if (!ordered.Any())
+                return;
 
-            var result = new List<Question>();
-            var visited = new HashSet<Guid>();
+            var changedTracked = new List<Question>();
 
-            foreach (var head in heads)
+            for (var i = 0; i < ordered.Count; i++)
             {
-                var current = head;
+                var currentId = ordered[i].Id;
+                var expectedParentId = i + 1 < ordered.Count ? ordered[i + 1].Id : (Guid?)null;
 
-                while (current != null && visited.Add(current.Id))
-                {
-                    result.Add(current);
+                if (ordered[i].ParentId == expectedParentId)
+                    continue;
 
-                    if (current.ParentId.HasValue && byId.TryGetValue(current.ParentId.Value, out var next))
-                        current = next;
-                    else
-                        current = null;
-                }
+                var tracked = await _questionRepository.GetByIdForUpdateAsync(currentId);
+                if (tracked == null)
+                    continue;
+
+                tracked.ParentId = expectedParentId;
+                tracked.UpdateAt = now;
+                changedTracked.Add(tracked);
             }
 
-            // Nếu có cycle/disconnected node thì append nốt
-            foreach (var q in allList)
+            if (changedTracked.Any())
             {
-                if (!visited.Contains(q.Id))
-                    result.Add(q);
+                await _questionRepository.UpdateAsync(changedTracked[0]);
             }
-
-            return result;
         }
 
         private static QuestionCreateDTO BuildQuestionCreateDto(
@@ -535,7 +432,7 @@ namespace SDLS.Services.Services
                 QuestionLessonName = GetRequired(row, "QuestionLessonName", rowNo),
                 QuestionTopicName = GetRequired(row, "QuestionTopicName", rowNo),
                 QuestionCategoryName = GetRequired(row, "QuestionCategoryName", rowNo),
-                Position = ParseIntOptional(row, "Position"),
+                Index = ParseIntOptional(row, "Index"),
                 Content = GetRequired(row, "Content", rowNo),
                 Image = GetOptional(row, "Image"),
                 Explanation = GetOptional(row, "Explanation"),
@@ -561,7 +458,7 @@ namespace SDLS.Services.Services
                 QuestionLessonId = lessonId,
                 QuestionTopicId = topicId,
                 QuestionCategoryId = categoryId,
-                Position = importRow.Position,
+                Index = importRow.Index,
                 Content = importRow.Content,
                 Image = importRow.Image,
                 Explanation = importRow.Explanation,

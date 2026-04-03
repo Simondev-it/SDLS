@@ -5,7 +5,7 @@ namespace SDLS.Model.DTOs.Question
         public string QuestionLessonName { get; set; } = null!;
         public string QuestionTopicName { get; set; } = null!;
         public string QuestionCategoryName { get; set; } = null!;
-        public int? Position { get; set; }
+        public int? Index { get; set; }
         public string Content { get; set; } = null!;
         public string? Image { get; set; }
         public string? Explanation { get; set; }

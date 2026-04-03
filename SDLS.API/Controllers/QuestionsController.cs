@@ -43,7 +43,7 @@ namespace SDLS.API.Controllers
             return Ok(question);
         }
 
-        [Authorize(Roles = "Instructor")]
+        //[Authorize(Roles = "Instructor")]
         [HttpPost]
         public async Task<ActionResult<QuestionDTO>> Create([FromBody] QuestionCreateDTO dto)
         {
@@ -76,7 +76,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Instructor")]
+        //[Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
