@@ -97,6 +97,7 @@ namespace SDLS.Services.Services
             {
                 Id = Guid.NewGuid(),
                 QuestionChapterId = dto.QuestionChapterId,
+                Index = dto.Index,
                 Name = dto.Name,
                 Description = dto.Description,
                 Content = dto.Content,
@@ -132,6 +133,12 @@ namespace SDLS.Services.Services
                     lesson.QuestionChapterId = dto.QuestionChapterId.Value;
                     changed = true;
                 }
+            }
+
+            if (dto.Index.HasValue && lesson.Index != dto.Index.Value)
+            {
+                lesson.Index = dto.Index.Value;
+                changed = true;
             }
 
             if (dto.Name != null)

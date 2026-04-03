@@ -72,6 +72,7 @@ namespace SDLS.Services.Services
 
             var entity = _mapper.Map<TrafficSign>(dto);
             entity.Id = Guid.NewGuid();
+            entity.Index = dto.Index;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
@@ -88,6 +89,7 @@ namespace SDLS.Services.Services
                 throw new KeyNotFoundException("Không tìm thấy TrafficSign");
 
             existing.SignCategoryId = dto.SignCategoryId;
+            existing.Index = dto.Index;
             existing.Name = dto.Name;
             existing.Code = dto.Code;
             existing.Description = dto.Description;

@@ -210,10 +210,10 @@ namespace SDLS.Services.Services
                 throw new InvalidOperationException($"SimulationId bị trùng: {duplicate.Key}");
         }
 
-        private async Task<int> CalculateDurationAsync(List<Guid> scenarioIds)
+        private async Task<double> CalculateDurationAsync(List<Guid> scenarioIds)
         {
             if (scenarioIds.Count == 0)
-                return 0;
+                return 0d;
 
             var scenarios = await _dbContext.SimulationScenarios
                 .Where(x => scenarioIds.Contains(x.Id) && x.Status == 1)
@@ -223,8 +223,7 @@ namespace SDLS.Services.Services
             if (scenarios.Count != scenarioIds.Count)
                 throw new KeyNotFoundException("Có SimulationScenario không tồn tại hoặc không active.");
 
-            var totalDuration = scenarios.Sum(x => x.TotalTime);
-            return (int)Math.Ceiling(totalDuration);
+            return scenarios.Sum(x => x.TotalTime);
         }
     }
 }

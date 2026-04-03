@@ -12,6 +12,9 @@ namespace SDLS.Model.DTOs.ExamSession
         [Range(0, 100, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Score { get; set; }
 
+        [Range(0d, double.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public double? TotalDuration { get; set; }
+
         public bool IsPassed { get; set; }
 
         [MinLength(1, ErrorMessage = "Trường này là bắt buộc.")]

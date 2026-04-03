@@ -20,6 +20,9 @@ namespace SDLS.Model.DTOs.Question
         public Guid? ParentId { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public int? Index { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Position { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]

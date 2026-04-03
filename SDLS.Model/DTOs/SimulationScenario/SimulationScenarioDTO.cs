@@ -10,6 +10,7 @@ namespace SDLS.Model.DTOs.SimulationScenario
         public Guid SimulationChapterId { get; set; }
         public Guid SimulationCategoryId { get; set; }
         public Guid SimulationDifficultyLevelId { get; set; }
+        public int? Index { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public string? Video { get; set; }

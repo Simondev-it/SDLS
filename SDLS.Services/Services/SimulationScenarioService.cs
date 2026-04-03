@@ -73,6 +73,7 @@ namespace SDLS.Services.Services
 
             var entity = _mapper.Map<SimulationScenario>(dto);
             entity.Id = Guid.NewGuid();
+            entity.Index = dto.Index;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
@@ -90,6 +91,7 @@ namespace SDLS.Services.Services
             existing.SimulationChapterId = dto.SimulationChapterId;
             existing.SimulationCategoryId = dto.SimulationCategoryId;
             existing.SimulationDifficultyLevelId = dto.SimulationDifficultyLevelId;
+            existing.Index = dto.Index;
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Video = dto.Video;

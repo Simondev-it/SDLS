@@ -77,6 +77,7 @@ namespace SDLS.Services.Services
             var newExamSession = _mapper.Map<ExamSession>(dto);
             newExamSession.Id = Guid.NewGuid();
             newExamSession.UserId = currentUserId;
+            newExamSession.TotalDuration = dto.TotalDuration;
             newExamSession.CreateAt = now;
             newExamSession.UpdateAt = now;
             newExamSession.Status = 1;
@@ -105,6 +106,7 @@ namespace SDLS.Services.Services
             existing.ExamId = dto.ExamId;
             existing.UserId = currentUserId;
             existing.Score = dto.Score;
+            existing.TotalDuration = dto.TotalDuration;
             existing.IsPassed = dto.IsPassed;
             existing.UpdateAt = now;
 

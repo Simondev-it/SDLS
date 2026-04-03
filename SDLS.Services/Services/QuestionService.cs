@@ -142,6 +142,7 @@ namespace SDLS.Services.Services
             var position = NormalizePosition(dto.Position, ordered.Count);
             ResolveInsertNeighbors(ordered, position, out var prevId, out var nextId);
 
+            newQuestion.Index = dto.Index ?? position;
             newQuestion.ParentId = nextId;
 
             if (prevId.HasValue)
@@ -169,6 +170,7 @@ namespace SDLS.Services.Services
             existing.QuestionLessonId = dto.QuestionLessonId;
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
+            existing.Index = dto.Index ?? dto.Position ?? existing.Index;
             existing.Content = dto.Content;
             existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
