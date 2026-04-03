@@ -5,6 +5,13 @@ namespace SDLS.Services.Interfaces
 {
     public interface IDrivingLicenseService
     {
+        Task<List<DrivingLicenseDTO>> GetAllNoPagingAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null,
+            string? vehicleName = null);
+
         Task<PagedResult<DrivingLicenseDTO>> GetAllAsync(
             Guid? id = null,
             string? name = null,

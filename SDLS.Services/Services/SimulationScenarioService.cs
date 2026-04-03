@@ -82,6 +82,19 @@ namespace SDLS.Services.Services
             return true;
         }
 
+        public async Task<bool> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw new ArgumentException("Danh sách tình huống mô phỏng không được rỗng.");
+
+            foreach (var dto in dtos)
+            {
+                await CreateAsync(dto);
+            }
+
+            return true;
+        }
+
         public async Task<bool> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);

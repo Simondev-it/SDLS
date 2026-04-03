@@ -41,27 +41,10 @@ namespace SDLS.Services.Services
             int page = 1,
             int pageSize = 20)
         {
-            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var all = await GetFilteredEntitiesAsync(id, name, description, status, vehicleName);
+            var total = all.Count;
 
-            var all = await _repository.GetAllAsync(id, status, role);
-            var filtered = all.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
-
-            if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
-
-            if (!string.IsNullOrWhiteSpace(vehicleName))
-            {
-                filtered = filtered.Where(x =>
-                    x.Vehicles != null &&
-                    x.Vehicles.Any(v => v.Status != 0 && ContainsNormalized(v.Name, vehicleName)));
-            }
-
-            var total = filtered.Count();
-
-            var pagedEntities = filtered
+            var pagedEntities = all
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -76,6 +59,17 @@ namespace SDLS.Services.Services
                 PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling(total / (double)pageSize)
             };
+        }
+
+        public async Task<List<DrivingLicenseDTO>> GetAllNoPagingAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null,
+            string? vehicleName = null)
+        {
+            var all = await GetFilteredEntitiesAsync(id, name, description, status, vehicleName);
+            return _mapper.Map<List<DrivingLicenseDTO>>(all);
         }
 
         public async Task<DrivingLicenseDTO> GetByIdAsync(Guid id)
@@ -181,6 +175,34 @@ namespace SDLS.Services.Services
         private static bool CanViewDeleted(string? role)
         {
             return !string.IsNullOrWhiteSpace(role) && PrivilegedRoles.Contains(role);
+        }
+
+        private async Task<List<DrivingLicense>> GetFilteredEntitiesAsync(
+            Guid? id,
+            string? name,
+            string? description,
+            int? status,
+            string? vehicleName)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var all = await _repository.GetAllAsync(id, status, role);
+            var filtered = all.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(name))
+                filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
+
+            if (!string.IsNullOrWhiteSpace(description))
+                filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
+
+            if (!string.IsNullOrWhiteSpace(vehicleName))
+            {
+                filtered = filtered.Where(x =>
+                    x.Vehicles != null &&
+                    x.Vehicles.Any(v => v.Status != 0 && ContainsNormalized(v.Name, vehicleName)));
+            }
+
+            return filtered.ToList();
         }
 
         private static bool ContainsNormalized(string? source, string? keyword)

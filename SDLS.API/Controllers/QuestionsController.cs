@@ -43,7 +43,7 @@ namespace SDLS.API.Controllers
             return Ok(question);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
         public async Task<ActionResult<QuestionDTO>> Create([FromBody] QuestionCreateDTO dto)
         {
@@ -52,7 +52,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         [HttpPost("bulk")]
         public async Task<ActionResult<bool>> CreateMany([FromBody] List<QuestionCreateDTO> dtos)
         {
@@ -64,7 +64,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         [HttpGet("import-template")]
         public async Task<IActionResult> DownloadImportTemplate([FromQuery] string format = "xlsx")
         {
@@ -76,7 +76,7 @@ namespace SDLS.API.Controllers
             return File(content, contentType, fileName);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         [HttpPost("import")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<QuestionImportResultDTO>> ImportQuestions([FromForm] QuestionImportFileDTO request)
@@ -88,7 +88,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)

@@ -52,6 +52,18 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize(Roles = "Instructor")]
+        [HttpPost("bulk")]
+        public async Task<ActionResult<bool>> CreateMany([FromBody] List<TrafficSignCreateDTO> dtos)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (dtos == null || dtos.Count == 0)
+                return BadRequest("Danh sách bi?n báo không ???c r?ng.");
+
+            var created = await _service.CreateManyAsync(dtos);
+            return Ok(created);
+        }
+
+        [Authorize(Roles = "Instructor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] TrafficSignUpdateDTO dto)
         {
