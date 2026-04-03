@@ -13,6 +13,8 @@ public partial class SimulationScenario
 
     public Guid SimulationDifficultyLevelId { get; set; }
 
+    public int? Index { get; set; }
+
     public string Name { get; set; } = null!;
 
     public string? Description { get; set; }
