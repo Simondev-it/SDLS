@@ -21,18 +21,15 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly IImportCoreService _importCoreService;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
-            IImportCoreService importCoreService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
-            _importCoreService = importCoreService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
