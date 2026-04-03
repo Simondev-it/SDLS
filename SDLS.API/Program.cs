@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PayOS;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -20,6 +21,10 @@ namespace SDLS.API
     {
         public static void Main(string[] args)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+            
+            // ...
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -108,6 +113,8 @@ namespace SDLS.API
 
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+
+
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
@@ -174,11 +181,27 @@ namespace SDLS.API
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
 
+            builder.Services.AddScoped<IPayOSService, PayOSService>();
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
             builder.Services.AddHttpContextAccessor();
+
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddSingleton<PayOSClient>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+
+                return new PayOSClient(new PayOSOptions
+                {
+                    ClientId = config["PayOS:ClientId"],
+                    ApiKey = config["PayOS:ApiKey"],
+                    ChecksumKey = config["PayOS:ChecksumKey"],
+                    BaseUrl = "https://api-merchant.payos.vn"
+                });
+            });
 
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
@@ -222,7 +245,7 @@ namespace SDLS.API
 
             builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
-            builder.Services.AddAuthorization();
+            //builder.Services.AddAuthorization();
 
             // ================= SWAGGER =================
             builder.Services.AddEndpointsApiExplorer();
@@ -265,10 +288,18 @@ namespace SDLS.API
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
+            //app.UseAuthentication();
 
             // Enable CORS for requests from local frontend
+            //app.UseCors("LocalFrontend");
+
+
+            app.UseAuthentication();
             app.UseCors("LocalFrontend");
+
+
+            
+
             app.UseAuthorization();
 
             app.MapControllers();

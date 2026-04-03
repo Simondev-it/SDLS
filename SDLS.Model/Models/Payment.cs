@@ -19,6 +19,7 @@ public partial class Payment
 
     public string? Response { get; set; }
 
+
     public DateTime? CreateAt { get; set; }
 
     public DateTime? UpdateAt { get; set; }
