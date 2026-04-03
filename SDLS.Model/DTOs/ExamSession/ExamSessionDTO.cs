@@ -9,6 +9,7 @@ namespace SDLS.Model.DTOs.ExamSession
         public Guid ExamId { get; set; }
         public Guid UserId { get; set; }
         public int? Score { get; set; }
+        public double? TotalDuration { get; set; }
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
 

@@ -15,6 +15,7 @@ namespace SDLS.Model.DTOs.Question
         public Guid QuestionTopicId { get; set; }
         public Guid QuestionCategoryId { get; set; }
         public Guid? ParentId { get; set; }
+        public int? Index { get; set; }
         public int Position { get; set; }
         public string Content { get; set; } = null!;
         public string? Image { get; set; }

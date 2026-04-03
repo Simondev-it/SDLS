@@ -93,7 +93,7 @@ namespace SDLS.Repositories.Repositories
 
         public async Task AddAsync(Question question)
         {
-            this.CreateAsync(question);
+            await this.CreateAsync(question);
         }
 
         public async Task UpdateAsync(Question question)

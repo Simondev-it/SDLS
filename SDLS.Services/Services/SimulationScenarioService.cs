@@ -73,11 +73,25 @@ namespace SDLS.Services.Services
 
             var entity = _mapper.Map<SimulationScenario>(dto);
             entity.Id = Guid.NewGuid();
+            entity.Index = dto.Index;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
+            return true;
+        }
+
+        public async Task<bool> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw new ArgumentException("Danh sách tình huống mô phỏng không được rỗng.");
+
+            foreach (var dto in dtos)
+            {
+                await CreateAsync(dto);
+            }
+
             return true;
         }
 
@@ -90,6 +104,7 @@ namespace SDLS.Services.Services
             existing.SimulationChapterId = dto.SimulationChapterId;
             existing.SimulationCategoryId = dto.SimulationCategoryId;
             existing.SimulationDifficultyLevelId = dto.SimulationDifficultyLevelId;
+            existing.Index = dto.Index;
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Video = dto.Video;

@@ -14,6 +14,9 @@ namespace SDLS.Model.DTOs.SimulationScenario
         [NotEmptyGuid]
         public Guid SimulationDifficultyLevelId { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public int? Index { get; set; }
+
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Name { get; set; } = null!;

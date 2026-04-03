@@ -6,6 +6,7 @@ namespace SDLS.Model.DTOs.TrafficSign
     {
         public Guid Id { get; set; }
         public Guid SignCategoryId { get; set; }
+        public int? Index { get; set; }
         public string Name { get; set; } = null!;
         public string Code { get; set; } = null!;
         public string? Description { get; set; }

@@ -74,6 +74,7 @@ namespace SDLS.Services.Services
             var entity = new SimulationChapter
             {
                 Id = Guid.NewGuid(),
+                Index = dto.Index,
                 Name = dto.Name,
                 Description = dto.Description,
                 CreateAt = now,
@@ -92,6 +93,7 @@ namespace SDLS.Services.Services
                 throw new KeyNotFoundException("Không tìm thấy SimulationChapter");
 
             existing.Name = dto.Name;
+            existing.Index = dto.Index;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();

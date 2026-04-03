@@ -51,6 +51,7 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IQuestionService, QuestionService>();
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+            builder.Services.AddScoped<IImportCoreService, ImportCoreService>();
 
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
