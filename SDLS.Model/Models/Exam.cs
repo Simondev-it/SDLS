@@ -13,7 +13,7 @@ public partial class Exam
 
     public string? Description { get; set; }
 
-    public int? Duration { get; set; }
+    public double? Duration { get; set; }
 
     public int? PassScore { get; set; }
 

@@ -69,7 +69,7 @@ namespace SDLS.Services.Services
             {
                 orderCode,
                 amount = model.Amount,
-                description = $"OC:{orderCode}", // 🔥 mapping user
+                description = $"OC:{orderCode}", 
                 cancelUrl = "https://yourdomain.com/cancel",
                 returnUrl = "https://yourdomain.com/success",
                 items

@@ -9,6 +9,8 @@ public partial class TrafficSign
 
     public Guid SignCategoryId { get; set; }
 
+    public int? Index { get; set; }
+
     public string Name { get; set; } = null!;
 
     public string Code { get; set; } = null!;
