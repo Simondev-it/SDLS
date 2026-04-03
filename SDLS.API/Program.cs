@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PayOS;
+using SDLS.API.Middlewares;
 using SDLS.Model.AutoMapper;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -112,6 +113,11 @@ namespace SDLS.API
 
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+            builder.Services.AddMemoryCache();
+            builder.Services.AddHttpClient();
+
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
+            builder.Services.AddScoped<IChatService, ChatService>();
 
 
             builder.Services.AddControllers()
@@ -285,6 +291,7 @@ namespace SDLS.API
                 app.UseSwaggerUI();
             }
 
+
             app.UseHttpsRedirection();
 
             //app.UseAuthentication();
@@ -297,7 +304,7 @@ namespace SDLS.API
             app.UseCors("LocalFrontend");
 
 
-            
+            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseAuthorization();
 

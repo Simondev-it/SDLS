@@ -15,6 +15,8 @@ public partial class Question
 
     public Guid? ParentId { get; set; }
 
+    public int? Index { get; set; }
+
     public string Content { get; set; } = null!;
 
     public string? Image { get; set; }
