@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.ExamSession;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -16,12 +17,14 @@ namespace SDLS.Services.Services
     public class ExamSessionService : IExamSessionService
     {
         private readonly IExamSessionRepository _examSessionRepository;
+        private readonly IExamRepository _examRepository;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ExamSessionService(IExamSessionRepository examSessionRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public ExamSessionService(IExamSessionRepository examSessionRepository, IExamRepository examRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _examSessionRepository = examSessionRepository;
+            _examRepository = examRepository;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -61,15 +64,19 @@ namespace SDLS.Services.Services
             var examSession = await _examSessionRepository.GetByIdAsync(id, role);
 
             if (examSession == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
         public async Task<bool> CreateAsync(ExamSessionCreateDTO dto)
         {
+            var exam = await _examRepository.GetByIdAsync(dto.ExamId);
+            if (exam == null)
+                throw ApiException.BadRequest($"Exam with ID {dto.ExamId} does not exist.");
+
             if (dto.ExamDetails == null || !dto.ExamDetails.Any())
-                throw new ArgumentException("ExamSession must have at least 1 exam detail");
+                throw ApiException.BadRequest("ExamSession must have at least 1 exam detail");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -98,7 +105,11 @@ namespace SDLS.Services.Services
         {
             var existing = await _examSessionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy exam session");
+                throw ApiException.NotFound("Không tìm thấy exam session");
+
+            var exam = await _examRepository.GetByIdAsync(dto.ExamId);
+            if (exam == null)
+                throw ApiException.BadRequest($"Exam with ID {dto.ExamId} does not exist.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -117,12 +128,12 @@ namespace SDLS.Services.Services
                 foreach (var detailDto in dto.ExamDetails)
                 {
                     if (detailDto.ExamSessionId != id)
-                        throw new ArgumentException($"ExamDetail.ExamSessionId ({detailDto.ExamSessionId}) không khớp ExamSession Id ({id}).");
+                        throw ApiException.BadRequest($"ExamDetail.ExamSessionId ({detailDto.ExamSessionId}) không khớp ExamSession Id ({id}).");
 
                     if (detailDto.Id.HasValue)
                     {
                         if (!existingDetailsById.TryGetValue(detailDto.Id.Value, out var detail))
-                            throw new KeyNotFoundException($"Không tìm thấy ExamDetail với Id {detailDto.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy ExamDetail với Id {detailDto.Id.Value}");
 
                         detail.AnswerId = detailDto.AnswerId;
                         detail.UpdateAt = now;

@@ -6,6 +6,9 @@ namespace SDLS.Repositories.Interface
     {
         Task<IEnumerable<DrivingLicense>> GetAllAsync(
             Guid? id = null,
+            string? name = null,
+            string? description = null,
+            string? vehicleName = null,
             int? status = null,
             string? role = null);
 

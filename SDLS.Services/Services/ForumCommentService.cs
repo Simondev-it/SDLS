@@ -7,6 +7,7 @@ using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -82,7 +83,7 @@ namespace SDLS.Services.Services
 
             var target = await _repository.GetByIdAsync(id, role);
             if (target == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             var all = (await _repository.GetAllAsync(
                 forumPostId: target.ForumPostId,
@@ -112,18 +113,18 @@ namespace SDLS.Services.Services
                     if (dto.ReplyId.HasValue)
                     {
                         if (dto.ReplyId.Value == Guid.Empty)
-                            throw new ArgumentException("ReplyId không hợp lệ.");
+                            throw ApiException.BadRequest("ReplyId không hợp lệ.");
 
                         var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
                         if (forumPost == null)
-                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
+                            throw ApiException.NotFound("Không tìm thấy ForumPost.");
 
                         var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
                         if (parent == null)
-                            throw new KeyNotFoundException("Không tìm thấy comment cha.");
+                            throw ApiException.NotFound("Không tìm thấy comment cha.");
 
                         if (parent.ForumPostId != dto.ForumPostId)
-                            throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
+                            throw ApiException.BadRequest("Reply phải cùng ForumPostId với comment cha.");
 
                         recipientUserId = parent.UserId;
                         notificationTitle = "Trả lời bình luận";
@@ -133,7 +134,7 @@ namespace SDLS.Services.Services
                     {
                         var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
                         if (forumPost == null)
-                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
+                            throw ApiException.NotFound("Không tìm thấy ForumPost.");
 
                         recipientUserId = forumPost.UserId;
                         notificationTitle = "Bình luận bài viết";
@@ -186,21 +187,21 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy ForumComment.");
+                throw ApiException.NotFound("Không tìm thấy ForumComment.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.ReplyId.HasValue)
             {
                 if (dto.ReplyId.Value == Guid.Empty || dto.ReplyId.Value == id)
-                    throw new ArgumentException("ReplyId không hợp lệ.");
+                    throw ApiException.BadRequest("ReplyId không hợp lệ.");
 
                 var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
                 if (parent == null)
-                    throw new KeyNotFoundException("Không tìm thấy comment cha.");
+                    throw ApiException.NotFound("Không tìm thấy comment cha.");
 
                 if (parent.ForumPostId != dto.ForumPostId)
-                    throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
+                    throw ApiException.BadRequest("Reply phải cùng ForumPostId với comment cha.");
             }
 
             existing.ReplyId = dto.ReplyId;

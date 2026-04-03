@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
 using ForumPostModel = SDLS.Model.Models.ForumPost;
@@ -76,7 +77,7 @@ namespace SDLS.Services.Services
 
             var forumPost = await _repository.GetByIdAsync(id, role);
             if (forumPost == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<ForumPostDTO>(forumPost);
             var images = await _repository.GetPostImagesByPostIdsAsync(new List<Guid> { id }, role);
@@ -115,7 +116,7 @@ namespace SDLS.Services.Services
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -124,7 +125,7 @@ namespace SDLS.Services.Services
             if (dto.ForumTopicId.HasValue)
             {
                 if (dto.ForumTopicId.Value == Guid.Empty)
-                    throw new ArgumentException("ForumTopicId khong hop le.");
+                    throw ApiException.BadRequest("ForumTopicId khong hop le.");
 
                 if (forumPost.ForumTopicId != dto.ForumTopicId.Value)
                 {
@@ -149,7 +150,7 @@ namespace SDLS.Services.Services
             {
                 var newTitle = dto.Title.Trim();
                 if (string.IsNullOrWhiteSpace(newTitle))
-                    throw new ArgumentException("Title khong duoc de trong.");
+                    throw ApiException.BadRequest("Title khong duoc de trong.");
 
                 if (!string.Equals(forumPost.Title, newTitle, StringComparison.Ordinal))
                 {
@@ -162,7 +163,7 @@ namespace SDLS.Services.Services
             {
                 var newContent = dto.Content.Trim();
                 if (string.IsNullOrWhiteSpace(newContent))
-                    throw new ArgumentException("Content khong duoc de trong.");
+                    throw ApiException.BadRequest("Content khong duoc de trong.");
 
                 if (!string.Equals(forumPost.Content, newContent, StringComparison.Ordinal))
                 {
@@ -197,7 +198,7 @@ namespace SDLS.Services.Services
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 1;
             forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
@@ -210,7 +211,7 @@ namespace SDLS.Services.Services
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 3;
             forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
@@ -228,7 +229,7 @@ namespace SDLS.Services.Services
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException($"Khong tim thay ForumPost voi Id {id}");
+                throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
             forumPost.Status = 0;
