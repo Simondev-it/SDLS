@@ -112,6 +112,8 @@ namespace SDLS.API
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
 
+            builder.Services.AddScoped<ISimulationExamRepository, SimulationExamRepository>();
+
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
             builder.Services.AddMemoryCache();

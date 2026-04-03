@@ -13,18 +13,21 @@ namespace SDLS.Services.Services
     public class SimulationSessionService : ISimulationSessionService
     {
         private readonly ISimulationSessionRepository _repository;
-        private readonly AppDbContext _dbContext;
+        private readonly ISimulationExamRepository _simulationExamRepository;
+        private readonly ISituationExamRepository _situationExamRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SimulationSessionService(
             ISimulationSessionRepository repository,
-            AppDbContext dbContext,
+            ISimulationExamRepository simulationExamRepository,
+            ISituationExamRepository situationExamRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _dbContext = dbContext;
+            _simulationExamRepository = simulationExamRepository;
+            _situationExamRepository = situationExamRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -81,8 +84,8 @@ namespace SDLS.Services.Services
 
             ValidateDetailCreateList(dto.SimulationSessionDetails);
 
-            var passScore = await GetPassScoreAsync(dto.SituationExamId);
-            await ValidateSimulationExamIdsAsync(
+            var passScore = await _situationExamRepository.GetPassScoreAsync(dto.SituationExamId);
+            await _simulationExamRepository.ValidateSimulationExamIdsAsync(
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
 
@@ -130,8 +133,8 @@ namespace SDLS.Services.Services
 
             ValidateDetailUpdateList(dto.SimulationSessionDetails);
 
-            var passScore = await GetPassScoreAsync(dto.SituationExamId);
-            await ValidateSimulationExamIdsAsync(
+            var passScore = await _situationExamRepository.GetPassScoreAsync(dto.SituationExamId);
+            await _simulationExamRepository.ValidateSimulationExamIdsAsync(
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
 
@@ -240,34 +243,6 @@ namespace SDLS.Services.Services
 
             if (duplicate != null)
                 throw new InvalidOperationException($"SimulationExamId bị trùng: {duplicate.Key}");
-        }
-
-        private async Task<int> GetPassScoreAsync(Guid situationExamId)
-        {
-            var exam = await _dbContext.SituationExams
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == situationExamId && x.Status == 1);
-
-            if (exam == null)
-                throw new KeyNotFoundException("Không tìm thấy SituationExam.");
-
-            return exam.PassScore ?? 0;
-        }
-
-        private async Task ValidateSimulationExamIdsAsync(Guid situationExamId, List<Guid> simulationExamIds)
-        {
-            if (simulationExamIds.Count == 0)
-                throw new ArgumentException("SimulationSessionDetails không hợp lệ.");
-
-            var validIds = await _dbContext.SimulationExams
-                .Where(x => x.Status == 1
-                    && x.SituationExamId == situationExamId
-                    && simulationExamIds.Contains(x.Id))
-                .Select(x => x.Id)
-                .ToListAsync();
-
-            if (validIds.Count != simulationExamIds.Count)
-                throw new KeyNotFoundException("Có SimulationExam không tồn tại, không active hoặc không thuộc SituationExam.");
         }
     }
 }

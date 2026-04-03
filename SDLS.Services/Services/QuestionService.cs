@@ -21,20 +21,17 @@ namespace SDLS.Services.Services
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly AppDbContext _dbContext;
         private readonly IImportCoreService _importCoreService;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
-            AppDbContext dbContext,
             IImportCoreService importCoreService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
-            _dbContext = dbContext;
             _importCoreService = importCoreService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
@@ -291,107 +288,8 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<byte[]> DownloadImportTemplateAsync(string format = "xlsx")
-        {
-            var headers = new[]
-            {
-                "QuestionLessonName",
-                "QuestionTopicName",
-                "QuestionCategoryName",
-                "Index",
-                "Content",
-                "Image",
-                "Explanation",
-                "Type",
-                "Answers",
-                "QuestionTagNames"
-            };
 
-            var sample = new[]
-            {
-                "Bài 1: Khái niệm và quy tắc",
-                "Biển báo giao thông",
-                "Lý thuyết",
-                "1",
-                "Nội dung câu hỏi mẫu",
-                "https://example.com/question-image.jpg",
-                "Giải thích mẫu",
-                "single-choice",
-                "Đáp án A|true;Đáp án B|false;Đáp án C|false;Đáp án D|false",
-                "Biển báo;Sa hình"
-            };
-
-            return await _importCoreService.BuildTemplateAsync(headers, sample, format, "QuestionsTemplate");
-        }
-
-        public async Task<QuestionImportResultDTO> ImportQuestionsAsync(IFormFile file)
-        {
-            var rows = await _importCoreService.ReadRowsAsync(file);
-
-            var result = new QuestionImportResultDTO { TotalRows = rows.Count };
-
-            var lessonMap = await _dbContext.QuestionLessons
-                .AsNoTracking()
-                .Where(x => x.Status != 0)
-                .ToListAsync();
-
-            var topicMap = await _dbContext.QuestionTopics
-                .AsNoTracking()
-                .Where(x => x.Status != 0)
-                .ToListAsync();
-
-            var categoryMap = await _dbContext.QuestionCategories
-                .AsNoTracking()
-                .Where(x => x.Status != 0)
-                .ToListAsync();
-
-            var tagMap = await _dbContext.Tags
-                .AsNoTracking()
-                .Where(x => x.Status != 0)
-                .ToListAsync();
-
-            var lessonLookup = lessonMap
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var topicLookup = topicMap
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var categoryLookup = categoryMap
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var tagLookup = tagMap
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            for (var index = 0; index < rows.Count; index++)
-            {
-                var rowNo = index + 2;
-                var row = rows[index];
-                try
-                {
-                    var dto = BuildQuestionCreateDto(
-                        row,
-                        rowNo,
-                        lessonLookup,
-                        topicLookup,
-                        categoryLookup,
-                        tagLookup);
-
-                    await CreateAsync(dto);
-                    result.SuccessCount++;
-                }
-                catch (Exception ex)
-                {
-                    result.FailedCount++;
-                    result.Errors.Add($"Row {rowNo}: {ex.Message}");
-                }
-            }
-
-            return result;
-        }
+        
 
 
         // private method
