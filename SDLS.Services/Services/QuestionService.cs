@@ -154,6 +154,29 @@ namespace SDLS.Services.Services
             return true;
         }
 
+        public async Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw new ArgumentException("Danh sách câu hỏi không được rỗng.");
+
+            await using var transaction = await _questionRepository.BeginTransactionAsync();
+            try
+            {
+                foreach (var dto in dtos)
+                {
+                    await CreateAsync(dto);
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);

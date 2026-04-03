@@ -21,6 +21,7 @@ namespace SDLS.Services.Interfaces
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
         Task<bool> CreateAsync(QuestionCreateDTO dto);
+        Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos);
         Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto);
         Task<byte[]> DownloadImportTemplateAsync(string format = "xlsx");
         Task<QuestionImportResultDTO> ImportQuestionsAsync(IFormFile file);
