@@ -13,18 +13,18 @@ namespace SDLS.Services.Services
     public class SituationExamService : ISituationExamService
     {
         private readonly ISituationExamRepository _repository;
-        private readonly AppDbContext _dbContext;
+        private readonly ISimulationScenarioRepository _simulationScenarioRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SituationExamService(
             ISituationExamRepository repository,
-            AppDbContext dbContext,
+            ISimulationScenarioRepository simulationScenarioRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _dbContext = dbContext;
+            _simulationScenarioRepository = simulationScenarioRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -75,7 +75,7 @@ namespace SDLS.Services.Services
 
             var now = DateTime.UtcNow.ToLocalTime();
             var scenarioIds = dto.SimulationExams.Select(x => x.SimulationId).Distinct().ToList();
-            var duration = await CalculateDurationAsync(scenarioIds);
+            var duration = await _simulationScenarioRepository.CalculateDurationAsync(scenarioIds);
 
             var entity = new SituationExam
             {
@@ -172,7 +172,7 @@ namespace SDLS.Services.Services
                 .Distinct()
                 .ToList();
 
-            existing.Duration = await CalculateDurationAsync(activeScenarioIds);
+            existing.Duration = await _simulationScenarioRepository.CalculateDurationAsync(activeScenarioIds);
 
             await _repository.UpdateAsync(existing);
             return true;
@@ -208,22 +208,6 @@ namespace SDLS.Services.Services
 
             if (duplicate != null)
                 throw new InvalidOperationException($"SimulationId bị trùng: {duplicate.Key}");
-        }
-
-        private async Task<double> CalculateDurationAsync(List<Guid> scenarioIds)
-        {
-            if (scenarioIds.Count == 0)
-                return 0d;
-
-            var scenarios = await _dbContext.SimulationScenarios
-                .Where(x => scenarioIds.Contains(x.Id) && x.Status == 1)
-                .Select(x => new { x.Id, x.TotalTime })
-                .ToListAsync();
-
-            if (scenarios.Count != scenarioIds.Count)
-                throw new KeyNotFoundException("Có SimulationScenario không tồn tại hoặc không active.");
-
-            return scenarios.Sum(x => x.TotalTime);
         }
     }
 }

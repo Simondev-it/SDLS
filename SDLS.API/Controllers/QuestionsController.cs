@@ -65,30 +65,6 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize(Roles = "Instructor")]
-        [HttpGet("import-template")]
-        public async Task<IActionResult> DownloadImportTemplate([FromQuery] string format = "xlsx")
-        {
-            var content = await _service.DownloadImportTemplateAsync(format);
-            var isCsv = string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase);
-            var fileName = isCsv ? "question-import-template.csv" : "question-import-template.xlsx";
-            var contentType = isCsv ? "text/csv" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-            return File(content, contentType, fileName);
-        }
-
-        [Authorize(Roles = "Instructor")]
-        [HttpPost("import")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<QuestionImportResultDTO>> ImportQuestions([FromForm] QuestionImportFileDTO request)
-        {
-            if (request.File == null || request.File.Length == 0)
-                return BadRequest("File không hợp lệ.");
-
-            var result = await _service.ImportQuestionsAsync(request.File);
-            return Ok(result);
-        }
-
-        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)
