@@ -13,7 +13,7 @@ public partial class ExamSession
 
     public int? Score { get; set; }
 
-    public int? TotalDuration { get; set; }
+    public double? TotalDuration { get; set; }
 
     public bool IsPassed { get; set; }
 
