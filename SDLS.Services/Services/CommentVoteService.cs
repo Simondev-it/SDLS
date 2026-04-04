@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.CommentVote;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +13,18 @@ namespace SDLS.Services.Services
     public class CommentVoteService : ICommentVoteService
     {
         private readonly ICommentVoteRepository _repository;
+        private readonly IForumCommentRepository _forumCommentRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public CommentVoteService(
             ICommentVoteRepository repository,
+            IForumCommentRepository forumCommentRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _forumCommentRepository = forumCommentRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,7 +65,11 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<CommentVoteDTO>(entity) : null;
+
+            if (entity == null)
+            throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<CommentVoteDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(CommentVoteCreateDTO dto)
@@ -69,11 +77,16 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.ForumCommentId == Guid.Empty)
-                throw new ArgumentException("ForumCommentId không được rỗng");
+                throw ApiException.BadRequest("ForumCommentId không được rỗng");
+
+            var comment = await _forumCommentRepository.GetByIdAsync(dto.ForumCommentId);
+
+            if (comment == null)
+                throw ApiException.NotFound("ForumComment không tồn tại");
 
             var existing = await _repository.GetByUserAndForumCommentAsync(currentUserId, dto.ForumCommentId);
             if (existing != null && existing.Any())
-                throw new InvalidOperationException("CommentVote cho User và ForumComment này đã tồn tại.");
+                throw ApiException.Conflict("CommentVote cho User và ForumComment này đã tồn tại.");
 
             var entity = new CommentVote
             {
@@ -92,16 +105,22 @@ namespace SDLS.Services.Services
         public async Task<bool> UpdateAsync(Guid id, CommentVoteUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id, null);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy CommentVote");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            var comment = await _forumCommentRepository.GetByIdAsync(dto.ForumCommentId);
+
+            if (comment == null)
+                throw ApiException.NotFound("ForumComment không tồn tại");
 
             var isChangingKeys = existing.UserId != currentUserId || existing.ForumCommentId != dto.ForumCommentId;
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndForumCommentAsync(currentUserId, dto.ForumCommentId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
-                    throw new InvalidOperationException("Cặp UserId và ForumCommentId mới đã tồn tại ở record khác.");
+                    throw ApiException.Conflict("Cặp UserId và ForumCommentId mới đã tồn tại ở record khác.");
             }
 
             existing.UserId = currentUserId;
@@ -115,12 +134,24 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

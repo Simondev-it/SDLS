@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
 using SDLS.Model.DTOs.Question;
@@ -8,31 +7,36 @@ using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SDLS.Services.Services
 {
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
-        private readonly IImportCoreService _importCoreService;
+        private readonly IQuestionTopicRepository _questionTopicRepository;
+        private readonly IQuestionLessonRepository _questionLessonRepository;
+        private readonly IQuestionCategoryRepository _questionCategoryRepository;
+        private readonly ITagRepository _tagRepository;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
-            IImportCoreService importCoreService,
+            IQuestionTopicRepository questionTopicRepository,
+            IQuestionLessonRepository questionLessonRepository,
+            IQuestionCategoryRepository questionCategoryRepository,
+            ITagRepository tagRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
-            _importCoreService = importCoreService;
+            _questionTopicRepository = questionTopicRepository;
+            _questionLessonRepository = questionLessonRepository;
+            _questionCategoryRepository = questionCategoryRepository;
+            _tagRepository = tagRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -94,7 +98,7 @@ namespace SDLS.Services.Services
 
             var question = await _questionRepository.GetByIdAsync(id, role);
             if (question == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<QuestionDTO>(question);
         }
@@ -103,10 +107,22 @@ namespace SDLS.Services.Services
         public async Task<bool> CreateAsync(QuestionCreateDTO dto)
         {
             if (dto.Answers == null || !dto.Answers.Any())
-                throw new ArgumentException("Question must have at least 1 answer");
+                throw ApiException.BadRequest("Question must have at least 1 answer");
 
-            if (!dto.Answers.Any(a => a.Iscorrect))
-                throw new ArgumentException("At least one answer must be correct");
+            if (!dto.Answers.Any(a => a.IsCorrect))
+                throw ApiException.BadRequest("At least one answer must be correct");
+
+            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (lesson == null)
+                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
+
+            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+            if (topic == null)
+                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
+
+            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -138,6 +154,10 @@ namespace SDLS.Services.Services
 
             foreach (var questionTag in newQuestion.QuestionTags)
             {
+                var tag = await _tagRepository.GetByIdAsync(questionTag.TagId);
+                if (tag == null)
+                    throw ApiException.BadRequest($"TagId {questionTag.TagId} không tồn tại.");
+
                 questionTag.QuestionId = newQuestion.Id;
                 questionTag.CreateAt = now;
                 questionTag.UpdateAt = now;
@@ -154,7 +174,7 @@ namespace SDLS.Services.Services
         public async Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
-                throw new ArgumentException("Danh sách câu hỏi không được rỗng.");
+                throw ApiException.BadRequest("Danh sách câu hỏi không được rỗng.");
 
             await using var transaction = await _questionRepository.BeginTransactionAsync();
             try
@@ -178,7 +198,19 @@ namespace SDLS.Services.Services
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy câu hỏi");
+                throw ApiException.NotFound("Không tìm thấy câu hỏi");
+
+            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (lesson == null)
+                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
+
+            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+            if (topic == null)
+                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
+
+            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -199,15 +231,15 @@ namespace SDLS.Services.Services
                 foreach (var answerDto in dto.Answers)
                 {
                     if (answerDto.QuestionId != id)
-                        throw new ArgumentException($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
+                        throw ApiException.BadRequest($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
 
                     if (answerDto.Id.HasValue)
                     {
                         if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
-                            throw new KeyNotFoundException($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
 
                         answer.Content = answerDto.Content;
-                        answer.IsCorrect = answerDto.Iscorrect;
+                        answer.IsCorrect = answerDto.IsCorrect;
                         answer.UpdateAt = now;
                         answer.Status = answerDto.Status ?? answer.Status ?? 1;
                     }
@@ -217,7 +249,7 @@ namespace SDLS.Services.Services
                         {
                             QuestionId = id,
                             Content = answerDto.Content,
-                            IsCorrect = answerDto.Iscorrect,
+                            IsCorrect = answerDto.IsCorrect,
                             CreateAt = now,
                             UpdateAt = now,
                             Status = answerDto.Status ?? 1
@@ -242,6 +274,10 @@ namespace SDLS.Services.Services
 
                 foreach (var tagId in newTagIds)
                 {
+                    var tag = await _tagRepository.GetByIdAsync(tagId);
+                    if (tag == null)
+                        throw ApiException.BadRequest($"TagId {tagId} không tồn tại.");
+
                     var newQuestionTag = new QuestionTag
                     {
                         QuestionId = id,
@@ -260,16 +296,11 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            return await DeleteSoftAsync(id);
-        }
-
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với Id {id}");
+                throw ApiException.NotFound($"Không tìm thấy câu hỏi với Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -284,6 +315,11 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _questionRepository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _questionRepository.DeleteHardAsync(id);
             return true;
         }
@@ -407,7 +443,7 @@ namespace SDLS.Services.Services
                 result.Add(new AnswerCreateDTO
                 {
                     Content = pieces[0],
-                    Iscorrect = isCorrect
+                    IsCorrect = isCorrect
                 });
             }
 

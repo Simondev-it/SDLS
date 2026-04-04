@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -62,7 +63,10 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<NotificationDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<NotificationDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(NotificationCreateDTO dto)
@@ -90,7 +94,8 @@ namespace SDLS.Services.Services
         public async Task<bool> UpdateAsync(Guid id, NotificationUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy Notification");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -107,12 +112,12 @@ namespace SDLS.Services.Services
                 foreach (var item in dto.UserNotifications)
                 {
                     if (item.NotificationId != id)
-                        throw new ArgumentException($"UserNotification.NotificationId ({item.NotificationId}) không khớp Notification Id ({id}).");
+                        throw ApiException.BadRequest($"UserNotification.NotificationId ({item.NotificationId}) không khớp Notification Id ({id}).");
 
                     if (item.Id.HasValue)
                     {
                         if (!byId.TryGetValue(item.Id.Value, out var un))
-                            throw new KeyNotFoundException($"Không tìm thấy UserNotification với Id {item.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy UserNotification với Id {item.Id.Value}");
 
                         un.UserId = item.UserId;
                         un.Status = item.Status ?? un.Status ?? 1;
@@ -138,12 +143,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

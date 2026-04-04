@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.Tag;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -61,7 +62,7 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<TagDTO>(entity);
         }
@@ -89,7 +90,7 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Tag");
+                throw ApiException.NotFound("Không tìm thấy Tag");
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
@@ -103,12 +104,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

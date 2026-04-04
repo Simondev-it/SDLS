@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
 
@@ -13,15 +14,18 @@ namespace SDLS.Services.Services
     public class QuestionLessonService : IQuestionLessonService
     {
         private readonly IQuestionLessonRepository _repository;
+        private readonly IQuestionChapterRepository _questionChapterRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public QuestionLessonService(
             IQuestionLessonRepository repository,
+            IQuestionChapterRepository questionChapterRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _questionChapterRepository = questionChapterRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -77,7 +81,7 @@ namespace SDLS.Services.Services
 
             var lesson = await _repository.GetByIdAsync(id, role);
             if (lesson == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<QuestionLessonDTO>(lesson);
             var images = await _repository.GetLessonImagesByLessonIdsAsync(new List<Guid> { id }, role);
@@ -89,7 +93,11 @@ namespace SDLS.Services.Services
         public async Task<bool> CreateAsync(QuestionLessonCreateDTO dto)
         {
             if (dto.QuestionChapterId == Guid.Empty)
-                throw new ArgumentException("QuestionChapterId không hợp lệ.");
+                throw ApiException.BadRequest("QuestionChapterId không hợp lệ.");
+
+            var chapter = await _questionChapterRepository.GetByIdAsync(dto.QuestionChapterId);
+            if (chapter == null)
+                throw ApiException.BadRequest("Không tìm thấy QuestionChapter với Id " + dto.QuestionChapterId);
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -118,7 +126,7 @@ namespace SDLS.Services.Services
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null)
-                throw new KeyNotFoundException("Không tìm thấy QuestionLesson");
+                throw ApiException.NotFound("Không tìm thấy QuestionLesson");
 
             var now = DateTime.UtcNow.ToLocalTime();
             var changed = false;
@@ -126,7 +134,11 @@ namespace SDLS.Services.Services
             if (dto.QuestionChapterId.HasValue)
             {
                 if (dto.QuestionChapterId.Value == Guid.Empty)
-                    throw new ArgumentException("QuestionChapterId không hợp lệ.");
+                    throw ApiException.BadRequest("QuestionChapterId không hợp lệ.");
+
+                var chapter = await _questionChapterRepository.GetByIdAsync(dto.QuestionChapterId.Value);
+                if (chapter == null)
+                    throw ApiException.BadRequest("Không tìm thấy QuestionChapter với Id " + dto.QuestionChapterId);
 
                 if (lesson.QuestionChapterId != dto.QuestionChapterId.Value)
                 {
@@ -145,7 +157,7 @@ namespace SDLS.Services.Services
             {
                 var newName = dto.Name.Trim();
                 if (string.IsNullOrWhiteSpace(newName))
-                    throw new ArgumentException("Name không được để trống.");
+                    throw ApiException.BadRequest("Name không được để trống.");
 
                 if (!string.Equals(lesson.Name, newName, StringComparison.Ordinal))
                 {
@@ -195,7 +207,7 @@ namespace SDLS.Services.Services
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null || lesson.Status != 1)
-                throw new KeyNotFoundException($"Không tìm thấy QuestionLesson với Id {id}");
+                throw ApiException.NotFound($"Không tìm thấy QuestionLesson với Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -210,6 +222,11 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var lesson = await _repository.GetByIdAsync(id, role);
+            if (lesson == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

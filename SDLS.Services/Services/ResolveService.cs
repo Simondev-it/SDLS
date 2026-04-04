@@ -6,6 +6,7 @@ using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -70,7 +71,10 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<ResolveDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<ResolveDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(ResolveCreateDTO dto)
@@ -78,7 +82,7 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.ReportId == Guid.Empty)
-                throw new ArgumentException("ReportId không được rỗng.");
+                throw ApiException.BadRequest("ReportId không được rỗng.");
 
             await _executionStrategyRepository.ExecuteAsync(async () =>
             {
@@ -89,7 +93,7 @@ namespace SDLS.Services.Services
 
                     var report = await _reportRepository.GetByIdAsync(dto.ReportId);
                     if (report == null)
-                        throw new KeyNotFoundException("Không tìm thấy Report.");
+                        throw ApiException.NotFound("Không tìm thấy Report.");
 
                     var entity = new Resolve
                     {
@@ -141,7 +145,7 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Resolve");
+                throw ApiException.NotFound("Không tìm thấy Resolve");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -158,12 +162,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

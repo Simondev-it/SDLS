@@ -8,6 +8,6 @@ namespace SDLS.Model.DTOs.Answer
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
-        public bool Iscorrect { get; set; }
+        public bool IsCorrect { get; set; }
     }
 }
