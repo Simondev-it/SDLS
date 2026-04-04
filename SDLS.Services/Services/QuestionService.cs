@@ -109,7 +109,7 @@ namespace SDLS.Services.Services
             if (dto.Answers == null || !dto.Answers.Any())
                 throw ApiException.BadRequest("Question must have at least 1 answer");
 
-            if (!dto.Answers.Any(a => a.Iscorrect))
+            if (!dto.Answers.Any(a => a.IsCorrect))
                 throw ApiException.BadRequest("At least one answer must be correct");
 
             var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
@@ -239,7 +239,7 @@ namespace SDLS.Services.Services
                             throw ApiException.NotFound($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
 
                         answer.Content = answerDto.Content;
-                        answer.IsCorrect = answerDto.Iscorrect;
+                        answer.IsCorrect = answerDto.IsCorrect;
                         answer.UpdateAt = now;
                         answer.Status = answerDto.Status ?? answer.Status ?? 1;
                     }
@@ -249,7 +249,7 @@ namespace SDLS.Services.Services
                         {
                             QuestionId = id,
                             Content = answerDto.Content,
-                            IsCorrect = answerDto.Iscorrect,
+                            IsCorrect = answerDto.IsCorrect,
                             CreateAt = now,
                             UpdateAt = now,
                             Status = answerDto.Status ?? 1
@@ -443,7 +443,7 @@ namespace SDLS.Services.Services
                 result.Add(new AnswerCreateDTO
                 {
                     Content = pieces[0],
-                    Iscorrect = isCorrect
+                    IsCorrect = isCorrect
                 });
             }
 

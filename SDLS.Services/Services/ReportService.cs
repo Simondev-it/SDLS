@@ -114,6 +114,27 @@ namespace SDLS.Services.Services
                     if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                         throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
 
+                    await ValidateIfExistsAsync(
+                        dto.SimulationId,
+                        async id => await _simulationScenarioRepository.GetByIdAsync(id),
+                        "Simulation không tồn tại.");
+
+                    await ValidateIfExistsAsync(dto.ForumPostId,
+                        async id => await _forumPostRepository.GetByIdAsync(id),
+                        "Forum Post không tồn tại.");
+
+                    await ValidateIfExistsAsync(dto.ForumCommentId,
+                        async id => await _forumCommentRepository.GetByIdAsync(id),
+                        "Forum Comment không tồn tại.");
+
+                    await ValidateIfExistsAsync(dto.QuestionId,
+                        async id => await _questionRepository.GetByIdAsync(id),
+                        "Question không tồn tại.");
+
+                    var reportCategory = await _reportCategoryRepository.GetByIdAsync(dto.ReportCategoryId);
+                    if (reportCategory == null)
+                        throw ApiException.BadRequest("Report Category không tồn tại.");
+
                     var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
                     var now = DateTime.UtcNow.ToLocalTime();
 
@@ -168,6 +189,27 @@ namespace SDLS.Services.Services
 
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
                 throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
+
+            await ValidateIfExistsAsync(
+                        dto.SimulationId,
+                        async id => await _simulationScenarioRepository.GetByIdAsync(id),
+                        "Simulation không tồn tại.");
+
+            await ValidateIfExistsAsync(dto.ForumPostId,
+                async id => await _forumPostRepository.GetByIdAsync(id),
+                "Forum Post không tồn tại.");
+
+            await ValidateIfExistsAsync(dto.ForumCommentId,
+                async id => await _forumCommentRepository.GetByIdAsync(id),
+                "Forum Comment không tồn tại.");
+
+            await ValidateIfExistsAsync(dto.QuestionId,
+                async id => await _questionRepository.GetByIdAsync(id),
+                "Question không tồn tại.");
+
+            var reportCategory = await _reportCategoryRepository.GetByIdAsync(dto.ReportCategoryId);
+            if (reportCategory == null)
+                throw ApiException.BadRequest("Report Category không tồn tại.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -267,6 +309,19 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteHardAsync(id);
             return true;
+        }
+
+        private async Task ValidateIfExistsAsync<T>(
+            Guid? id,
+            Func<Guid, Task<T?>> getFunc,
+            string errorMessage)
+            where T : class
+        {
+            if (!id.HasValue) return;
+
+            var entity = await getFunc(id.Value);
+            if (entity == null)
+                throw ApiException.BadRequest(errorMessage);
         }
     }
 }
