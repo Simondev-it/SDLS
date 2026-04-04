@@ -1,6 +1,5 @@
 ﻿using SDLS.Services.ApiExceptions;
 using System.Text.Json;
-using SDLS.Services.ApiExceptions;
 
 namespace SDLS.API.Middlewares
 {
