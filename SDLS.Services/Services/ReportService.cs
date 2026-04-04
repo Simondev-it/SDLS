@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.Report;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -13,17 +14,32 @@ namespace SDLS.Services.Services
     {
         private readonly IReportRepository _repository;
         private readonly IResolveRepository _resolveRepository;
+        private readonly ISimulationScenarioRepository _simulationScenarioRepository;
+        private readonly IForumPostRepository _forumPostRepository;
+        private readonly IForumCommentRepository _forumCommentRepository;
+        private readonly IQuestionRepository _questionRepository;
+        private readonly IReportCategoryRepository _reportCategoryRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public ReportService(
             IReportRepository repository,
             IResolveRepository resolveRepository,
+            ISimulationScenarioRepository simulationScenarioRepository,
+            IForumPostRepository forumPostRepository,
+            IForumCommentRepository forumCommentRepository,
+            IQuestionRepository questionRepository,
+            IReportCategoryRepository reportCategoryRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
             _resolveRepository = resolveRepository;
+            _simulationScenarioRepository = simulationScenarioRepository;
+            _forumPostRepository = forumPostRepository;
+            _forumCommentRepository = forumCommentRepository;
+            _questionRepository = questionRepository;
+            _reportCategoryRepository = reportCategoryRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -71,7 +87,7 @@ namespace SDLS.Services.Services
 
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<ReportDTO>(entity);
         }
@@ -79,7 +95,7 @@ namespace SDLS.Services.Services
         public async Task<bool> CreateAsync(ReportCreateDTO dto)
         {
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
-                throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
+                throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -100,10 +116,10 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Report");
+                throw ApiException.NotFound("Không tìm thấy Report");
 
             if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
-                throw new ArgumentException("Phải có ít nhất 1 đối tượng bị report.");
+                throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -127,7 +143,7 @@ namespace SDLS.Services.Services
         {
             var report = await _repository.GetByIdForUpdateAsync(id);
             if (report == null)
-                throw new KeyNotFoundException("Không tìm thấy Report");
+                throw ApiException.NotFound("Không tìm thấy Report");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -157,7 +173,7 @@ namespace SDLS.Services.Services
         {
             var report = await _repository.GetByIdForUpdateAsync(id);
             if (report == null)
-                throw new KeyNotFoundException("Không tìm thấy Report");
+                throw ApiException.NotFound("Không tìm thấy Report");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -185,12 +201,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var report = await _repository.GetByIdAsync(id, role);
+            if (report == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var report = await _repository.GetByIdAsync(id, role);
+            if (report == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }
