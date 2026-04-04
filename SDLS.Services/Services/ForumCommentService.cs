@@ -217,12 +217,24 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var target = await _repository.GetByIdAsync(id, role);
+            if (target == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var target = await _repository.GetByIdAsync(id, role);
+            if (target == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

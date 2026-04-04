@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.LessonImage;
 using SDLS.Model.Enumerations;
 using SDLS.Model.Models;
 using SDLS.Repositories.Interface.ImageInterfaces;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -39,7 +40,7 @@ namespace SDLS.Services.Services
             var image = await _lessonImageRepository.GetByIdAsync(id);
             if (image == null)
             {
-                throw new KeyNotFoundException($"Lesson image not found with ID {id}");
+                throw ApiException.NotFound($"Lesson image not found with ID {id}");
             }
 
             return _mapper.Map<LessonImageDTO>(image);
@@ -50,7 +51,7 @@ namespace SDLS.Services.Services
             var image = await _lessonImageRepository.GetByLessonIdAsync(lessonId);
             if (image == null)
             {
-                throw new KeyNotFoundException($"Lesson image not found for lesson ID {lessonId}");
+                throw ApiException.NotFound($"Lesson image not found for lesson ID {lessonId}");
             }
 
             return _mapper.Map<LessonImageDTO>(image);
@@ -60,14 +61,14 @@ namespace SDLS.Services.Services
         {
             if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("Image file is required", nameof(file));
+                throw ApiException.BadRequest("Image file is required");
             }
 
             // Validate that the QuestionLesson exists
             var questionLessonExists = await _dbContext.QuestionLessons.AnyAsync(ql => ql.Id == lessonId);
             if (!questionLessonExists)
             {
-                throw new KeyNotFoundException($"QuestionLesson with ID {lessonId} not found");
+                throw ApiException.NotFound($"QuestionLesson with ID {lessonId} not found");
             }
 
             var url = await _storageService.UploadImageAsync(file, ImageTarget.LessonImage, lessonId);
@@ -93,7 +94,7 @@ namespace SDLS.Services.Services
             var image = await _lessonImageRepository.GetByIdAsync(id);
             if (image == null)
             {
-                throw new KeyNotFoundException($"Lesson image not found with ID {id}");
+                throw ApiException.NotFound($"Lesson image not found with ID {id}");
             }
 
             if (!string.IsNullOrWhiteSpace(image.Url))
