@@ -10,7 +10,7 @@ namespace SDLS.Model.Constants
     {
         public static readonly Guid USER_ROLE_ID = Guid.Parse("66efa899-db8f-4866-bfe9-6fe9d98eca7e");
 
-        public static readonly Guid GUEST_ROLE_ID = Guid.Parse("66efa899-db8f-4866-bfe9-6fe9d98eca7e");
+        public static readonly Guid GUEST_ROLE_ID = Guid.Parse("67b62c82-e459-4b1a-b912-e1758a5c87c4");
         
         public static readonly Guid INSTRUCTOR_ROLE_ID = Guid.Parse("179599cd-c7c9-4b3b-b0c7-f832991dc7a4");
 

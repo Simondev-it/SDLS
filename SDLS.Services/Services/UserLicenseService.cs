@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +13,18 @@ namespace SDLS.Services.Services
     public class UserLicenseService : IUserLicenseService
     {
         private readonly IUserLicenseRepository _repository;
+        private readonly IDrivingLicenseRepository _drivingLicenseRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public UserLicenseService(
             IUserLicenseRepository repository,
+            IDrivingLicenseRepository drivingLicenseRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _drivingLicenseRepository = drivingLicenseRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,7 +65,10 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<UserLicenseDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<UserLicenseDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(UserLicenseCreateDTO dto)
@@ -69,11 +76,15 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.DrivingLicenseId == Guid.Empty)
-                throw new ArgumentException("DrivingLicenseId không được rỗng");
+                throw ApiException.BadRequest("DrivingLicenseId không được rỗng");
+
+            var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(dto.DrivingLicenseId);
+            if (drivingLicense == null)
+                throw ApiException.BadRequest("DrivingLicenseId không tồn tại");
 
             var existing = await _repository.GetByUserAndDrivingLicenseAsync(currentUserId, dto.DrivingLicenseId);
             if (existing != null && existing.Any())
-                throw new InvalidOperationException("UserLicense cho UserId và DrivingLicenseId này đã tồn tại.");
+                throw ApiException.Conflict("UserLicense cho UserId và DrivingLicenseId này đã tồn tại.");
 
             var entity = _mapper.Map<UserLicense>(dto);
             entity.Id = Guid.NewGuid();
@@ -89,16 +100,22 @@ namespace SDLS.Services.Services
         public async Task<bool> UpdateAsync(Guid id, UserLicenseUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy UserLicense");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             var isChangingKeys = existing.UserId != currentUserId || existing.DrivingLicenseId != dto.DrivingLicenseId;
+
+            var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(dto.DrivingLicenseId);
+            if (drivingLicense == null)
+                throw ApiException.BadRequest("DrivingLicenseId không tồn tại");
+
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndDrivingLicenseAsync(currentUserId, dto.DrivingLicenseId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
-                    throw new InvalidOperationException("Cặp UserId và DrivingLicenseId mới đã tồn tại ở record khác.");
+                    throw ApiException.Conflict("Cặp UserId và DrivingLicenseId mới đã tồn tại ở record khác.");
             }
 
             existing.UserId = currentUserId;
@@ -112,12 +129,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }
