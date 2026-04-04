@@ -6,6 +6,7 @@ using SDLS.Model.DTOs.SimulationSession;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -70,7 +71,7 @@ namespace SDLS.Services.Services
 
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<SimulationSessionDTO>(entity);
         }
@@ -80,7 +81,11 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.SituationExamId == Guid.Empty)
-                throw new ArgumentException("SituationExamId không được rỗng.");
+                throw ApiException.BadRequest("SituationExamId không được rỗng.");
+
+            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId);
+            if (situationExamExists == null)
+                throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
             ValidateDetailCreateList(dto.SimulationSessionDetails);
 
@@ -124,12 +129,16 @@ namespace SDLS.Services.Services
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy SimulationSession");
+                throw ApiException.NotFound("Không tìm thấy SimulationSession");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.SituationExamId == Guid.Empty)
-                throw new ArgumentException("SituationExamId không được rỗng.");
+                throw ApiException.BadRequest("SituationExamId không được rỗng.");
+
+            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId);
+            if (situationExamExists == null)
+                throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
             ValidateDetailUpdateList(dto.SimulationSessionDetails);
 
@@ -168,7 +177,7 @@ namespace SDLS.Services.Services
                 {
                     var child = existing.SimulationSessionDetails.FirstOrDefault(x => x.Id == item.Id.Value);
                     if (child == null)
-                        throw new KeyNotFoundException($"Không tìm thấy SimulationSessionDetail với Id {item.Id.Value}");
+                        throw ApiException.NotFound($"Không tìm thấy SimulationSessionDetail với Id {item.Id.Value}");
 
                     child.SimulationExamId = item.SimulationExamId;
                     child.DurationSecond = item.DurationSecond;
@@ -209,12 +218,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }
@@ -222,27 +241,27 @@ namespace SDLS.Services.Services
         private static void ValidateDetailCreateList(List<SimulationSessionDetailCreateDTO> items)
         {
             if (items == null || items.Count == 0)
-                throw new ArgumentException("SimulationSessionDetails không được rỗng.");
+                throw ApiException.BadRequest("SimulationSessionDetails không được rỗng.");
 
             var duplicate = items
                 .GroupBy(x => x.SimulationExamId)
                 .FirstOrDefault(g => g.Count() > 1);
 
             if (duplicate != null)
-                throw new InvalidOperationException($"SimulationExamId bị trùng: {duplicate.Key}");
+                throw ApiException.Conflict($"SimulationExamId bị trùng: {duplicate.Key}");
         }
 
         private static void ValidateDetailUpdateList(List<SimulationSessionDetailUpdateDTO> items)
         {
             if (items == null || items.Count == 0)
-                throw new ArgumentException("SimulationSessionDetails không được rỗng.");
+                throw ApiException.BadRequest("SimulationSessionDetails không được rỗng.");
 
             var duplicate = items
                 .GroupBy(x => x.SimulationExamId)
                 .FirstOrDefault(g => g.Count() > 1);
 
             if (duplicate != null)
-                throw new InvalidOperationException($"SimulationExamId bị trùng: {duplicate.Key}");
+                throw ApiException.Conflict($"SimulationExamId bị trùng: {duplicate.Key}");
         }
     }
 }
