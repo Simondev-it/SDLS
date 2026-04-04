@@ -1,6 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Constants;
 using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Report;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -19,6 +22,9 @@ namespace SDLS.Services.Services
         private readonly IForumCommentRepository _forumCommentRepository;
         private readonly IQuestionRepository _questionRepository;
         private readonly IReportCategoryRepository _reportCategoryRepository;
+        private readonly INotificationService _notificationService;
+        private readonly IExecutionStrategyRepository _executionStrategy;
+        private readonly AppDbContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
@@ -30,6 +36,9 @@ namespace SDLS.Services.Services
             IForumCommentRepository forumCommentRepository,
             IQuestionRepository questionRepository,
             IReportCategoryRepository reportCategoryRepository,
+            INotificationService notificationService,
+            IExecutionStrategyRepository executionStrategyRepository,
+            AppDbContext dbContext,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
@@ -40,6 +49,9 @@ namespace SDLS.Services.Services
             _forumCommentRepository = forumCommentRepository;
             _questionRepository = questionRepository;
             _reportCategoryRepository = reportCategoryRepository;
+            _notificationService = notificationService;
+            _executionStrategy = executionStrategyRepository;
+            _dbContext = dbContext;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -94,22 +106,58 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(ReportCreateDTO dto)
         {
-            if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
-                throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
+            return await _executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+                try
+                {
+                    if (!dto.SimulationId.HasValue && !dto.ForumPostId.HasValue && !dto.ForumCommentId.HasValue && !dto.QuestionId.HasValue)
+                        throw ApiException.BadRequest("Phải có ít nhất 1 đối tượng bị report.");
 
-            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+                    var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+                    var now = DateTime.UtcNow.ToLocalTime();
 
-            var entity = _mapper.Map<Report>(dto);
-            entity.Id = Guid.NewGuid();
-            entity.UserId = currentUserId;
-            entity.CreateAt = now;
-            entity.UpdateAt = now;
-            entity.Status = -1;
-            entity.Image = dto.Image;
+                    var entity = _mapper.Map<Report>(dto);
+                    entity.Id = Guid.NewGuid();
+                    entity.UserId = currentUserId;
+                    entity.CreateAt = now;
+                    entity.UpdateAt = now;
+                    entity.Status = -1;
+                    entity.Image = dto.Image;
 
-            await _repository.AddAsync(entity);
-            return true;
+                    await _repository.AddAsync(entity);
+
+                    var instructorUserIds = await _dbContext.Users
+                        .AsNoTracking()
+                        .Where(x => x.RoleId == RoleConst.INSTRUCTOR_ROLE_ID && x.Status != 0)
+                        .Select(x => x.Id)
+                        .Distinct()
+                        .ToListAsync();
+
+                    if (instructorUserIds.Any())
+                    {
+                        var notification = new NotificationCreateDTO
+                        {
+                            Title = "Báo cáo mới",
+                            Content = $"Có báo cáo mới cần xử lý: '{entity.Title}'.",
+                            Status = 2,
+                            UserNotifications = instructorUserIds
+                                .Select(userId => new UserNotificationCreateDTO { UserId = userId })
+                                .ToList()
+                        };
+
+                        await _notificationService.CreateAsync(notification);
+                    }
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> UpdateAsync(Guid id, ReportUpdateDTO dto)
