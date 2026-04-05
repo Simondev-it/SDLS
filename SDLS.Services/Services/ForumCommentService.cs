@@ -53,19 +53,11 @@ namespace SDLS.Services.Services
 
             var all = (await _repository.GetAllAsync(id, forumPostId, userId, content, status, role)).ToList();
 
-            var ordered = all.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList();
+            var ordered = all.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
+            var total = ordered.Count;
+            var pageItems = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var replyLookup = ordered
-                .Where(x => x.ReplyId.HasValue)
-                .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
-
-            var roots = ordered.Where(x => x.ReplyId == null).ToList();
-
-            var total = roots.Count;
-            var pageRoots = roots.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var dtos = pageRoots.Select(x => BuildCommentTree(x, replyLookup)).ToList();
+            var dtos = _mapper.Map<List<ForumCommentDTO>>(pageItems);
 
             return new PagedResult<ForumCommentDTO>
             {
@@ -85,17 +77,7 @@ namespace SDLS.Services.Services
             if (target == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
-            var all = (await _repository.GetAllAsync(
-                forumPostId: target.ForumPostId,
-                status: null,
-                role: role)).ToList();
-
-            var replyLookup = all
-                .Where(x => x.ReplyId.HasValue)
-                .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
-
-            return BuildCommentTree(target, replyLookup);
+            return _mapper.Map<ForumCommentDTO>(target);
         }
 
         public async Task<bool> CreateAsync(ForumCommentCreateDTO dto)
@@ -239,20 +221,5 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        private ForumCommentDTO BuildCommentTree(
-            ForumComment comment,
-            Dictionary<Guid, List<ForumComment>> replyLookup)
-        {
-            var dto = _mapper.Map<ForumCommentDTO>(comment);
-
-            if (replyLookup.TryGetValue(comment.Id, out var replies))
-            {
-                dto.Replies = replies
-                    .Select(x => BuildCommentTree(x, replyLookup))
-                    .ToList();
-            }
-
-            return dto;
-        }
     }
 }
