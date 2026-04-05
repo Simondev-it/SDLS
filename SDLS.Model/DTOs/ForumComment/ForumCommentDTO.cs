@@ -14,6 +14,8 @@ public class ForumCommentDTO
     public Guid UserId { get; set; }
     public string Content { get; set; } = null!;
     public int? Status { get; set; }
+    public DateTime? CreateAt { get; set; }
+    public DateTime? UpdateAt { get; set; }
 
     public ForumCommentUserBriefDTO? User { get; set; }
     public ForumCommentPostBriefDTO? ForumPost { get; set; }
