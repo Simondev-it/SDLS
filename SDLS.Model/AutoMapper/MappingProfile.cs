@@ -166,8 +166,7 @@ namespace SDLS.Model.AutoMapper
             CreateMap<CommentVoteUpdateDTO, CommentVote>().ReverseMap();
             CreateMap<ForumCommentBriefDTO, ForumComment>().ReverseMap();
 
-            CreateMap<ForumComment, ForumCommentDTO>()
-                .ForMember(dest => dest.Replies, opt => opt.Ignore());
+            CreateMap<ForumComment, ForumCommentDTO>();
             CreateMap<ForumCommentCreateDTO, ForumComment>().ReverseMap();
             CreateMap<ForumCommentUpdateDTO, ForumComment>().ReverseMap();
 

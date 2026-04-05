@@ -18,6 +18,4 @@ public class ForumCommentDTO
     public ForumCommentUserBriefDTO? User { get; set; }
     public ForumCommentPostBriefDTO? ForumPost { get; set; }
     public List<ForumCommentVoteBriefDTO> CommentVotes { get; set; } = new();
-
-    public List<ForumCommentDTO> Replies { get; set; } = new();
 }
