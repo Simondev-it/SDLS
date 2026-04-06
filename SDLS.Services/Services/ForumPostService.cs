@@ -90,6 +90,16 @@ namespace SDLS.Services.Services
 
         public async Task<bool> CreateAsync(ForumPostCreateDTO dto)
         {
+            return await CreateInternalAsync(dto, -1);
+        }
+
+        public async Task<bool> CreateByInstructorAsync(ForumPostCreateDTO dto)
+        {
+            return await CreateInternalAsync(dto, 1);
+        }
+
+        private async Task<bool> CreateInternalAsync(ForumPostCreateDTO dto, int status)
+        {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -111,7 +121,7 @@ namespace SDLS.Services.Services
                 ViewCount = 0,
                 CreateAt = now,
                 UpdateAt = now,
-                Status = -1
+                Status = status
             };
 
             await _repository.AddAsync(forumPost);

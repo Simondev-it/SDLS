@@ -50,6 +50,15 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize(Roles = "Instructor")]
+        [HttpPost("instructor")]
+        public async Task<ActionResult<bool>> CreateByInstructor([FromBody] ForumPostCreateDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var created = await _service.CreateByInstructorAsync(dto);
+            return Ok(created);
+        }
+
         [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumPostUpdateDTO dto)
