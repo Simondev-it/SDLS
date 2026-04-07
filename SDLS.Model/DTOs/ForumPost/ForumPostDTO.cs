@@ -9,7 +9,9 @@ namespace SDLS.Model.DTOs.ForumPost
         public string Title { get; set; } = null!;
         public string Content { get; set; } = null!;
         public int? ViewCount { get; set; }
+        public int CommentCount { get; set; }
         public int? Status { get; set; }
+        public ForumPostUserBriefDTO? User { get; set; }
         public List<ForumPostImageDTO> PostImages { get; set; } = new();
     }
 }
