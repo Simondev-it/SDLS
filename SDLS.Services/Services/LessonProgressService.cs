@@ -81,7 +81,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<List<LessonProgressDTO>>(entities);
         }
 
-        public async Task<bool> CreateAsync(LessonProgressCreateDTO dto)
+        public async Task<LessonProgressDTO> CreateAsync(LessonProgressCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -104,10 +104,10 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, LessonProgressUpdateDTO dto)
+        public async Task<LessonProgressDTO> UpdateAsync(Guid id, LessonProgressUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -135,10 +135,10 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<LessonProgressDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
@@ -146,10 +146,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<LessonProgressDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
@@ -157,7 +159,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteHardAsync(id);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
     }
 }

@@ -171,7 +171,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<QuestionDTO>(newQuestion);
         }
 
-        public async Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos)
+        public async Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
                 throw ApiException.BadRequest("Danh sách câu hỏi không được rỗng.");
@@ -179,13 +179,16 @@ namespace SDLS.Services.Services
             await using var transaction = await _questionRepository.BeginTransactionAsync();
             try
             {
+                var createdItems = new List<QuestionDTO>();
+
                 foreach (var dto in dtos)
                 {
-                    await CreateAsync(dto);
+                    var created = await CreateAsync(dto);
+                    createdItems.Add(created);
                 }
 
                 await transaction.CommitAsync();
-                return true;
+                return createdItems;
             }
             catch
             {

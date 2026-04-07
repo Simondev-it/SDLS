@@ -105,17 +105,20 @@ namespace SDLS.Services.Services
             return _mapper.Map<SimulationScenarioDTO>(entity);
         }
 
-        public async Task<bool> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
+        public async Task<List<SimulationScenarioDTO>> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
                 throw ApiException.BadRequest("Danh sách tình huống mô phỏng không được rỗng.");
 
+            var createdItems = new List<SimulationScenarioDTO>();
+
             foreach (var dto in dtos)
             {
-                await CreateAsync(dto);
+                var created = await CreateAsync(dto);
+                createdItems.Add(created);
             }
 
-            return true;
+            return createdItems;
         }
 
         public async Task<SimulationScenarioDTO> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto)

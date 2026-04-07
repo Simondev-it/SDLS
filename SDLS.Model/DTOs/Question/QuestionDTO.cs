@@ -22,6 +22,8 @@ namespace SDLS.Model.DTOs.Question
         public string? Explanation { get; set; }
         public string? Type { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public List<AnswerDTO> Answers { get; set; } = new();
         public List<QuestionTagDTO> QuestionTags { get; set; } = new();

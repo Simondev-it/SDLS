@@ -15,6 +15,8 @@ namespace SDLS.Model.DTOs.Notification
         public string? Image { get; set; }
 
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public List<UserNotificationDTO> UserNotifications { get; set; } = new();
     }

@@ -21,7 +21,7 @@ namespace SDLS.Services.Interfaces
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
         Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto);
-        Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos);
+        Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos);
         Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto);
         Task<QuestionDTO> DeleteSoftAsync(Guid id);
         Task<QuestionDTO> DeleteHardAsync(Guid id);

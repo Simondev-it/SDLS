@@ -82,7 +82,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<PostReactDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(PostReactCreateDTO dto)
+        public async Task<PostReactDTO> CreateAsync(PostReactCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -109,10 +109,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<PostReactDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, PostReactUpdateDTO dto)
+        public async Task<PostReactDTO> UpdateAsync(Guid id, PostReactUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
@@ -140,10 +140,10 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<PostReactDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<PostReactDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -151,10 +151,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<PostReactDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<PostReactDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -162,7 +164,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteHardAsync(id);
-            return true;
+            return _mapper.Map<PostReactDTO>(entity);
         }
     }
 }

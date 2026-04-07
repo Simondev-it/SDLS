@@ -13,6 +13,8 @@ namespace SDLS.Model.DTOs.TrafficSign
         public string? VectorData { get; set; }
         public string? Image { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public SignCategoryDTO? SignCategory { get; set; }
     }
