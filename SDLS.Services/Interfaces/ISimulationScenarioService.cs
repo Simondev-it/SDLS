@@ -16,7 +16,7 @@ namespace SDLS.Services.Interfaces
 
         Task<SimulationScenarioDTO> GetByIdAsync(Guid id);
         Task<SimulationScenarioDTO> CreateAsync(SimulationScenarioCreateDTO dto);
-        Task<bool> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos);
+        Task<List<SimulationScenarioDTO>> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos);
         Task<SimulationScenarioDTO> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto);
         Task<SimulationScenarioDTO> DeleteSoftAsync(Guid id);
         Task<SimulationScenarioDTO> DeleteHardAsync(Guid id);

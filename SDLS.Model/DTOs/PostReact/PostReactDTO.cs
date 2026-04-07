@@ -9,6 +9,8 @@ namespace SDLS.Model.DTOs.PostReact
         public Guid UserId { get; set; }
         public string ReactType { get; set; } = null!;
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public ForumPostDTO? ForumPost { get; set; }
     }

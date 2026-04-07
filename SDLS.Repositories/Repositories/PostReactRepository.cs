@@ -87,6 +87,13 @@ namespace SDLS.Repositories.Repositories
 
         public async Task UpdateAsync(PostReact entity)
         {
+            _context.PostReacts.Attach(entity);
+            _context.Entry(entity).Property(x => x.UserId).IsModified = true;
+            _context.Entry(entity).Property(x => x.ForumPostId).IsModified = true;
+            _context.Entry(entity).Property(x => x.ReactType).IsModified = true;
+            _context.Entry(entity).Property(x => x.UpdateAt).IsModified = true;
+            _context.Entry(entity).Property(x => x.Status).IsModified = true;
+
             await _context.SaveChangesAsync();
         }
 

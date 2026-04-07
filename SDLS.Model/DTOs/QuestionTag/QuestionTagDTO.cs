@@ -15,5 +15,7 @@ namespace SDLS.Model.DTOs.QuestionTag
         public Guid TagId { get; set; }
 
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
     }
 }

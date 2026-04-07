@@ -15,9 +15,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<NotificationDTO?> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(NotificationCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, NotificationUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<NotificationDTO> CreateAsync(NotificationCreateDTO dto);
+        Task<NotificationDTO> UpdateAsync(Guid id, NotificationUpdateDTO dto);
+        Task<NotificationDTO> DeleteSoftAsync(Guid id);
+        Task<NotificationDTO> DeleteHardAsync(Guid id);
     }
 }

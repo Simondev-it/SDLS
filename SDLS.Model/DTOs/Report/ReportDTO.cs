@@ -20,6 +20,8 @@ namespace SDLS.Model.DTOs.Report
         public string Content { get; set; } = null!;
         public string? Image { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public ReportCategoryDTO? ReportCategory { get; set; }
         public ForumCommentDTO? ForumComment { get; set; }

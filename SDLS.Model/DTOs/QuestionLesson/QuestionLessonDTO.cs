@@ -11,6 +11,8 @@ namespace SDLS.Model.DTOs.QuestionLesson
         public string? Description { get; set; }
         public string? Content { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
         public List<QuestionLessonImageDTO> LessonImages { get; set; } = new();
 
         public QuestionChapterDTO? QuestionChapter { get; set; }
