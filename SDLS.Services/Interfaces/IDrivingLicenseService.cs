@@ -22,9 +22,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<DrivingLicenseDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(DrivingLicenseCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<DrivingLicenseDTO> CreateAsync(DrivingLicenseCreateDTO dto);
+        Task<DrivingLicenseDTO> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto);
+        Task<DrivingLicenseDTO> DeleteSoftAsync(Guid id);
+        Task<DrivingLicenseDTO> DeleteHardAsync(Guid id);
     }
 }

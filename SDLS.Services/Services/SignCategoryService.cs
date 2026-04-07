@@ -68,7 +68,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<SignCategoryDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SignCategoryCreateDTO dto)
+        public async Task<SignCategoryDTO> CreateAsync(SignCategoryCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -83,10 +83,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SignCategoryDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SignCategoryUpdateDTO dto)
+        public async Task<SignCategoryDTO> UpdateAsync(Guid id, SignCategoryUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -98,10 +98,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SignCategoryDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SignCategoryDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -109,18 +109,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SignCategoryDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SignCategoryDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<SignCategoryDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

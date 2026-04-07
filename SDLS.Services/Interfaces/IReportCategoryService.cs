@@ -20,9 +20,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<ReportCategoryDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(ReportCategoryCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<ReportCategoryDTO> CreateAsync(ReportCategoryCreateDTO dto);
+        Task<ReportCategoryDTO> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto);
+        Task<ReportCategoryDTO> DeleteSoftAsync(Guid id);
+        Task<ReportCategoryDTO> DeleteHardAsync(Guid id);
     }
 }

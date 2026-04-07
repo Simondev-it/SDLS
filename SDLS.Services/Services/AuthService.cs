@@ -94,7 +94,7 @@ namespace SDLS.Services.Services
                 Gender = dto.Gender,
                 DateOfBirth = dto.DateOfBirth,
 
-                RoleId = RoleConst.GUEST_ROLE_ID, // mặc định USER
+                RoleId = RoleConst.GUEST_ROLE_ID, // mặc định GUEST (đã sửa)
                 CreateAt = DateTime.Now,
                 Status = 1
             };

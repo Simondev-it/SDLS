@@ -68,7 +68,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<ReportCategoryDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(ReportCategoryCreateDTO dto)
+        public async Task<ReportCategoryDTO> CreateAsync(ReportCategoryCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -83,10 +83,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<ReportCategoryDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto)
+        public async Task<ReportCategoryDTO> UpdateAsync(Guid id, ReportCategoryUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -98,10 +98,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ReportCategoryDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ReportCategoryDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
@@ -109,18 +109,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<ReportCategoryDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ReportCategoryDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
             if (existing == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<ReportCategoryDTO>(existing);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

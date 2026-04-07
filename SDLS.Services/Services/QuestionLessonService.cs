@@ -90,7 +90,7 @@ namespace SDLS.Services.Services
             return dto;
         }
 
-        public async Task<bool> CreateAsync(QuestionLessonCreateDTO dto)
+        public async Task<QuestionLessonDTO> CreateAsync(QuestionLessonCreateDTO dto)
         {
             if (dto.QuestionChapterId == Guid.Empty)
                 throw ApiException.BadRequest("QuestionChapterId không hợp lệ.");
@@ -119,10 +119,10 @@ namespace SDLS.Services.Services
             await SyncLessonImagesFromContentAsync(lesson.Id, dto.Content, now);
             await _repository.UpdateAsync(lesson);
 
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
+        public async Task<QuestionLessonDTO> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null)
@@ -190,20 +190,20 @@ namespace SDLS.Services.Services
             }
 
             if (!changed)
-                return true;
+                return _mapper.Map<QuestionLessonDTO>(lesson);
 
             lesson.UpdateAt = now;
 
             await _repository.UpdateAsync(lesson);
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteAsync(Guid id)
         {
             return await DeleteSoftAsync(id);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteSoftAsync(Guid id)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null || lesson.Status != 1)
@@ -217,18 +217,19 @@ namespace SDLS.Services.Services
             await _repository.SoftDeleteLessonImagesAsync(id, now);
             await _repository.UpdateAsync(lesson);
 
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var lesson = await _repository.GetByIdAsync(id, role);
             if (lesson == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<QuestionLessonDTO>(lesson);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private async Task SyncLessonImagesFromContentAsync(Guid lessonId, string? content, DateTime now)

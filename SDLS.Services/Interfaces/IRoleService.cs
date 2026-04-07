@@ -20,9 +20,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<RoleDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(RoleCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, RoleUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<RoleDTO> CreateAsync(RoleCreateDTO dto);
+        Task<RoleDTO> UpdateAsync(Guid id, RoleUpdateDTO dto);
+        Task<RoleDTO> DeleteSoftAsync(Guid id);
+        Task<RoleDTO> DeleteHardAsync(Guid id);
     }
 }

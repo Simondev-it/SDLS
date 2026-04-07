@@ -15,9 +15,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<ForumCommentDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(ForumCommentCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, ForumCommentUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<ForumCommentDTO> CreateAsync(ForumCommentCreateDTO dto);
+        Task<ForumCommentDTO> UpdateAsync(Guid id, ForumCommentUpdateDTO dto);
+        Task<ForumCommentDTO> DeleteSoftAsync(Guid id);
+        Task<ForumCommentDTO> DeleteHardAsync(Guid id);
     }
 }
