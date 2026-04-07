@@ -76,7 +76,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<SimulationSessionDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SimulationSessionCreateDTO dto)
+        public async Task<SimulationSessionDTO> CreateAsync(SimulationSessionCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -122,10 +122,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SimulationSessionDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SimulationSessionUpdateDTO dto)
+        public async Task<SimulationSessionDTO> UpdateAsync(Guid id, SimulationSessionUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -213,10 +213,10 @@ namespace SDLS.Services.Services
             existing.IsPassed = totalScore >= passScore;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SimulationSessionDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SimulationSessionDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -224,18 +224,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SimulationSessionDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SimulationSessionDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<SimulationSessionDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private static void ValidateDetailCreateList(List<SimulationSessionDetailCreateDTO> items)

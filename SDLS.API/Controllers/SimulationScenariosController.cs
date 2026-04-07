@@ -49,7 +49,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor")]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] SimulationScenarioCreateDTO dto)
+        public async Task<ActionResult<SimulationScenarioDTO>> Create([FromBody] SimulationScenarioCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -70,28 +70,27 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] SimulationScenarioUpdateDTO dto)
+        public async Task<ActionResult<SimulationScenarioDTO>> Update(Guid id, [FromBody] SimulationScenarioUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
-            if (!updated) return NotFound();
             return Ok(updated);
         }
 
         [Authorize(Roles = "Instructor")]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<SimulationScenarioDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
         [Authorize(Roles = "Instructor")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<SimulationScenarioDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

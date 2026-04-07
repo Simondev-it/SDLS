@@ -20,9 +20,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<SavedTrafficSignDTO?> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(SavedTrafficSignCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, SavedTrafficSignUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<SavedTrafficSignDTO> CreateAsync(SavedTrafficSignCreateDTO dto);
+        Task<SavedTrafficSignDTO> UpdateAsync(Guid id, SavedTrafficSignUpdateDTO dto);
+        Task<SavedTrafficSignDTO> DeleteSoftAsync(Guid id);
+        Task<SavedTrafficSignDTO> DeleteHardAsync(Guid id);
     }
 }

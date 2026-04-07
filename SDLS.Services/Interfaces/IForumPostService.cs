@@ -17,12 +17,12 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<ForumPostDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(ForumPostCreateDTO dto);
-        Task<bool> CreateByInstructorAsync(ForumPostCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, ForumPostUpdateDTO dto);
-        Task<bool> ApproveAsync(Guid id);
-        Task<bool> DisapproveAsync(Guid id);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<ForumPostDTO> CreateAsync(ForumPostCreateDTO dto);
+        Task<ForumPostDTO> CreateByInstructorAsync(ForumPostCreateDTO dto);
+        Task<ForumPostDTO> UpdateAsync(Guid id, ForumPostUpdateDTO dto);
+        Task<ForumPostDTO> ApproveAsync(Guid id);
+        Task<ForumPostDTO> DisapproveAsync(Guid id);
+        Task<ForumPostDTO> DeleteSoftAsync(Guid id);
+        Task<ForumPostDTO> DeleteHardAsync(Guid id);
     }
 }

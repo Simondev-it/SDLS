@@ -52,7 +52,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] ReportCreateDTO dto)
+        public async Task<ActionResult<ReportDTO>> Create([FromBody] ReportCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -61,7 +61,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ReportUpdateDTO dto)
+        public async Task<ActionResult<ReportDTO>> Update(Guid id, [FromBody] ReportUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
@@ -70,7 +70,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}/approve")]
-        public async Task<ActionResult<bool>> Approve(Guid id, [FromBody] ReportResolveActionDTO dto)
+        public async Task<ActionResult<ReportDTO>> Approve(Guid id, [FromBody] ReportResolveActionDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _service.ApproveAsync(id, dto);
@@ -79,7 +79,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}/disapprove")]
-        public async Task<ActionResult<bool>> Disapprove(Guid id, [FromBody] ReportResolveActionDTO dto)
+        public async Task<ActionResult<ReportDTO>> Disapprove(Guid id, [FromBody] ReportResolveActionDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _service.DisapproveAsync(id, dto);
@@ -88,18 +88,18 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<ReportDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<ReportDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }
