@@ -41,7 +41,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] ExamSessionCreateDTO dto)
+        public async Task<ActionResult<ExamSessionDTO>> Create([FromBody] ExamSessionCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -50,28 +50,27 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ExamSessionUpdateDTO dto)
+        public async Task<ActionResult<ExamSessionDTO>> Update(Guid id, [FromBody] ExamSessionUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
-            if (updated == null) return NotFound();
             return Ok(updated);
         }
 
         [Authorize]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<ExamSessionDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<ExamSessionDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

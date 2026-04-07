@@ -70,7 +70,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<TrafficSignDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(TrafficSignCreateDTO dto)
+        public async Task<TrafficSignDTO> CreateAsync(TrafficSignCreateDTO dto)
         {
             var category = await _signCategoryRepository.GetByIdAsync(dto.SignCategoryId);
             if (category == null)
@@ -87,7 +87,7 @@ namespace SDLS.Services.Services
             entity.Image = dto.Image;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<TrafficSignDTO>(entity);
         }
 
         public async Task<bool> CreateManyAsync(List<TrafficSignCreateDTO> dtos)
@@ -103,7 +103,7 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, TrafficSignUpdateDTO dto)
+        public async Task<TrafficSignDTO> UpdateAsync(Guid id, TrafficSignUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -124,10 +124,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<TrafficSignDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<TrafficSignDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -135,18 +135,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<TrafficSignDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<TrafficSignDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<TrafficSignDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

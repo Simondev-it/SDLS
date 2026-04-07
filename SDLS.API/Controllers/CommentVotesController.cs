@@ -51,7 +51,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] CommentVoteCreateDTO dto)
+        public async Task<ActionResult<CommentVoteDTO>> Create([FromBody] CommentVoteCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
@@ -60,28 +60,27 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] CommentVoteUpdateDTO dto)
+        public async Task<ActionResult<CommentVoteDTO>> Update(Guid id, [FromBody] CommentVoteUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
-            if (!updated) return NotFound();
-            return Ok(true);
+            return Ok(updated);
         }
 
         [Authorize]
         [HttpPatch("{id}/soft-delete")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<CommentVoteDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<CommentVoteDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

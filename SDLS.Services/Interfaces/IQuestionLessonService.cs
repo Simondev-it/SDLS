@@ -16,11 +16,11 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<QuestionLessonDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(QuestionLessonCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto);
+        Task<QuestionLessonDTO> CreateAsync(QuestionLessonCreateDTO dto);
+        Task<QuestionLessonDTO> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto);
 
-        Task<bool> DeleteAsync(Guid id);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<QuestionLessonDTO> DeleteAsync(Guid id);
+        Task<QuestionLessonDTO> DeleteSoftAsync(Guid id);
+        Task<QuestionLessonDTO> DeleteHardAsync(Guid id);
     }
 }

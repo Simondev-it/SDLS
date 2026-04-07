@@ -72,7 +72,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<CommentVoteDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(CommentVoteCreateDTO dto)
+        public async Task<CommentVoteDTO> CreateAsync(CommentVoteCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -99,10 +99,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<CommentVoteDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, CommentVoteUpdateDTO dto)
+        public async Task<CommentVoteDTO> UpdateAsync(Guid id, CommentVoteUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id, null);
             if (existing == null)
@@ -129,10 +129,10 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<CommentVoteDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<CommentVoteDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -141,10 +141,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<CommentVoteDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<CommentVoteDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -152,8 +154,9 @@ namespace SDLS.Services.Services
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<CommentVoteDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }
