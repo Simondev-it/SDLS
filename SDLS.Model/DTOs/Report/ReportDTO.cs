@@ -28,6 +28,7 @@ namespace SDLS.Model.DTOs.Report
         public ForumPostDTO? ForumPost { get; set; }
         public QuestionDTO? Question { get; set; }
         public SimulationScenarioDTO? Simulation { get; set; }
+        public ReportUserBriefDTO? User { get; set; }
         public List<ResolveDTO> Resolves { get; set; } = new();
     }
 }
