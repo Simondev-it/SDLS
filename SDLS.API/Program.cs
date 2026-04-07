@@ -309,8 +309,8 @@ namespace SDLS.API
 
             //dùng để deploy trên Railway, render.com,... những nền tảng yêu cầu app phải lắng nghe trên cổng do hệ thống cung cấp qua biến môi trường
             //////////////////////////////////////////////////////////////////////////////////////
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+            //var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            //builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
             ///////////////////////////////////////////////////////////////////////////////////////
             ///
 
