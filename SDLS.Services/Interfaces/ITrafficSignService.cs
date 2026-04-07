@@ -17,7 +17,7 @@ namespace SDLS.Services.Interfaces
 
         Task<TrafficSignDTO> GetByIdAsync(Guid id);
         Task<TrafficSignDTO> CreateAsync(TrafficSignCreateDTO dto);
-        Task<bool> CreateManyAsync(List<TrafficSignCreateDTO> dtos);
+        Task<List<TrafficSignDTO>> CreateManyAsync(List<TrafficSignCreateDTO> dtos);
         Task<TrafficSignDTO> UpdateAsync(Guid id, TrafficSignUpdateDTO dto);
         Task<TrafficSignDTO> DeleteSoftAsync(Guid id);
         Task<TrafficSignDTO> DeleteHardAsync(Guid id);

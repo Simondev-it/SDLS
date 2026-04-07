@@ -54,7 +54,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor")]
         [HttpPost("bulk")]
-        public async Task<ActionResult<bool>> CreateMany([FromBody] List<QuestionCreateDTO> dtos)
+        public async Task<ActionResult<List<QuestionDTO>>> CreateMany([FromBody] List<QuestionCreateDTO> dtos)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (dtos == null || dtos.Count == 0)

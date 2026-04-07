@@ -90,17 +90,20 @@ namespace SDLS.Services.Services
             return _mapper.Map<TrafficSignDTO>(entity);
         }
 
-        public async Task<bool> CreateManyAsync(List<TrafficSignCreateDTO> dtos)
+        public async Task<List<TrafficSignDTO>> CreateManyAsync(List<TrafficSignCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
                 throw ApiException.BadRequest("Danh sách biển báo không được rỗng.");
 
+            var createdItems = new List<TrafficSignDTO>();
+
             foreach (var dto in dtos)
             {
-                await CreateAsync(dto);
+                var created = await CreateAsync(dto);
+                createdItems.Add(created);
             }
 
-            return true;
+            return createdItems;
         }
 
         public async Task<TrafficSignDTO> UpdateAsync(Guid id, TrafficSignUpdateDTO dto)

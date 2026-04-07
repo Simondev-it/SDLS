@@ -22,9 +22,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<PostReactDTO?> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(PostReactCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, PostReactUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<PostReactDTO> CreateAsync(PostReactCreateDTO dto);
+        Task<PostReactDTO> UpdateAsync(Guid id, PostReactUpdateDTO dto);
+        Task<PostReactDTO> DeleteSoftAsync(Guid id);
+        Task<PostReactDTO> DeleteHardAsync(Guid id);
     }
 }
