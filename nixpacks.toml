@@ -1,5 +1,0 @@
-[phases.build]
-cmds = ["dotnet publish SDLS.API/SDLS.API.csproj -c Release -o out"]
-
-[phases.start]
-cmd = "dotnet out/SDLS.API.dll"
