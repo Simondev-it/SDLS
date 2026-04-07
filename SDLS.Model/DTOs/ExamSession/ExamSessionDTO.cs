@@ -12,6 +12,8 @@ namespace SDLS.Model.DTOs.ExamSession
         public double? TotalDuration { get; set; }
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public ExamDTO? Exam { get; set; }
         public List<ExamDetailDTO> ExamDetails { get; set; } = new();

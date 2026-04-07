@@ -18,6 +18,8 @@ namespace SDLS.Model.DTOs.SimulationScenario
         public double StartPoint { get; set; }
         public double EndPoint { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         //public SimulationDifficultyLevelBriefDTO? SimulationDifficultyLevel { get; set; }
         //public SimulationCategoryBriefDTO? SimulationCategory { get; set; }

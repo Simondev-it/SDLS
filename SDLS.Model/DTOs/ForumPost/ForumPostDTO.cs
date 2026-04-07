@@ -11,6 +11,8 @@ namespace SDLS.Model.DTOs.ForumPost
         public int? ViewCount { get; set; }
         public int CommentCount { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
         public ForumPostUserBriefDTO? User { get; set; }
         public List<ForumPostImageDTO> PostImages { get; set; } = new();
     }
