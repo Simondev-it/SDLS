@@ -10,6 +10,9 @@ namespace SDLS.Repositories.Repositories
     {
         public async Task<IEnumerable<DrivingLicense>> GetAllAsync(
             Guid? id = null,
+            string? name = null,
+            string? description = null,
+            string? vehicleName = null,
             int? status = null,
             string? role = null)
         {
@@ -24,6 +27,15 @@ namespace SDLS.Repositories.Repositories
 
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(x => x.Name != null && EF.Functions.ILike(x.Name, $"%{name}%"));
+
+            if (!string.IsNullOrWhiteSpace(description))
+                query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{description}%"));
+
+            if (!string.IsNullOrWhiteSpace(vehicleName))
+                query = query.Where(x => x.Vehicles.Any(v => v.Status != 0 && v.Name != null && EF.Functions.ILike(v.Name, $"%{vehicleName}%")));
 
             query = query.ApplyRoleFilter(role);
 

@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.TrafficSign;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +13,18 @@ namespace SDLS.Services.Services
     public class TrafficSignService : ITrafficSignService
     {
         private readonly ITrafficSignRepository _repository;
+        private readonly ISignCategoryRepository _signCategoryRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public TrafficSignService(
             ITrafficSignRepository repository,
+            ISignCategoryRepository signCategoryRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _signCategoryRepository = signCategoryRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,17 +65,22 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<TrafficSignDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(TrafficSignCreateDTO dto)
         {
+            var category = await _signCategoryRepository.GetByIdAsync(dto.SignCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"Không tìm thấy SignCategory với ID {dto.SignCategoryId}");
+
             var now = DateTime.UtcNow.ToLocalTime();
 
             var entity = _mapper.Map<TrafficSign>(dto);
             entity.Id = Guid.NewGuid();
+            entity.Index = dto.Index;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
@@ -81,13 +90,31 @@ namespace SDLS.Services.Services
             return true;
         }
 
+        public async Task<bool> CreateManyAsync(List<TrafficSignCreateDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw ApiException.BadRequest("Danh sách biển báo không được rỗng.");
+
+            foreach (var dto in dtos)
+            {
+                await CreateAsync(dto);
+            }
+
+            return true;
+        }
+
         public async Task<bool> UpdateAsync(Guid id, TrafficSignUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy TrafficSign");
+                throw ApiException.NotFound("Không tìm thấy TrafficSign");
+
+            var category = await _signCategoryRepository.GetByIdAsync(dto.SignCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"Không tìm thấy SignCategory với ID {dto.SignCategoryId}");
 
             existing.SignCategoryId = dto.SignCategoryId;
+            existing.Index = dto.Index;
             existing.Name = dto.Name;
             existing.Code = dto.Code;
             existing.Description = dto.Description;
@@ -102,12 +129,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }

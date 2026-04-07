@@ -18,5 +18,6 @@ namespace SDLS.Repositories.Interface
         Task UpdateAsync(SimulationScenario entity);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
+        Task<double> CalculateDurationAsync(List<Guid> scenarioIds);
     }
 }

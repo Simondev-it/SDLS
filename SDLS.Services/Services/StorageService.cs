@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using SDLS.Model.Enumerations;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using Supabase.Storage.Exceptions;
 
@@ -44,10 +45,10 @@ namespace SDLS.Services.Services
 
         public async Task<string> UploadImageAsync(IFormFile file, ImageTarget target, Guid entityId)
         {
-            if (file is null) throw new ArgumentNullException(nameof(file));
-            if (file.Length <= 0) throw new ArgumentException("File is empty", nameof(file));
+            if (file is null) throw ApiException.BadRequest("File is required.");
+            if (file.Length <= 0) throw ApiException.BadRequest("File is empty.");
             if (!_config.TryGetValue(target, out var cfg))
-                throw new ArgumentOutOfRangeException(nameof(target), $"No storage config for target '{target}'.");
+                throw ApiException.BadRequest($"No storage config for target '{target}'.");
 
             var (bucket, folder) = cfg;
 
@@ -89,10 +90,9 @@ namespace SDLS.Services.Services
             }
             catch (SupabaseStorageException ex)
             {
-                throw new InvalidOperationException(
+                throw ApiException.Internal(
                     $"Failed to upload image to Supabase storage bucket '{bucket}' at path '{filePath}'. " +
-                    "This is usually caused by Storage RLS policy restrictions. For backend uploads, use Supabase service role key in configuration ('Supabase:ServiceRoleKey') or adjust bucket policies.",
-                    ex);
+                    "This is usually caused by Storage RLS policy restrictions. For backend uploads, use Supabase service role key in configuration ('Supabase:ServiceRoleKey') or adjust bucket policies.");
             }
 
             return storage.GetPublicUrl(filePath);
@@ -104,7 +104,7 @@ namespace SDLS.Services.Services
                 return true;
 
             if (!_config.TryGetValue(target, out var cfg))
-                throw new ArgumentOutOfRangeException(nameof(target), $"No storage config for target '{target}'.");
+                throw ApiException.BadRequest($"No storage config for target '{target}'.");
 
             var (bucket, _) = cfg;
             var path = ExtractPathFromUrl(fileUrl, bucket);
@@ -117,10 +117,9 @@ namespace SDLS.Services.Services
             }
             catch (SupabaseStorageException ex)
             {
-                throw new InvalidOperationException(
+                throw ApiException.Internal(
                     $"Failed to delete image from Supabase storage bucket '{bucket}' at path '{path}'. " +
-                    "Check Storage RLS policies or service role key configuration.",
-                    ex);
+                    "Check Storage RLS policies or service role key configuration.");
             }
 
             return true;

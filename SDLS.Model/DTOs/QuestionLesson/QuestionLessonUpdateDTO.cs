@@ -6,6 +6,9 @@ namespace SDLS.Model.DTOs.QuestionLesson
     {
         public Guid? QuestionChapterId { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public int? Index { get; set; }
+
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Name { get; set; }
 

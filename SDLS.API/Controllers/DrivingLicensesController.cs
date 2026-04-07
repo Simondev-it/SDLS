@@ -33,6 +33,18 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("all")]
+        public async Task<ActionResult<List<DrivingLicenseDTO>>> GetAllNoPaging(
+            [FromQuery] Guid? id,
+            [FromQuery] string? name,
+            [FromQuery] string? description,
+            [FromQuery] int? status = null,
+            [FromQuery] string? vehicleName = null)
+        {
+            var result = await _service.GetAllNoPagingAsync(id, name, description, status, vehicleName);
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<DrivingLicenseDTO>> GetById(Guid id)
         {

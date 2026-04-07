@@ -53,6 +53,18 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize(Roles = "Instructor")]
+        [HttpPost("bulk")]
+        public async Task<ActionResult<bool>> CreateMany([FromBody] List<QuestionCreateDTO> dtos)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (dtos == null || dtos.Count == 0)
+                return BadRequest("Danh sách câu hỏi không được rỗng.");
+
+            var created = await _service.CreateManyAsync(dtos);
+            return Ok(created);
+        }
+
+        [Authorize(Roles = "Instructor")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<QuestionDTO>> Update(Guid id, [FromBody] QuestionUpdateDTO dto)

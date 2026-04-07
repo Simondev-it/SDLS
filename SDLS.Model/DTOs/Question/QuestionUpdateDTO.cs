@@ -16,10 +16,8 @@ namespace SDLS.Model.DTOs.Question
         [NotEmptyGuid]
         public Guid QuestionCategoryId { get; set; }
 
-        public Guid? ParentId { get; set; }
-
         [Range(1, int.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
-        public int? Position { get; set; }
+        public int? Index { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]

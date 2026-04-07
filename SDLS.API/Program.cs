@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -110,6 +111,8 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
+
+            builder.Services.AddScoped<ISimulationExamRepository, SimulationExamRepository>();
 
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
@@ -233,6 +236,27 @@ namespace SDLS.API
 
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            // Customize model validation error responses for middleware handling
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errors = context.ModelState
+                        .Where(x => x.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            x => x.Key,
+                            x => x.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+
+                    return new BadRequestObjectResult(new
+                    {
+                        message = "Validation Failed",
+                        status = 400,
+                        errors = errors
+                    });
                 };
             });
 

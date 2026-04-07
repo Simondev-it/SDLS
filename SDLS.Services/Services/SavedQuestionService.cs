@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.SavedQuestion;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +13,18 @@ namespace SDLS.Services.Services
     public class SavedQuestionService : ISavedQuestionService
     {
         private readonly ISavedQuestionRepository _repository;
+        private readonly IQuestionRepository _questionRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SavedQuestionService(
             ISavedQuestionRepository repository,
+            IQuestionRepository questionRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _questionRepository = questionRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,7 +65,10 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<SavedQuestionDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<SavedQuestionDTO>(entity);
         }
 
         public async Task<bool> CreateAsync(SavedQuestionCreateDTO dto)
@@ -69,11 +76,15 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.QuestionId == Guid.Empty)
-                throw new ArgumentException("QuestionId không được rỗng");
+                throw ApiException.BadRequest("QuestionId không được rỗng");
+
+            var questionExists = await _questionRepository.GetByIdAsync(dto.QuestionId);
+            if (questionExists == null)
+                throw ApiException.BadRequest("QuestionId không tồn tại");
 
             var existing = await _repository.GetByUserAndQuestionAsync(currentUserId, dto.QuestionId);
             if (existing != null && existing.Any())
-                throw new InvalidOperationException("SavedQuestion cho UserId và QuestionId này đã tồn tại.");
+                throw ApiException.Conflict("SavedQuestion cho UserId và QuestionId này đã tồn tại.");
 
             var entity = new SavedQuestion
             {
@@ -92,16 +103,22 @@ namespace SDLS.Services.Services
         public async Task<bool> UpdateAsync(Guid id, SavedQuestionUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy SavedQuestion");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             var isChangingKeys = existing.UserId != currentUserId || existing.QuestionId != dto.QuestionId;
+
+            var questionExists = await _questionRepository.GetByIdAsync(dto.QuestionId);
+            if (questionExists == null)
+                throw ApiException.BadRequest("QuestionId không tồn tại");
+
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndQuestionAsync(currentUserId, dto.QuestionId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
-                    throw new InvalidOperationException("Cặp UserId và QuestionId mới đã tồn tại ở record khác.");
+                    throw ApiException.Conflict("Cặp UserId và QuestionId mới đã tồn tại ở record khác.");
             }
 
             existing.UserId = currentUserId;
@@ -115,12 +132,22 @@ namespace SDLS.Services.Services
 
         public async Task<bool> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
             return true;
         }
 
         public async Task<bool> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
             return true;
         }
