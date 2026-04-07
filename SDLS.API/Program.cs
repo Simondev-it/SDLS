@@ -307,14 +307,22 @@ namespace SDLS.API
                 });
             });
 
+
+            ///////////////////////////////////////////////////////////
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+            ///////////////////////////////////////////////////////////
+
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            ///////////////////////////////////
 
             app.UseHttpsRedirection();
 

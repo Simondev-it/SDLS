@@ -12,6 +12,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SDLS.Services", "SDLS.Services\SDLS.Services.csproj", "{65843571-D05D-494C-AFBE-88C31BA468F4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71D1C921-AD15-4545-8A7A-A0D1867A0E56}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile.txt = Dockerfile.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
