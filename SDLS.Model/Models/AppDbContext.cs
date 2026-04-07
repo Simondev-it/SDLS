@@ -379,6 +379,7 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.Reply).WithMany(p => p.InverseReply)
                 .HasForeignKey(d => d.ReplyId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("ForumComment_replyId_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
