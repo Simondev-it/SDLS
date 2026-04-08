@@ -24,6 +24,8 @@ namespace SDLS.Model.DTOs.Exam
         public bool IsRandom { get; set; }
 
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public List<ExamQuestionDTO> ExamQuestions { get; set; } = new();
     }

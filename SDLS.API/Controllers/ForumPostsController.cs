@@ -43,16 +43,16 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] ForumPostCreateDTO dto)
+        public async Task<ActionResult<ForumPostDTO>> Create([FromBody] ForumPostCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPost("instructor")]
-        public async Task<ActionResult<bool>> CreateByInstructor([FromBody] ForumPostCreateDTO dto)
+        public async Task<ActionResult<ForumPostDTO>> CreateByInstructor([FromBody] ForumPostCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateByInstructorAsync(dto);
@@ -61,7 +61,7 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] ForumPostUpdateDTO dto)
+        public async Task<ActionResult<ForumPostDTO>> Update(Guid id, [FromBody] ForumPostUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
@@ -70,7 +70,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}/approve")]
-        public async Task<ActionResult<bool>> Approve(Guid id)
+        public async Task<ActionResult<ForumPostDTO>> Approve(Guid id)
         {
             var result = await _service.ApproveAsync(id);
             return Ok(result);
@@ -78,7 +78,7 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}/disapprove")]
-        public async Task<ActionResult<bool>> Disapprove(Guid id)
+        public async Task<ActionResult<ForumPostDTO>> Disapprove(Guid id)
         {
             var result = await _service.DisapproveAsync(id);
             return Ok(result);
@@ -86,18 +86,18 @@ namespace SDLS.API.Controllers
 
         [Authorize]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<ForumPostDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<ForumPostDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

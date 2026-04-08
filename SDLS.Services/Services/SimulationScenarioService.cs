@@ -77,7 +77,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<SimulationScenarioDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SimulationScenarioCreateDTO dto)
+        public async Task<SimulationScenarioDTO> CreateAsync(SimulationScenarioCreateDTO dto)
         {
             var chapter = await _simulationChapterRepository.GetByIdAsync(dto.SimulationChapterId);
             if (chapter == null)
@@ -102,23 +102,26 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SimulationScenarioDTO>(entity);
         }
 
-        public async Task<bool> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
+        public async Task<List<SimulationScenarioDTO>> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
                 throw ApiException.BadRequest("Danh sách tình huống mô phỏng không được rỗng.");
 
+            var createdItems = new List<SimulationScenarioDTO>();
+
             foreach (var dto in dtos)
             {
-                await CreateAsync(dto);
+                var created = await CreateAsync(dto);
+                createdItems.Add(created);
             }
 
-            return true;
+            return createdItems;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto)
+        public async Task<SimulationScenarioDTO> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -150,10 +153,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SimulationScenarioDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SimulationScenarioDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -161,18 +164,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SimulationScenarioDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SimulationScenarioDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<SimulationScenarioDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

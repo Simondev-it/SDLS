@@ -1,11 +1,11 @@
 namespace SDLS.Model.DTOs.ForumPost
 {
-    public class ForumPostImageDTO
+    public class ForumPostUserBriefDTO
     {
         public Guid Id { get; set; }
-        public Guid ForumPostId { get; set; }
         public string? Name { get; set; }
-        public string? Url { get; set; }
+        public string? Email { get; set; }
+        public string? Avatar { get; set; }
         public int? Status { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }

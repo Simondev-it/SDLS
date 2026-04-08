@@ -7,5 +7,7 @@ namespace SDLS.Model.DTOs.QuestionLesson
         public string Name { get; set; } = null!;
         public string Url { get; set; } = null!;
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
     }
 }

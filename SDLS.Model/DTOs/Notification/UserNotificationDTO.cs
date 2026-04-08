@@ -6,6 +6,8 @@ namespace SDLS.Model.DTOs.Notification
         public Guid NotificationId { get; set; }
         public Guid UserId { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
         public UserNotificationUserDTO? User { get; set; }
     }
 }

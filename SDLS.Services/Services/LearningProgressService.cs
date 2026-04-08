@@ -74,7 +74,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<LearningProgressDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(LearningProgressCreateDTO dto)
+        public async Task<LearningProgressDTO> CreateAsync(LearningProgressCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -97,10 +97,10 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<LearningProgressDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, LearningProgressUpdateDTO dto)
+        public async Task<LearningProgressDTO> UpdateAsync(Guid id, LearningProgressUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id, null);
             if (existing == null)
@@ -126,10 +126,10 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<LearningProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<LearningProgressDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
@@ -137,10 +137,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<LearningProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<LearningProgressDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _repository.GetByIdAsync(id, role);
@@ -148,7 +150,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteHardAsync(id);
-            return true;
+            return _mapper.Map<LearningProgressDTO>(existing);
         }
 
         public async Task<List<LearningProgressDTO>> GetByUserAndQuestionAsync(

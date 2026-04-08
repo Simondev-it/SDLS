@@ -69,7 +69,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
-        public async Task<bool> CreateAsync(ExamSessionCreateDTO dto)
+        public async Task<ExamSessionDTO> CreateAsync(ExamSessionCreateDTO dto)
         {
             var exam = await _examRepository.GetByIdAsync(dto.ExamId);
             if (exam == null)
@@ -98,10 +98,10 @@ namespace SDLS.Services.Services
             }
 
             await _examSessionRepository.AddAsync(newExamSession);
-            return true;
+            return _mapper.Map<ExamSessionDTO>(newExamSession);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ExamSessionUpdateDTO dto)
+        public async Task<ExamSessionDTO> UpdateAsync(Guid id, ExamSessionUpdateDTO dto)
         {
             var existing = await _examSessionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -156,10 +156,10 @@ namespace SDLS.Services.Services
             }
 
             await _examSessionRepository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ExamSessionDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ExamSessionDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var examSession = await _examSessionRepository.GetByIdAsync(id, role);
@@ -167,18 +167,21 @@ namespace SDLS.Services.Services
             if (examSession == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
             await _examSessionRepository.DeleteSoftAsync(id);
-            return true;
+            examSession.Status = 0;
+            examSession.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ExamSessionDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var examSession = await _examSessionRepository.GetByIdAsync(id, role);
 
             if (examSession == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
+            var result = _mapper.Map<ExamSessionDTO>(examSession);
             await _examSessionRepository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

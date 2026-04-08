@@ -20,10 +20,10 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(QuestionCreateDTO dto);
-        Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos);
-        Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto);
+        Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos);
+        Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto);
+        Task<QuestionDTO> DeleteSoftAsync(Guid id);
+        Task<QuestionDTO> DeleteHardAsync(Guid id);
     }
 }

@@ -22,9 +22,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<TagDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(TagCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, TagUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<TagDTO> CreateAsync(TagCreateDTO dto);
+        Task<TagDTO> UpdateAsync(Guid id, TagUpdateDTO dto);
+        Task<TagDTO> DeleteSoftAsync(Guid id);
+        Task<TagDTO> DeleteHardAsync(Guid id);
     }
 }

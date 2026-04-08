@@ -9,6 +9,8 @@ namespace SDLS.Model.DTOs.SituationExam
         public int? PassScore { get; set; }
         public bool IsRandom { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public List<SimulationExamDTO> SimulationExams { get; set; } = new();
     }

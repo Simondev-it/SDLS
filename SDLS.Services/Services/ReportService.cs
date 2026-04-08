@@ -104,7 +104,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<ReportDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(ReportCreateDTO dto)
+        public async Task<ReportDTO> CreateAsync(ReportCreateDTO dto)
         {
             return await _executionStrategy.ExecuteAsync(async () =>
             {
@@ -171,7 +171,7 @@ namespace SDLS.Services.Services
                     }
 
                     await transaction.CommitAsync();
-                    return true;
+                    return _mapper.Map<ReportDTO>(entity);
                 }
                 catch
                 {
@@ -181,7 +181,7 @@ namespace SDLS.Services.Services
             });
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ReportUpdateDTO dto)
+        public async Task<ReportDTO> UpdateAsync(Guid id, ReportUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -226,10 +226,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ReportDTO>(existing);
         }
 
-        public async Task<bool> ApproveAsync(Guid id, ReportResolveActionDTO dto)
+        public async Task<ReportDTO> ApproveAsync(Guid id, ReportResolveActionDTO dto)
         {
             var report = await _repository.GetByIdForUpdateAsync(id);
             if (report == null)
@@ -256,10 +256,10 @@ namespace SDLS.Services.Services
             };
 
             await _resolveRepository.AddAsync(resolve);
-            return true;
+            return _mapper.Map<ReportDTO>(report);
         }
 
-        public async Task<bool> DisapproveAsync(Guid id, ReportResolveActionDTO dto)
+        public async Task<ReportDTO> DisapproveAsync(Guid id, ReportResolveActionDTO dto)
         {
             var report = await _repository.GetByIdForUpdateAsync(id);
             if (report == null)
@@ -286,10 +286,10 @@ namespace SDLS.Services.Services
             };
 
             await _resolveRepository.AddAsync(resolve);
-            return true;
+            return _mapper.Map<ReportDTO>(report);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ReportDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var report = await _repository.GetByIdAsync(id, role);
@@ -297,18 +297,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            report.Status = 0;
+            report.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<ReportDTO>(report);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ReportDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var report = await _repository.GetByIdAsync(id, role);
             if (report == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<ReportDTO>(report);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private async Task ValidateIfExistsAsync<T>(

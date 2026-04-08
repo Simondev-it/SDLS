@@ -9,6 +9,8 @@ namespace SDLS.Model.DTOs.SituationExam
         public Guid SimulationId { get; set; }
         public int? BaseScore { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public SimulationScenarioDTO? Simulation { get; set; }
     }

@@ -100,11 +100,14 @@ namespace SDLS.Model.AutoMapper
             CreateMap<VehicleCreateDTO, Vehicle>().ReverseMap();
             CreateMap<VehicleUpdateDTO, Vehicle>().ReverseMap();
 
-            CreateMap<ForumPostDTO, ForumPost>().ReverseMap();
+            CreateMap<ForumPost, ForumPostDTO>()
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.ForumComments.Count(x => x.Status != 0)));
+            CreateMap<ForumPostDTO, ForumPost>();
             CreateMap<ForumPostCreateDTO, ForumPost>().ReverseMap();
             CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
 
             CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
+            CreateMap<User, ForumPostUserBriefDTO>().ReverseMap();
             CreateMap<TagDTO, Tag>().ReverseMap();
             CreateMap<TagCreateDTO, Tag>().ReverseMap();
             CreateMap<TagUpdateDTO, Tag>().ReverseMap();

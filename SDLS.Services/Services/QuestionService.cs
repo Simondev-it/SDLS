@@ -104,7 +104,7 @@ namespace SDLS.Services.Services
         }
 
 
-        public async Task<bool> CreateAsync(QuestionCreateDTO dto)
+        public async Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto)
         {
             if (dto.Answers == null || !dto.Answers.Any())
                 throw ApiException.BadRequest("Question must have at least 1 answer");
@@ -168,10 +168,10 @@ namespace SDLS.Services.Services
 
             await _questionRepository.AddAsync(newQuestion);
             await RebuildGlobalParentLinksAsync(now);
-            return true;
+            return _mapper.Map<QuestionDTO>(newQuestion);
         }
 
-        public async Task<bool> CreateManyAsync(List<QuestionCreateDTO> dtos)
+        public async Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos)
         {
             if (dtos == null || dtos.Count == 0)
                 throw ApiException.BadRequest("Danh sách câu hỏi không được rỗng.");
@@ -179,13 +179,16 @@ namespace SDLS.Services.Services
             await using var transaction = await _questionRepository.BeginTransactionAsync();
             try
             {
+                var createdItems = new List<QuestionDTO>();
+
                 foreach (var dto in dtos)
                 {
-                    await CreateAsync(dto);
+                    var created = await CreateAsync(dto);
+                    createdItems.Add(created);
                 }
 
                 await transaction.CommitAsync();
-                return true;
+                return createdItems;
             }
             catch
             {
@@ -194,7 +197,7 @@ namespace SDLS.Services.Services
             }
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto)
+        public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -293,10 +296,10 @@ namespace SDLS.Services.Services
 
             await _questionRepository.UpdateAsync(existing);
             await RebuildGlobalParentLinksAsync(now);
-            return true;
+            return _mapper.Map<QuestionDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionDTO> DeleteSoftAsync(Guid id)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -310,18 +313,19 @@ namespace SDLS.Services.Services
 
             await _questionRepository.UpdateAsync(existing);
             await RebuildGlobalParentLinksAsync(now);
-            return true;
+            return _mapper.Map<QuestionDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var existing = await _questionRepository.GetByIdAsync(id, role);
             if (existing == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<QuestionDTO>(existing);
             await _questionRepository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
 

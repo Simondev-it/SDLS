@@ -71,7 +71,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<ExamDTO>(exam);
         }
 
-        public async Task<bool> CreateAsync(ExamCreateDTO dto)
+        public async Task<ExamDTO> CreateAsync(ExamCreateDTO dto)
         {
             if (dto.ExamQuestions == null || !dto.ExamQuestions.Any())
                 throw ApiException.BadRequest("Exam must have at least 1 exam question");
@@ -100,10 +100,10 @@ namespace SDLS.Services.Services
             }
 
             await _examRepository.AddAsync(newExam);
-            return true;
+            return _mapper.Map<ExamDTO>(newExam);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ExamUpdateDTO dto)
+        public async Task<ExamDTO> UpdateAsync(Guid id, ExamUpdateDTO dto)
         {
             var existing = await _examRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -160,10 +160,10 @@ namespace SDLS.Services.Services
             }
 
             await _examRepository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ExamDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ExamDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var exam = await _examRepository.GetByIdAsync(id, role);
@@ -171,17 +171,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _examRepository.DeleteSoftAsync(id);
-            return true;
+            exam.Status = 0;
+            exam.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<ExamDTO>(exam);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ExamDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var exam = await _examRepository.GetByIdAsync(id, role);
             if (exam == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<ExamDTO>(exam);
             await _examRepository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

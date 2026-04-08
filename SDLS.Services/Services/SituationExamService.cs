@@ -71,7 +71,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SituationExamCreateDTO dto)
+        public async Task<SituationExamDTO> CreateAsync(SituationExamCreateDTO dto)
         {
             ValidateSimulationExamList(dto.SimulationExams);
 
@@ -110,10 +110,10 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SituationExamUpdateDTO dto)
+        public async Task<SituationExamDTO> UpdateAsync(Guid id, SituationExamUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -190,10 +190,10 @@ namespace SDLS.Services.Services
             existing.Duration = await _simulationScenarioRepository.CalculateDurationAsync(activeScenarioIds);
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SituationExamDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SituationExamDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -201,18 +201,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SituationExamDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<SituationExamDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private static void ValidateSimulationExamList(List<SimulationExamCreateDTO> items)

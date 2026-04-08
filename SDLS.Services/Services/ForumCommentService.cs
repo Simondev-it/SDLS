@@ -80,7 +80,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<ForumCommentDTO>(target);
         }
 
-        public async Task<bool> CreateAsync(ForumCommentCreateDTO dto)
+        public async Task<ForumCommentDTO> CreateAsync(ForumCommentCreateDTO dto)
         {
             return await _executionStrategy.ExecuteAsync(async () =>
             {
@@ -155,7 +155,7 @@ namespace SDLS.Services.Services
                     await _notificationService.CreateAsync(notificationDto);
 
                     await transaction.CommitAsync();
-                    return true;
+                    return _mapper.Map<ForumCommentDTO>(entity);
                 }
                 catch
                 {
@@ -165,7 +165,7 @@ namespace SDLS.Services.Services
             });
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ForumCommentUpdateDTO dto)
+        public async Task<ForumCommentDTO> UpdateAsync(Guid id, ForumCommentUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -194,10 +194,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ForumCommentDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ForumCommentDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
@@ -206,10 +206,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            target.Status = 0;
+            target.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<ForumCommentDTO>(target);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ForumCommentDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
@@ -217,8 +219,9 @@ namespace SDLS.Services.Services
             if (target == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<ForumCommentDTO>(target);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
     }

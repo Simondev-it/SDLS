@@ -10,6 +10,8 @@ namespace SDLS.Model.DTOs.QuestionChapter
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public DrivingLicenseDTO? DrivingLicense { get; set; }
     }

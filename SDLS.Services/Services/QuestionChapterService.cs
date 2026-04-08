@@ -73,7 +73,7 @@ namespace SDLS.Services.Services
             return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(QuestionChapterCreateDTO dto)
+        public async Task<QuestionChapterDTO> CreateAsync(QuestionChapterCreateDTO dto)
         {
             var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(dto.DrivingLicenseId);
             if (drivingLicense == null)
@@ -89,10 +89,10 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionChapterUpdateDTO dto)
+        public async Task<QuestionChapterDTO> UpdateAsync(Guid id, QuestionChapterUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
@@ -110,10 +110,10 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<QuestionChapterDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionChapterDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
@@ -121,18 +121,21 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionChapterDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var result = _mapper.Map<QuestionChapterDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }
