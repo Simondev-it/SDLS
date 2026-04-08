@@ -109,7 +109,7 @@ namespace SDLS.Services.Services
 
         public async Task<LessonProgressDTO> UpdateAsync(Guid id, LessonProgressUpdateDTO dto)
         {
-            var existing = await _repository.GetByIdAsync(id);
+            var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy LessonProgress");
 
