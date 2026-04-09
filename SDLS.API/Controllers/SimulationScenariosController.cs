@@ -47,7 +47,7 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPost]
         public async Task<ActionResult<SimulationScenarioDTO>> Create([FromBody] SimulationScenarioCreateDTO dto)
         {
@@ -56,7 +56,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPost("bulk")]
         public async Task<ActionResult<List<SimulationScenarioDTO>>> CreateMany([FromBody] List<SimulationScenarioCreateDTO> dtos)
         {
@@ -68,7 +68,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id}")]
         public async Task<ActionResult<SimulationScenarioDTO>> Update(Guid id, [FromBody] SimulationScenarioUpdateDTO dto)
         {
@@ -77,7 +77,7 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}")]
         public async Task<ActionResult<SimulationScenarioDTO>> SoftDelete(Guid id)
         {
@@ -85,7 +85,7 @@ namespace SDLS.API.Controllers
             return Ok(deleted);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id}")]
         public async Task<ActionResult<SimulationScenarioDTO>> HardDelete(Guid id)
         {
