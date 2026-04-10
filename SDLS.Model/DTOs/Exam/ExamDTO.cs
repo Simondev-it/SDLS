@@ -27,6 +27,8 @@ namespace SDLS.Model.DTOs.Exam
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
 
+        public int ExamQuestionCount { get; set; }
+
         public List<ExamQuestionDTO> ExamQuestions { get; set; } = new();
     }
 }

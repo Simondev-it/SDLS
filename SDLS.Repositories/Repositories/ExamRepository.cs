@@ -13,8 +13,15 @@ namespace SDLS.Repositories.Repositories
             int? status = null,
             string? role = null)
         {
-            var query = _context.Exams
-                .Where(e => e.IsRandom == false);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<Exam> query = isPrivileged
+                ? _context.Exams
+                    .Include(e => e.ExamQuestions)
+                : _context.Exams
+                    .Include(e => e.ExamQuestions.Where(eq => eq.Status != 0));
+
+            query = query.Where(e => e.IsRandom == false);
 
             if (userId.HasValue)
                 query = query.Where(e => e.UserId == userId.Value);
