@@ -206,15 +206,22 @@ namespace SDLS.Services.Services
         public async Task<QuestionLessonDTO> DeleteSoftAsync(Guid id)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
-            if (lesson == null || lesson.Status != 1)
+            if (lesson == null)
                 throw ApiException.NotFound($"Không tìm thấy QuestionLesson với Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
-            lesson.Status = 0;
+            var currentStatus = lesson.Status ?? 1;
+            var nextStatus = currentStatus == 0 ? 1 : 0;
+
+            lesson.Status = nextStatus;
             lesson.UpdateAt = now;
 
-            await _repository.SoftDeleteLessonImagesAsync(id, now);
+            if (nextStatus == 0)
+                await _repository.SoftDeleteLessonImagesAsync(id, now);
+            else
+                await _repository.RestoreLessonImagesAsync(id, now);
+
             await _repository.UpdateAsync(lesson);
 
             return _mapper.Map<QuestionLessonDTO>(lesson);
