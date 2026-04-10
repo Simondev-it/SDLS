@@ -23,9 +23,11 @@ namespace SDLS.Repositories.Repositories
             IQueryable<ForumPost> query = isPrivileged
                 ? _context.ForumPosts
                     .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
                     .Include(x => x.ForumComments)
                 : _context.ForumPosts
                     .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
                     .Include(x => x.ForumComments.Where(c => c.Status != 0));
 
             if (id.HasValue)
@@ -75,9 +77,11 @@ namespace SDLS.Repositories.Repositories
             IQueryable<ForumPost> query = isPrivileged
                 ? _context.ForumPosts
                     .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
                     .Include(x => x.ForumComments)
                 : _context.ForumPosts
                     .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
                     .Include(x => x.ForumComments.Where(c => c.Status != 0));
 
             query = query.Where(x => x.Id == id)
