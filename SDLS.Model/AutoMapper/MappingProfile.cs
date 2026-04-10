@@ -109,7 +109,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
 
             CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
-            CreateMap<User, ForumPostUserBriefDTO>().ReverseMap();
+            CreateMap<User, ForumPostUserBriefDTO>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.Name : null));
+            CreateMap<ForumPostUserBriefDTO, User>();
             CreateMap<TagDTO, Tag>().ReverseMap();
             CreateMap<TagCreateDTO, Tag>().ReverseMap();
             CreateMap<TagUpdateDTO, Tag>().ReverseMap();
