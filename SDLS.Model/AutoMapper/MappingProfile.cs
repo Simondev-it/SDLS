@@ -59,7 +59,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<LessonImageDTO, LessonImage>().ReverseMap();
             CreateMap<LessonImageCreateDTO, LessonImage>().ReverseMap();
 
-            CreateMap<ExamDTO, Exam>().ReverseMap();
+            CreateMap<Exam, ExamDTO>()
+                .ForMember(dest => dest.ExamQuestionCount, opt => opt.MapFrom(src => src.ExamQuestions.Count));
+            CreateMap<ExamDTO, Exam>();
             CreateMap<ExamCreateDTO, Exam>().ReverseMap();
             CreateMap<ExamUpdateDTO, Exam>().ReverseMap();
 
