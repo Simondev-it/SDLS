@@ -20,6 +20,7 @@ namespace SDLS.Services.Interfaces
         Task<ForumPostDTO> CreateAsync(ForumPostCreateDTO dto);
         Task<ForumPostDTO> CreateByInstructorAsync(ForumPostCreateDTO dto);
         Task<ForumPostDTO> UpdateAsync(Guid id, ForumPostUpdateDTO dto);
+        Task<ForumPostDTO> ToggleStatusAsync(Guid id);
         Task<ForumPostDTO> ApproveAsync(Guid id);
         Task<ForumPostDTO> DisapproveAsync(Guid id);
         Task<ForumPostDTO> DeleteSoftAsync(Guid id);

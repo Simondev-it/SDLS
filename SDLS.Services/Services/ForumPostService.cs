@@ -268,6 +268,31 @@ namespace SDLS.Services.Services
             return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
+        public async Task<ForumPostDTO> ToggleStatusAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound("Khong tim thay ForumPost");
+
+            if (forumPost.Status == 1)
+            {
+                forumPost.Status = 4;
+            }
+            else if (forumPost.Status == 4)
+            {
+                forumPost.Status = 1;
+            }
+            else
+            {
+                throw ApiException.BadRequest("Ch? cho phép chuy?n tr?ng thái gi?a 1 và 4.");
+            }
+
+            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _repository.UpdateAsync(forumPost);
+
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
         public async Task<ForumPostDTO> DisapproveAsync(Guid id)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
