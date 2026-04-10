@@ -84,6 +84,14 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Instructor,Student,Admin")]
+        [HttpPatch("{id}/toggle-status")]
+        public async Task<ActionResult<ForumPostDTO>> ToggleStatus(Guid id)
+        {
+            var result = await _service.ToggleStatusAsync(id);
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPatch("{id}")]
         public async Task<ActionResult<ForumPostDTO>> SoftDelete(Guid id)
