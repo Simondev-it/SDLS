@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.CommentVote;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -93,8 +94,8 @@ namespace SDLS.Services.Services
                 Id = Guid.NewGuid(),
                 UserId = currentUserId,
                 ForumCommentId = dto.ForumCommentId,
-                CreateAt = DateTime.UtcNow.ToLocalTime(),
-                UpdateAt = DateTime.UtcNow.ToLocalTime(),
+                CreateAt = DateTimeHelper.GetVietnamNow(),
+                UpdateAt = DateTimeHelper.GetVietnamNow(),
                 Status = 1
             };
 
@@ -125,7 +126,7 @@ namespace SDLS.Services.Services
 
             existing.UserId = currentUserId;
             existing.ForumCommentId = dto.ForumCommentId;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
@@ -142,7 +143,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<CommentVoteDTO>(entity);
         }
 
@@ -158,5 +159,6 @@ namespace SDLS.Services.Services
             await _repository.DeleteHardAsync(id);
             return result;
         }
+
     }
 }

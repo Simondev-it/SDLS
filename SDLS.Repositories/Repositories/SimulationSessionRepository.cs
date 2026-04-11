@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
@@ -93,7 +94,7 @@ namespace SDLS.Repositories.Repositories
             if (existing == null)
                 return;
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             existing.Status = 0;
             existing.UpdateAt = now;
 

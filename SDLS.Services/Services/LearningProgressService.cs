@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.LearningProgress;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -92,8 +93,8 @@ namespace SDLS.Services.Services
             var entity = _mapper.Map<LearningProgress>(dto);
             entity.Id = Guid.NewGuid();
             entity.UserId = currentUserId;
-            entity.CreateAt = DateTime.UtcNow.ToLocalTime();
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.CreateAt = DateTimeHelper.GetVietnamNow();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
@@ -122,7 +123,7 @@ namespace SDLS.Services.Services
 
             existing.QuestionId = dto.QuestionId;
             existing.UserId = currentUserId;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
@@ -138,7 +139,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<LearningProgressDTO>(existing);
         }
 

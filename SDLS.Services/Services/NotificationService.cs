@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -71,7 +72,7 @@ namespace SDLS.Services.Services
 
         public async Task<NotificationDTO> CreateAsync(NotificationCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<Notification>(dto);
             entity.Id = Guid.NewGuid();
@@ -97,7 +98,7 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy Notification");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Title = dto.Title;
             existing.Content = dto.Content;
@@ -150,7 +151,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<NotificationDTO>(entity);
         }
 

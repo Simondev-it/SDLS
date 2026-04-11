@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ExamSession;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -79,7 +80,7 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest("ExamSession must have at least 1 exam detail");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var newExamSession = _mapper.Map<ExamSession>(dto);
             newExamSession.Id = Guid.NewGuid();
@@ -112,7 +113,7 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest($"Exam with ID {dto.ExamId} does not exist.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.ExamId = dto.ExamId;
             existing.UserId = currentUserId;
@@ -168,7 +169,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
             await _examSessionRepository.DeleteSoftAsync(id);
             examSession.Status = 0;
-            examSession.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            examSession.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
@@ -183,5 +184,6 @@ namespace SDLS.Services.Services
             await _examSessionRepository.DeleteHardAsync(id);
             return result;
         }
+
     }
 }

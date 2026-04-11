@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SignCategory;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -70,7 +71,7 @@ namespace SDLS.Services.Services
 
         public async Task<SignCategoryDTO> CreateAsync(SignCategoryCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = new SignCategory
             {
@@ -95,7 +96,7 @@ namespace SDLS.Services.Services
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<SignCategoryDTO>(existing);
@@ -110,7 +111,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<SignCategoryDTO>(entity);
         }
 

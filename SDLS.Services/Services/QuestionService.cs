@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Models;
@@ -124,7 +125,7 @@ namespace SDLS.Services.Services
             if (category == null)
                 throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var newQuestion = _mapper.Map<Question>(dto);
             newQuestion.Id = Guid.NewGuid();
@@ -215,7 +216,7 @@ namespace SDLS.Services.Services
             if (category == null)
                 throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.QuestionLessonId = dto.QuestionLessonId;
             existing.QuestionTopicId = dto.QuestionTopicId;
@@ -306,7 +307,7 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound($"Không tìm thấy câu hỏi với Id {id}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Status = 0;
             existing.UpdateAt = now;

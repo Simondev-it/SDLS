@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.TrafficSign;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -76,7 +77,7 @@ namespace SDLS.Services.Services
             if (category == null)
                 throw ApiException.BadRequest($"Không tìm thấy SignCategory với ID {dto.SignCategoryId}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<TrafficSign>(dto);
             entity.Id = Guid.NewGuid();
@@ -124,7 +125,7 @@ namespace SDLS.Services.Services
             existing.VectorData = dto.VectorData;
             existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<TrafficSignDTO>(existing);
@@ -139,7 +140,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<TrafficSignDTO>(entity);
         }
 

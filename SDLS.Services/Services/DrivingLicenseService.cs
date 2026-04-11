@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.DrivingLicense;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -87,7 +88,7 @@ namespace SDLS.Services.Services
 
         public async Task<DrivingLicenseDTO> CreateAsync(DrivingLicenseCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<DrivingLicense>(dto);
             entity.Id = Guid.NewGuid();
@@ -116,7 +117,7 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy DrivingLicense");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
@@ -172,7 +173,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             if (entity.Vehicles != null)
             {
                 foreach (var vehicle in entity.Vehicles.Where(v => v.Status == 1))

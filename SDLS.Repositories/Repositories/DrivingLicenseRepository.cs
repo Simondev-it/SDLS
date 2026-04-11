@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -82,7 +83,7 @@ namespace SDLS.Repositories.Repositories
 
             if (existing == null) return;
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             existing.Status = 0;
             existing.UpdateAt = now;
 
@@ -109,5 +110,6 @@ namespace SDLS.Repositories.Repositories
             _context.DrivingLicenses.Remove(existing);
             await _context.SaveChangesAsync();
         }
+
     }
 }
