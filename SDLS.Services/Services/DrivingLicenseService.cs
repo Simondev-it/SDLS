@@ -36,7 +36,10 @@ namespace SDLS.Services.Services
             int pageSize = 20)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role)).ToList();
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
             var total = all.Count;
 
             var pagedEntities = all
@@ -64,8 +67,12 @@ namespace SDLS.Services.Services
             string? vehicleName = null)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = await _repository.GetAllAsync(id, name, description, vehicleName, status, role);
-            return _mapper.Map<List<DrivingLicenseDTO>>(all.ToList());
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
+
+            return _mapper.Map<List<DrivingLicenseDTO>>(all);
         }
 
         public async Task<DrivingLicenseDTO> GetByIdAsync(Guid id)
