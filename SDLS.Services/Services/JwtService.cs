@@ -28,7 +28,7 @@ namespace SDLS.Services.Services
 
         public string GenerateRefreshToken(User user)
         {
-            return GenerateToken(user, 7 * 24 * 60); // 7 ngày
+            return GenerateToken(user, 30); // 30 phút
         }
 
         private string GenerateToken(User user, int minutes)
