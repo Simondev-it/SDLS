@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
@@ -124,7 +125,7 @@ namespace SDLS.Repositories.Repositories
                 return;
 
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -146,7 +147,7 @@ namespace SDLS.Repositories.Repositories
                 .Where(x => x.ParentId == id)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(x => x.ParentId, (Guid?)null)
-                    .SetProperty(x => x.UpdateAt, DateTime.UtcNow.ToLocalTime()));
+                    .SetProperty(x => x.UpdateAt, DateTimeHelper.GetVietnamNow()));
 
             if (existing.Answers.Any()) _context.Answers.RemoveRange(existing.Answers);
             if (existing.QuestionTags.Any()) _context.QuestionTags.RemoveRange(existing.QuestionTags);
@@ -184,7 +185,7 @@ namespace SDLS.Repositories.Repositories
                 .Where(q => q.Id == questionId)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(q => q.ParentId, newParentId)
-                    .SetProperty(q => q.UpdateAt, DateTime.UtcNow.ToLocalTime()));
+                    .SetProperty(q => q.UpdateAt, DateTimeHelper.GetVietnamNow()));
         }
 
         public async Task<List<Question>> GetLessonQuestionsForReorderAsync(Guid lessonId)

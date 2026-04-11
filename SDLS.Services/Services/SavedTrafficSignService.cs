@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SavedTrafficSign;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -91,8 +92,8 @@ namespace SDLS.Services.Services
                 Id = Guid.NewGuid(),
                 UserId = currentUserId,
                 TrafficSignId = dto.TrafficSignId,
-                CreateAt = DateTime.UtcNow.ToLocalTime(),
-                UpdateAt = DateTime.UtcNow.ToLocalTime(),
+                CreateAt = DateTimeHelper.GetVietnamNow(),
+                UpdateAt = DateTimeHelper.GetVietnamNow(),
                 Status = 1
             };
 
@@ -123,7 +124,7 @@ namespace SDLS.Services.Services
 
             existing.UserId = currentUserId;
             existing.TrafficSignId = dto.TrafficSignId;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
@@ -139,7 +140,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<SavedTrafficSignDTO>(entity);
         }
 

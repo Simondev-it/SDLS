@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.Models;
@@ -89,7 +90,7 @@ namespace SDLS.Services.Services
                 await using var transaction = await _repository.BeginTransactionAsync();
                 try
                 {
-                    var now = DateTime.UtcNow.ToLocalTime();
+                    var now = DateTimeHelper.GetVietnamNow();
 
                     var report = await _reportRepository.GetByIdAsync(dto.ReportId);
                     if (report == null)
@@ -153,7 +154,7 @@ namespace SDLS.Services.Services
             existing.Title = dto.Title;
             existing.Content = dto.Content;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<ResolveDTO>(existing);
@@ -168,7 +169,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ResolveDTO>(existing);
         }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -89,7 +90,7 @@ namespace SDLS.Repositories.Repositories
             if (exam == null) return;
 
             exam.Status = 0;
-            exam.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            exam.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -117,5 +118,6 @@ namespace SDLS.Repositories.Repositories
             _context.Exams.Remove(exam);
             await _context.SaveChangesAsync();
         }
+
     }
 }

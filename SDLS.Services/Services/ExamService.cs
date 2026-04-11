@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Exam;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -77,7 +78,7 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest("Exam must have at least 1 exam question");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var newExam = _mapper.Map<Exam>(dto);
             newExam.Id = Guid.NewGuid();
@@ -110,7 +111,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Không tìm thấy exam");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.UserId = currentUserId;
             existing.Title = dto.Title;
@@ -172,7 +173,7 @@ namespace SDLS.Services.Services
 
             await _examRepository.DeleteSoftAsync(id);
             exam.Status = 0;
-            exam.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            exam.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ExamDTO>(exam);
         }
 
@@ -187,5 +188,6 @@ namespace SDLS.Services.Services
             await _examRepository.DeleteHardAsync(id);
             return result;
         }
+
     }
 }

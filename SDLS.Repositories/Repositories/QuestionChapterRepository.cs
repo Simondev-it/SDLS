@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
@@ -86,7 +87,7 @@ namespace SDLS.Repositories.Repositories
             if (chapter == null) return;
 
             chapter.Status = 0;
-            chapter.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            chapter.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
