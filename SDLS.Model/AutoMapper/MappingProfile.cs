@@ -59,7 +59,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<LessonImageDTO, LessonImage>().ReverseMap();
             CreateMap<LessonImageCreateDTO, LessonImage>().ReverseMap();
 
-            CreateMap<ExamDTO, Exam>().ReverseMap();
+            CreateMap<Exam, ExamDTO>()
+                .ForMember(dest => dest.ExamQuestionCount, opt => opt.MapFrom(src => src.ExamQuestions.Count));
+            CreateMap<ExamDTO, Exam>();
             CreateMap<ExamCreateDTO, Exam>().ReverseMap();
             CreateMap<ExamUpdateDTO, Exam>().ReverseMap();
 
@@ -100,11 +102,16 @@ namespace SDLS.Model.AutoMapper
             CreateMap<VehicleCreateDTO, Vehicle>().ReverseMap();
             CreateMap<VehicleUpdateDTO, Vehicle>().ReverseMap();
 
-            CreateMap<ForumPostDTO, ForumPost>().ReverseMap();
+            CreateMap<ForumPost, ForumPostDTO>()
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.ForumComments.Count(x => x.Status != 0)));
+            CreateMap<ForumPostDTO, ForumPost>();
             CreateMap<ForumPostCreateDTO, ForumPost>().ReverseMap();
             CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
 
             CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
+            CreateMap<User, ForumPostUserBriefDTO>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.Name : null));
+            CreateMap<ForumPostUserBriefDTO, User>();
             CreateMap<TagDTO, Tag>().ReverseMap();
             CreateMap<TagCreateDTO, Tag>().ReverseMap();
             CreateMap<TagUpdateDTO, Tag>().ReverseMap();
@@ -166,8 +173,7 @@ namespace SDLS.Model.AutoMapper
             CreateMap<CommentVoteUpdateDTO, CommentVote>().ReverseMap();
             CreateMap<ForumCommentBriefDTO, ForumComment>().ReverseMap();
 
-            CreateMap<ForumComment, ForumCommentDTO>()
-                .ForMember(dest => dest.Replies, opt => opt.Ignore());
+            CreateMap<ForumComment, ForumCommentDTO>();
             CreateMap<ForumCommentCreateDTO, ForumComment>().ReverseMap();
             CreateMap<ForumCommentUpdateDTO, ForumComment>().ReverseMap();
 
@@ -190,6 +196,7 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationScenarioUpdateDTO, SimulationScenario>().ReverseMap();
 
             CreateMap<ReportDTO, Report>().ReverseMap();
+            CreateMap<User, ReportUserBriefDTO>().ReverseMap();
             CreateMap<ReportCreateDTO, Report>().ReverseMap();
             CreateMap<ReportUpdateDTO, Report>().ReverseMap();
 

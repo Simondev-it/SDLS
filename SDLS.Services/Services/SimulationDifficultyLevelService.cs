@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.SimulationDifficultyLevel;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -62,12 +63,12 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<SimulationDifficultyLevelDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SimulationDifficultyLevelCreateDTO dto)
+        public async Task<SimulationDifficultyLevelDTO> CreateAsync(SimulationDifficultyLevelCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -82,14 +83,14 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SimulationDifficultyLevelDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SimulationDifficultyLevelUpdateDTO dto)
+        public async Task<SimulationDifficultyLevelDTO> UpdateAsync(Guid id, SimulationDifficultyLevelUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy SimulationDifficultyLevel");
+                throw ApiException.NotFound("Không tìm thấy SimulationDifficultyLevel");
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
@@ -97,19 +98,32 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SimulationDifficultyLevelDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SimulationDifficultyLevelDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SimulationDifficultyLevelDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SimulationDifficultyLevelDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<SimulationDifficultyLevelDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

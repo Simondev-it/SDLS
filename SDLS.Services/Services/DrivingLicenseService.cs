@@ -5,19 +5,13 @@ using SDLS.Model.DTOs.DrivingLicense;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
-using System.Globalization;
-using System.Text;
 
 namespace SDLS.Services.Services
 {
     public class DrivingLicenseService : IDrivingLicenseService
     {
-        private static readonly HashSet<string> PrivilegedRoles = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Admin", "Instructor"
-        };
-
         private readonly IDrivingLicenseRepository _repository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
@@ -42,26 +36,13 @@ namespace SDLS.Services.Services
             int pageSize = 20)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
+            var total = all.Count;
 
-            var all = await _repository.GetAllAsync(id, status, role);
-            var filtered = all.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(name))
-                filtered = filtered.Where(x => ContainsNormalized(x.Name, name));
-
-            if (!string.IsNullOrWhiteSpace(description))
-                filtered = filtered.Where(x => ContainsNormalized(x.Description, description));
-
-            if (!string.IsNullOrWhiteSpace(vehicleName))
-            {
-                filtered = filtered.Where(x =>
-                    x.Vehicles != null &&
-                    x.Vehicles.Any(v => v.Status != 0 && ContainsNormalized(v.Name, vehicleName)));
-            }
-
-            var total = filtered.Count();
-
-            var pagedEntities = filtered
+            var pagedEntities = all
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -78,17 +59,33 @@ namespace SDLS.Services.Services
             };
         }
 
+        public async Task<List<DrivingLicenseDTO>> GetAllNoPagingAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null,
+            string? vehicleName = null)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
+
+            return _mapper.Map<List<DrivingLicenseDTO>>(all);
+        }
+
         public async Task<DrivingLicenseDTO> GetByIdAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<DrivingLicenseDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(DrivingLicenseCreateDTO dto)
+        public async Task<DrivingLicenseDTO> CreateAsync(DrivingLicenseCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -110,14 +107,14 @@ namespace SDLS.Services.Services
             }
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<DrivingLicenseDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto)
+        public async Task<DrivingLicenseDTO> UpdateAsync(Guid id, DrivingLicenseUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy DrivingLicense");
+                throw ApiException.NotFound("Không tìm thấy DrivingLicense");
 
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -133,12 +130,12 @@ namespace SDLS.Services.Services
                 foreach (var vehicleDto in dto.Vehicles)
                 {
                     if (vehicleDto.DrivingLicenseId != id)
-                        throw new ArgumentException($"Vehicle.DrivingLicenseId ({vehicleDto.DrivingLicenseId}) không khớp DrivingLicense Id ({id}).");
+                        throw ApiException.BadRequest($"Vehicle.DrivingLicenseId ({vehicleDto.DrivingLicenseId}) không khớp DrivingLicense Id ({id}).");
 
                     if (vehicleDto.Id.HasValue)
                     {
                         if (!existingVehiclesById.TryGetValue(vehicleDto.Id.Value, out var vehicle))
-                            throw new KeyNotFoundException($"Không tìm thấy Vehicle với Id {vehicleDto.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy Vehicle với Id {vehicleDto.Id.Value}");
 
                         vehicle.Name = vehicleDto.Name;
                         vehicle.Description = vehicleDto.Description;
@@ -163,58 +160,41 @@ namespace SDLS.Services.Services
             }
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<DrivingLicenseDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<DrivingLicenseDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
-        }
-
-        public async Task<bool> DeleteHardAsync(Guid id)
-        {
-            await _repository.DeleteHardAsync(id);
-            return true;
-        }
-
-        private static bool CanViewDeleted(string? role)
-        {
-            return !string.IsNullOrWhiteSpace(role) && PrivilegedRoles.Contains(role);
-        }
-
-        private static bool ContainsNormalized(string? source, string? keyword)
-        {
-            var left = NormalizeText(source);
-            var right = NormalizeText(keyword);
-
-            if (string.IsNullOrWhiteSpace(right))
-                return true;
-
-            return left.Contains(right, StringComparison.Ordinal);
-        }
-
-        private static string NormalizeText(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return string.Empty;
-
-            var formD = input.Trim().Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder();
-
-            foreach (var c in formD)
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            if (entity.Vehicles != null)
             {
-                var uc = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (uc != UnicodeCategory.NonSpacingMark)
-                    sb.Append(c);
+                foreach (var vehicle in entity.Vehicles.Where(v => v.Status == 1))
+                {
+                    vehicle.Status = 0;
+                    vehicle.UpdateAt = entity.UpdateAt;
+                }
             }
-
-            var normalized = sb.ToString().Normalize(NormalizationForm.FormC)
-                .Replace('đ', 'd')
-                .Replace('Đ', 'D');
-
-            normalized = string.Join(' ', normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-            return normalized.ToLowerInvariant();
+            return _mapper.Map<DrivingLicenseDTO>(entity);
         }
+
+        public async Task<DrivingLicenseDTO> DeleteHardAsync(Guid id)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<DrivingLicenseDTO>(entity);
+            await _repository.DeleteHardAsync(id);
+            return result;
+        }
+
     }
 }

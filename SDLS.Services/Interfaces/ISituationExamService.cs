@@ -15,9 +15,9 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<SituationExamDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(SituationExamCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, SituationExamUpdateDTO dto);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<SituationExamDTO> CreateAsync(SituationExamCreateDTO dto);
+        Task<SituationExamDTO> UpdateAsync(Guid id, SituationExamUpdateDTO dto);
+        Task<SituationExamDTO> DeleteSoftAsync(Guid id);
+        Task<SituationExamDTO> DeleteHardAsync(Guid id);
     }
 }

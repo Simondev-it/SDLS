@@ -1,10 +1,14 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Constants;
 using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
 using ForumPostModel = SDLS.Model.Models.ForumPost;
@@ -14,12 +18,24 @@ namespace SDLS.Services.Services
     public class ForumPostService : IForumPostService
     {
         private readonly IForumPostRepository _repository;
+        private readonly IForumTopicRepository _forumTopicRepository;
+        private readonly INotificationService _notificationService;
+        private readonly AppDbContext _dbContext;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ForumPostService(IForumPostRepository repository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public ForumPostService(
+            IForumPostRepository repository,
+            IForumTopicRepository forumTopicRepository,
+            INotificationService notificationService,
+            AppDbContext dbContext,
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor)
         {
             _repository = repository;
+            _forumTopicRepository = forumTopicRepository;
+            _notificationService = notificationService;
+            _dbContext = dbContext;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -76,7 +92,7 @@ namespace SDLS.Services.Services
 
             var forumPost = await _repository.GetByIdAsync(id, role);
             if (forumPost == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<ForumPostDTO>(forumPost);
             var images = await _repository.GetPostImagesByPostIdsAsync(new List<Guid> { id }, role);
@@ -85,10 +101,27 @@ namespace SDLS.Services.Services
             return dto;
         }
 
-        public async Task<bool> CreateAsync(ForumPostCreateDTO dto)
+        public async Task<ForumPostDTO> CreateAsync(ForumPostCreateDTO dto)
+        {
+            return await CreateInternalAsync(dto, -1);
+        }
+
+        public async Task<ForumPostDTO> CreateByInstructorAsync(ForumPostCreateDTO dto)
+        {
+            return await CreateInternalAsync(dto, 1);
+        }
+
+        private async Task<ForumPostDTO> CreateInternalAsync(ForumPostCreateDTO dto, int status)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
+
+                if (dto.ForumTopicId == Guid.Empty)
+                    throw ApiException.BadRequest("ForumTopicId khong hop le.");
+
+                var forumTopic = await _forumTopicRepository.GetByIdAsync(dto.ForumTopicId);
+                if (forumTopic == null)
+                    throw ApiException.BadRequest("Khong tim thay ForumTopic voi ForumTopicId da cho.");
 
             var forumPost = new ForumPostModel
             {
@@ -101,21 +134,46 @@ namespace SDLS.Services.Services
                 ViewCount = 0,
                 CreateAt = now,
                 UpdateAt = now,
-                Status = -1
+                Status = status
             };
 
             await _repository.AddAsync(forumPost);
             await SyncPostImagesFromContentAsync(forumPost.Id, dto.Content, now);
             await _repository.UpdateAsync(forumPost);
 
-            return true;
+            if (status == -1)
+            {
+                var instructorUserIds = await _dbContext.Users
+                    .AsNoTracking()
+                    .Where(x => x.RoleId == RoleConst.INSTRUCTOR_ROLE_ID && x.Status != 0)
+                    .Select(x => x.Id)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (instructorUserIds.Any())
+                {
+                    var notification = new NotificationCreateDTO
+                    {
+                        Title = "Bài vi?t m?i",
+                        Content = $"Có bài vi?t m?i c?n duy?t: '{forumPost.Title}'.",
+                        Status = 2,
+                        UserNotifications = instructorUserIds
+                            .Select(userId => new UserNotificationCreateDTO { UserId = userId })
+                            .ToList()
+                    };
+
+                    await _notificationService.CreateAsync(notification);
+                }
+            }
+
+            return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ForumPostUpdateDTO dto)
+        public async Task<ForumPostDTO> UpdateAsync(Guid id, ForumPostUpdateDTO dto)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTime.UtcNow.ToLocalTime();
@@ -124,7 +182,11 @@ namespace SDLS.Services.Services
             if (dto.ForumTopicId.HasValue)
             {
                 if (dto.ForumTopicId.Value == Guid.Empty)
-                    throw new ArgumentException("ForumTopicId khong hop le.");
+                    throw ApiException.BadRequest("ForumTopicId khong hop le.");
+
+                var forumTopic = await _forumTopicRepository.GetByIdAsync(dto.ForumTopicId.Value);
+                if (forumTopic == null)
+                    throw ApiException.BadRequest("Khong tim thay ForumTopic voi ForumTopicId da cho.");
 
                 if (forumPost.ForumTopicId != dto.ForumTopicId.Value)
                 {
@@ -149,7 +211,7 @@ namespace SDLS.Services.Services
             {
                 var newTitle = dto.Title.Trim();
                 if (string.IsNullOrWhiteSpace(newTitle))
-                    throw new ArgumentException("Title khong duoc de trong.");
+                    throw ApiException.BadRequest("Title khong duoc de trong.");
 
                 if (!string.Equals(forumPost.Title, newTitle, StringComparison.Ordinal))
                 {
@@ -162,7 +224,7 @@ namespace SDLS.Services.Services
             {
                 var newContent = dto.Content.Trim();
                 if (string.IsNullOrWhiteSpace(newContent))
-                    throw new ArgumentException("Content khong duoc de trong.");
+                    throw ApiException.BadRequest("Content khong duoc de trong.");
 
                 if (!string.Equals(forumPost.Content, newContent, StringComparison.Ordinal))
                 {
@@ -185,50 +247,71 @@ namespace SDLS.Services.Services
             }
 
             if (!changed)
-                return true;
+                return _mapper.Map<ForumPostDTO>(forumPost);
 
             forumPost.UpdateAt = now;
             await _repository.UpdateAsync(forumPost);
 
-            return true;
+            return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
-        public async Task<bool> ApproveAsync(Guid id)
+        public async Task<ForumPostDTO> ApproveAsync(Guid id)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 1;
             forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
             await _repository.UpdateAsync(forumPost);
 
-            return true;
+            return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
-        public async Task<bool> DisapproveAsync(Guid id)
+        public async Task<ForumPostDTO> ToggleStatusAsync(Guid id)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException("Khong tim thay ForumPost");
+                throw ApiException.NotFound("Khong tim thay ForumPost");
+
+            if (forumPost.Status == 1)
+            {
+                forumPost.Status = 4;
+            }
+            else if (forumPost.Status == 4)
+            {
+                forumPost.Status = 1;
+            }
+            else
+            {
+                throw ApiException.BadRequest("Ch? cho phép chuy?n tr?ng thái gi?a 1 và 4.");
+            }
+
+            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            await _repository.UpdateAsync(forumPost);
+
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
+        public async Task<ForumPostDTO> DisapproveAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 3;
             forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
             await _repository.UpdateAsync(forumPost);
 
-            return true;
+            return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            return await DeleteSoftAsync(id);
-        }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ForumPostDTO> DeleteSoftAsync(Guid id)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
             if (forumPost == null)
-                throw new KeyNotFoundException($"Khong tim thay ForumPost voi Id {id}");
+                throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
 
             var now = DateTime.UtcNow.ToLocalTime();
             forumPost.Status = 0;
@@ -237,13 +320,20 @@ namespace SDLS.Services.Services
             await _repository.SoftDeletePostImagesAsync(id, now);
             await _repository.UpdateAsync(forumPost);
 
-            return true;
+            return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ForumPostDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var forumPost = await _repository.GetByIdAsync(id, role);
+            if (forumPost == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<ForumPostDTO>(forumPost);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private async Task SyncPostImagesFromContentAsync(Guid postId, string? content, DateTime now)

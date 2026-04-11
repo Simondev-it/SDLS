@@ -17,13 +17,17 @@ namespace SDLS.Model.DTOs.Exam
 
         public string? Description { get; set; }
 
-        public int? Duration { get; set; }
+        public double? Duration { get; set; }
 
         public int? PassScore { get; set; }
 
         public bool IsRandom { get; set; }
 
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
+
+        public int ExamQuestionCount { get; set; }
 
         public List<ExamQuestionDTO> ExamQuestions { get; set; } = new();
     }

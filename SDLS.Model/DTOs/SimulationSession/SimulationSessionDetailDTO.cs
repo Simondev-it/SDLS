@@ -7,5 +7,7 @@ namespace SDLS.Model.DTOs.SimulationSession
         public double? DurationSecond { get; set; }
         public int? Score { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
     }
 }

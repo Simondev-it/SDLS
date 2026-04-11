@@ -11,6 +11,8 @@ namespace SDLS.Model.DTOs.SimulationSession
         public double? TotalDuration { get; set; }
         public bool IsPassed { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public SituationExamDTO? SituationExam { get; set; }
         public List<SimulationSessionDetailDTO> SimulationSessionDetails { get; set; } = new();

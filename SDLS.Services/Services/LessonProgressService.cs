@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.LessonProgress;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +13,18 @@ namespace SDLS.Services.Services
     public class LessonProgressService : ILessonProgressService
     {
         private readonly ILessonProgressRepository _repository;
+        private readonly IQuestionLessonRepository _questionLessonRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public LessonProgressService(
             ILessonProgressRepository repository,
+            IQuestionLessonRepository questionLessonRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _questionLessonRepository = questionLessonRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,29 +65,36 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<LessonProgressDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<LessonProgressDTO>(entity);
         }
 
         public async Task<List<LessonProgressDTO>> GetByUserIdAsync(Guid userId, int? status = null)
         {
             if (userId == Guid.Empty)
-                throw new ArgumentException("UserId không được rỗng");
+                throw ApiException.BadRequest("UserId không được rỗng");
 
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entities = await _repository.GetByUserAndQuestionLessonAsync(userId, null, status, role);
             return _mapper.Map<List<LessonProgressDTO>>(entities);
         }
 
-        public async Task<bool> CreateAsync(LessonProgressCreateDTO dto)
+        public async Task<LessonProgressDTO> CreateAsync(LessonProgressCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.QuestionLessonId == Guid.Empty)
-                throw new ArgumentException("QuestionLessonId không được rỗng");
+                throw ApiException.BadRequest("QuestionLessonId không được rỗng");
+
+            var questionLesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (questionLesson == null)
+                throw ApiException.BadRequest("QuestionLessonId không hợp lệ");
 
             var existing = await _repository.GetByUserAndQuestionLessonAsync(currentUserId, dto.QuestionLessonId);
             if (existing != null && existing.Any())
-                throw new InvalidOperationException("LessonProgress cho UserId và QuestionLessonId này đã tồn tại.");
+                throw ApiException.Conflict("LessonProgress cho UserId và QuestionLessonId này đã tồn tại.");
 
             var entity = _mapper.Map<LessonProgress>(dto);
             entity.Id = Guid.NewGuid();
@@ -93,22 +104,28 @@ namespace SDLS.Services.Services
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, LessonProgressUpdateDTO dto)
+        public async Task<LessonProgressDTO> UpdateAsync(Guid id, LessonProgressUpdateDTO dto)
         {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return false;
+            var existing = await _repository.GetByIdForUpdateAsync(id);
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy LessonProgress");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             var isChangingKeys = existing.UserId != currentUserId || existing.QuestionLessonId != dto.QuestionLessonId;
+
+            var questionLesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (questionLesson == null)
+                throw ApiException.BadRequest("QuestionLessonId không hợp lệ");
+
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndQuestionLessonAsync(currentUserId, dto.QuestionLessonId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
-                    throw new InvalidOperationException("Cặp UserId và QuestionLessonId mới đã tồn tại ở record khác.");
+                    throw ApiException.Conflict("Cặp UserId và QuestionLessonId mới đã tồn tại ở record khác.");
             }
 
             existing.UserId = currentUserId;
@@ -118,19 +135,31 @@ namespace SDLS.Services.Services
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<LessonProgressDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<LessonProgressDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
-            return true;
+            return _mapper.Map<LessonProgressDTO>(existing);
         }
     }
 }

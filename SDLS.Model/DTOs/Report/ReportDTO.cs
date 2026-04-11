@@ -20,12 +20,15 @@ namespace SDLS.Model.DTOs.Report
         public string Content { get; set; } = null!;
         public string? Image { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         public ReportCategoryDTO? ReportCategory { get; set; }
         public ForumCommentDTO? ForumComment { get; set; }
         public ForumPostDTO? ForumPost { get; set; }
         public QuestionDTO? Question { get; set; }
         public SimulationScenarioDTO? Simulation { get; set; }
+        public ReportUserBriefDTO? User { get; set; }
         public List<ResolveDTO> Resolves { get; set; } = new();
     }
 }

@@ -148,5 +148,14 @@ namespace SDLS.Repositories.Repositories
                     .SetProperty(x => x.Status, 0)
                     .SetProperty(x => x.UpdateAt, now));
         }
+
+        public async Task RestoreLessonImagesAsync(Guid lessonId, DateTime now)
+        {
+            await _context.LessonImages
+                .Where(x => x.QuestionLessonId == lessonId && x.Status == 0)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.Status, 1)
+                    .SetProperty(x => x.UpdateAt, now));
+        }
     }
 }

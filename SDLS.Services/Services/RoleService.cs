@@ -5,6 +5,7 @@ using SDLS.Model.DTOs.Role;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -60,12 +61,12 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<RoleDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(RoleCreateDTO dto)
+        public async Task<RoleDTO> CreateAsync(RoleCreateDTO dto)
         {
             var now = DateTime.UtcNow.ToLocalTime();
 
@@ -80,14 +81,14 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<RoleDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, RoleUpdateDTO dto)
+        public async Task<RoleDTO> UpdateAsync(Guid id, RoleUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Role");
+                throw ApiException.NotFound("Không tìm thấy Role");
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
@@ -95,19 +96,32 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<RoleDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<RoleDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<RoleDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<RoleDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<RoleDTO>(existing);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

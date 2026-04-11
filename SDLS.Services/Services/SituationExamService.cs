@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
@@ -6,6 +7,7 @@ using SDLS.Model.DTOs.SituationExam;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -13,18 +15,18 @@ namespace SDLS.Services.Services
     public class SituationExamService : ISituationExamService
     {
         private readonly ISituationExamRepository _repository;
-        private readonly AppDbContext _dbContext;
+        private readonly ISimulationScenarioRepository _simulationScenarioRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SituationExamService(
             ISituationExamRepository repository,
-            AppDbContext dbContext,
+            ISimulationScenarioRepository simulationScenarioRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
-            _dbContext = dbContext;
+            _simulationScenarioRepository = simulationScenarioRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -64,18 +66,25 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SituationExamCreateDTO dto)
+        public async Task<SituationExamDTO> CreateAsync(SituationExamCreateDTO dto)
         {
             ValidateSimulationExamList(dto.SimulationExams);
 
             var now = DateTime.UtcNow.ToLocalTime();
             var scenarioIds = dto.SimulationExams.Select(x => x.SimulationId).Distinct().ToList();
-            var duration = await CalculateDurationAsync(scenarioIds);
+            var duration = await _simulationScenarioRepository.CalculateDurationAsync(scenarioIds);
+
+            foreach (var scenarioId in scenarioIds)
+            {
+                var exists = await _simulationScenarioRepository.GetByIdAsync(scenarioId);
+                if (exists == null)
+                    throw ApiException.NotFound($"Không tìm thấy SimulationScenario với ID {scenarioId}");
+            }
 
             var entity = new SituationExam
             {
@@ -101,14 +110,14 @@ namespace SDLS.Services.Services
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SituationExamUpdateDTO dto)
+        public async Task<SituationExamDTO> UpdateAsync(Guid id, SituationExamUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy SituationExam");
+                throw ApiException.NotFound("Không tìm thấy SituationExam");
 
             ValidateSimulationExamList(dto.SimulationExams);
 
@@ -144,7 +153,13 @@ namespace SDLS.Services.Services
                 {
                     var child = existing.SimulationExams.FirstOrDefault(x => x.Id == item.Id.Value);
                     if (child == null)
-                        throw new KeyNotFoundException($"Không tìm thấy SimulationExam với Id {item.Id.Value}");
+                        throw ApiException.NotFound($"Không tìm thấy SimulationExam với Id {item.Id.Value}");
+
+                    // Kiểm tra tồn tại của SimulationScenario trước khi cập nhật
+                    var exists = await _simulationScenarioRepository.GetByIdAsync(item.SimulationId);
+                    if (exists == null)
+                        throw ApiException.NotFound($"Không tìm thấy SimulationScenario với ID {item.SimulationId}");
+                    
 
                     child.SimulationId = item.SimulationId;
                     child.BaseScore = item.BaseScore;
@@ -172,22 +187,35 @@ namespace SDLS.Services.Services
                 .Distinct()
                 .ToList();
 
-            existing.Duration = await CalculateDurationAsync(activeScenarioIds);
+            existing.Duration = await _simulationScenarioRepository.CalculateDurationAsync(activeScenarioIds);
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SituationExamDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SituationExamDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            return _mapper.Map<SituationExamDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SituationExamDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<SituationExamDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private static void ValidateSimulationExamList(List<SimulationExamCreateDTO> items)
@@ -197,7 +225,7 @@ namespace SDLS.Services.Services
                 .FirstOrDefault(g => g.Count() > 1);
 
             if (duplicate != null)
-                throw new InvalidOperationException($"SimulationId bị trùng: {duplicate.Key}");
+                throw ApiException.Conflict($"SimulationId bị trùng: {duplicate.Key}");
         }
 
         private static void ValidateSimulationExamList(List<SimulationExamUpdateDTO> items)
@@ -207,24 +235,7 @@ namespace SDLS.Services.Services
                 .FirstOrDefault(g => g.Count() > 1);
 
             if (duplicate != null)
-                throw new InvalidOperationException($"SimulationId bị trùng: {duplicate.Key}");
-        }
-
-        private async Task<int> CalculateDurationAsync(List<Guid> scenarioIds)
-        {
-            if (scenarioIds.Count == 0)
-                return 0;
-
-            var scenarios = await _dbContext.SimulationScenarios
-                .Where(x => scenarioIds.Contains(x.Id) && x.Status == 1)
-                .Select(x => new { x.Id, x.TotalTime })
-                .ToListAsync();
-
-            if (scenarios.Count != scenarioIds.Count)
-                throw new KeyNotFoundException("Có SimulationScenario không tồn tại hoặc không active.");
-
-            var totalDuration = scenarios.Sum(x => x.TotalTime);
-            return (int)Math.Ceiling(totalDuration);
+                throw ApiException.Conflict($"SimulationId bị trùng: {duplicate.Key}");
         }
     }
 }
