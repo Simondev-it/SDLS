@@ -225,6 +225,7 @@ namespace SDLS.Services.Services
             existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
             existing.Type = dto.Type;
+            existing.Status = dto.Status ?? existing.Status;
             existing.UpdateAt = now;
 
             if (dto.Answers != null)

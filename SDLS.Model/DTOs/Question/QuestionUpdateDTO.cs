@@ -31,6 +31,9 @@ namespace SDLS.Model.DTOs.Question
         [StringLength(20, ErrorMessage = "Vượt quá độ dài tối đa 20 ký tự.")]
         public string? Type { get; set; }
 
+        [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
+        public int? Status { get; set; }
+
         public List<AnswerUpdateDTO> Answers { get; set; } = new();
 
         public List<QuestionTagUpdateDTO> QuestionTags { get; set; } = new();
