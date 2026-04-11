@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SimulationScenario;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -92,7 +93,7 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest("Simulation difficulty level không tồn tại.");
 
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<SimulationScenario>(dto);
             entity.Id = Guid.NewGuid();
@@ -150,7 +151,7 @@ namespace SDLS.Services.Services
             existing.StartPoint = dto.StartPoint;
             existing.EndPoint = dto.EndPoint;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<SimulationScenarioDTO>(existing);
@@ -165,7 +166,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<SimulationScenarioDTO>(entity);
         }
 

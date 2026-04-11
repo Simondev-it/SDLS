@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.ReportCategory;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -70,7 +71,7 @@ namespace SDLS.Services.Services
 
         public async Task<ReportCategoryDTO> CreateAsync(ReportCategoryCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = new ReportCategory
             {
@@ -95,7 +96,7 @@ namespace SDLS.Services.Services
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<ReportCategoryDTO>(existing);
@@ -110,7 +111,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ReportCategoryDTO>(existing);
         }
 

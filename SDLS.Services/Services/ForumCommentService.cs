@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumComment;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -123,7 +124,7 @@ namespace SDLS.Services.Services
                         notificationContent = "Có người đã bình luận vào bài đăng '" + forumPost.Title + "' của bạn";
                     }
 
-                    var now = DateTime.UtcNow.ToLocalTime();
+                    var now = DateTimeHelper.GetVietnamNow();
                     var entity = new ForumComment
                     {
                         Id = Guid.NewGuid(),
@@ -191,7 +192,7 @@ namespace SDLS.Services.Services
             existing.UserId = currentUserId;
             existing.Content = dto.Content.Trim();
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<ForumCommentDTO>(existing);
@@ -207,7 +208,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             target.Status = 0;
-            target.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            target.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ForumCommentDTO>(target);
         }
 

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -99,7 +100,7 @@ namespace SDLS.Services.Services
             if (chapter == null)
                 throw ApiException.BadRequest("Không tìm thấy QuestionChapter với Id " + dto.QuestionChapterId);
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var lesson = new QuestionLesson
             {
@@ -128,7 +129,7 @@ namespace SDLS.Services.Services
             if (lesson == null)
                 throw ApiException.NotFound("Không tìm thấy QuestionLesson");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             var changed = false;
 
             if (dto.QuestionChapterId.HasValue)
@@ -209,7 +210,7 @@ namespace SDLS.Services.Services
             if (lesson == null)
                 throw ApiException.NotFound($"Không tìm thấy QuestionLesson với Id {id}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var currentStatus = lesson.Status ?? 1;
             var nextStatus = currentStatus == 0 ? 1 : 0;

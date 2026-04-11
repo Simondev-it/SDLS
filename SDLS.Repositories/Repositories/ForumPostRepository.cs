@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Helper;
@@ -121,7 +122,7 @@ namespace SDLS.Repositories.Repositories
                 return;
 
             forumPost.Status = 0;
-            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -174,5 +175,6 @@ namespace SDLS.Repositories.Repositories
                     .SetProperty(x => x.Status, 0)
                     .SetProperty(x => x.UpdateAt, now));
         }
+
     }
 }

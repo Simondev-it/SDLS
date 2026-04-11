@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SituationExam;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -75,7 +76,7 @@ namespace SDLS.Services.Services
         {
             ValidateSimulationExamList(dto.SimulationExams);
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             var scenarioIds = dto.SimulationExams.Select(x => x.SimulationId).Distinct().ToList();
             var duration = await _simulationScenarioRepository.CalculateDurationAsync(scenarioIds);
 
@@ -121,7 +122,7 @@ namespace SDLS.Services.Services
 
             ValidateSimulationExamList(dto.SimulationExams);
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Title = dto.Title;
             existing.Description = dto.Description;
@@ -202,7 +203,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<SituationExamDTO>(entity);
         }
 

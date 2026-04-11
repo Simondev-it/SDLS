@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SimulationSession;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -94,7 +95,7 @@ namespace SDLS.Services.Services
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             var totalScore = dto.SimulationSessionDetails.Sum(x => x.Score ?? 0);
             var totalDuration = dto.SimulationSessionDetails.Sum(x => x.DurationSecond ?? 0d);
 
@@ -147,7 +148,7 @@ namespace SDLS.Services.Services
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.SituationExamId = dto.SituationExamId;
             existing.UserId = currentUserId;
@@ -225,7 +226,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<SimulationSessionDTO>(entity);
         }
 
