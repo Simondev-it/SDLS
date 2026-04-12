@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -7,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using PayOS;
 using SDLS.API.Middlewares;
 using SDLS.Model.AutoMapper;
+using SDLS.Model.DTOs.User;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -104,12 +106,15 @@ namespace SDLS.API
 
             builder.Services.AddScoped<ISignCategoryRepository, SignCategoryRepository>();
             builder.Services.AddScoped<ISignCategoryService, SignCategoryService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
             builder.Services.AddScoped<IReportCategoryService, ReportCategoryService>();
 
             builder.Services.AddScoped<IForumTopicRepository, ForumTopicRepository>();
             builder.Services.AddScoped<IForumTopicService, ForumTopicService>();
+
+            builder.Services.AddScoped<ISimulationExamRepository, SimulationExamRepository>();
 
             //builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
@@ -189,6 +194,9 @@ namespace SDLS.API
             builder.Services.AddScoped<IPayOSService, PayOSService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+            builder.Services.Configure<EmailSettings>(
+            builder.Configuration.GetSection("EmailSettings")); 
+
             builder.Services.AddHttpContextAccessor();
 
 
@@ -233,6 +241,27 @@ namespace SDLS.API
 
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            // Customize model validation error responses for middleware handling
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errors = context.ModelState
+                        .Where(x => x.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            x => x.Key,
+                            x => x.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+
+                    return new BadRequestObjectResult(new
+                    {
+                        message = "Validation Failed",
+                        status = 400,
+                        errors = errors
+                    });
                 };
             });
 
@@ -282,6 +311,13 @@ namespace SDLS.API
                     }
                 });
             });
+
+            //dùng để deploy trên Railway, render.com,... những nền tảng yêu cầu app phải lắng nghe trên cổng do hệ thống cung cấp qua biến môi trường
+            //////////////////////////////////////////////////////////////////////////////////////
+            //var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            //builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+            ///////////////////////////////////////////////////////////////////////////////////////
+            ///
 
             var app = builder.Build();
 

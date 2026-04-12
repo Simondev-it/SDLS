@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Notification;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -62,12 +64,15 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<NotificationDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<NotificationDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(NotificationCreateDTO dto)
+        public async Task<NotificationDTO> CreateAsync(NotificationCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<Notification>(dto);
             entity.Id = Guid.NewGuid();
@@ -84,15 +89,16 @@ namespace SDLS.Services.Services
             }
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<NotificationDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, NotificationUpdateDTO dto)
+        public async Task<NotificationDTO> UpdateAsync(Guid id, NotificationUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy Notification");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Title = dto.Title;
             existing.Content = dto.Content;
@@ -107,12 +113,12 @@ namespace SDLS.Services.Services
                 foreach (var item in dto.UserNotifications)
                 {
                     if (item.NotificationId != id)
-                        throw new ArgumentException($"UserNotification.NotificationId ({item.NotificationId}) không khớp Notification Id ({id}).");
+                        throw ApiException.BadRequest($"UserNotification.NotificationId ({item.NotificationId}) không khớp Notification Id ({id}).");
 
                     if (item.Id.HasValue)
                     {
                         if (!byId.TryGetValue(item.Id.Value, out var un))
-                            throw new KeyNotFoundException($"Không tìm thấy UserNotification với Id {item.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy UserNotification với Id {item.Id.Value}");
 
                         un.UserId = item.UserId;
                         un.Status = item.Status ?? un.Status ?? 1;
@@ -133,19 +139,31 @@ namespace SDLS.Services.Services
             }
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<NotificationDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<NotificationDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<NotificationDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<NotificationDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteHardAsync(id);
-            return true;
+            return _mapper.Map<NotificationDTO>(entity);
         }
     }
 }

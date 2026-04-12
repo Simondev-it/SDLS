@@ -13,8 +13,8 @@ namespace SDLS.Model.DTOs.Exam
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
-        [Range(1, 600, ErrorMessage = "Giá trị không hợp lệ.")]
-        public int? Duration { get; set; }
+        [Range(0d, double.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public double? Duration { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
         [Range(0, 100, ErrorMessage = "Giá trị không hợp lệ.")]

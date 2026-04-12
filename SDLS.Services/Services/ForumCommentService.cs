@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumComment;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -52,19 +54,11 @@ namespace SDLS.Services.Services
 
             var all = (await _repository.GetAllAsync(id, forumPostId, userId, content, status, role)).ToList();
 
-            var ordered = all.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList();
+            var ordered = all.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
+            var total = ordered.Count;
+            var pageItems = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-            var replyLookup = ordered
-                .Where(x => x.ReplyId.HasValue)
-                .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
-
-            var roots = ordered.Where(x => x.ReplyId == null).ToList();
-
-            var total = roots.Count;
-            var pageRoots = roots.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            var dtos = pageRoots.Select(x => BuildCommentTree(x, replyLookup)).ToList();
+            var dtos = _mapper.Map<List<ForumCommentDTO>>(pageItems);
 
             return new PagedResult<ForumCommentDTO>
             {
@@ -82,22 +76,12 @@ namespace SDLS.Services.Services
 
             var target = await _repository.GetByIdAsync(id, role);
             if (target == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
-            var all = (await _repository.GetAllAsync(
-                forumPostId: target.ForumPostId,
-                status: null,
-                role: role)).ToList();
-
-            var replyLookup = all
-                .Where(x => x.ReplyId.HasValue)
-                .GroupBy(x => x.ReplyId!.Value)
-                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.CreateAt).ThenBy(x => x.Id).ToList());
-
-            return BuildCommentTree(target, replyLookup);
+            return _mapper.Map<ForumCommentDTO>(target);
         }
 
-        public async Task<bool> CreateAsync(ForumCommentCreateDTO dto)
+        public async Task<ForumCommentDTO> CreateAsync(ForumCommentCreateDTO dto)
         {
             return await _executionStrategy.ExecuteAsync(async () =>
             {
@@ -112,18 +96,18 @@ namespace SDLS.Services.Services
                     if (dto.ReplyId.HasValue)
                     {
                         if (dto.ReplyId.Value == Guid.Empty)
-                            throw new ArgumentException("ReplyId không hợp lệ.");
+                            throw ApiException.BadRequest("ReplyId không hợp lệ.");
 
                         var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
                         if (forumPost == null)
-                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
+                            throw ApiException.NotFound("Không tìm thấy ForumPost.");
 
                         var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
                         if (parent == null)
-                            throw new KeyNotFoundException("Không tìm thấy comment cha.");
+                            throw ApiException.NotFound("Không tìm thấy comment cha.");
 
                         if (parent.ForumPostId != dto.ForumPostId)
-                            throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
+                            throw ApiException.BadRequest("Reply phải cùng ForumPostId với comment cha.");
 
                         recipientUserId = parent.UserId;
                         notificationTitle = "Trả lời bình luận";
@@ -133,14 +117,14 @@ namespace SDLS.Services.Services
                     {
                         var forumPost = await _forumPostRepository.GetByIdAsync(dto.ForumPostId);
                         if (forumPost == null)
-                            throw new KeyNotFoundException("Không tìm thấy ForumPost.");
+                            throw ApiException.NotFound("Không tìm thấy ForumPost.");
 
                         recipientUserId = forumPost.UserId;
                         notificationTitle = "Bình luận bài viết";
                         notificationContent = "Có người đã bình luận vào bài đăng '" + forumPost.Title + "' của bạn";
                     }
 
-                    var now = DateTime.UtcNow.ToLocalTime();
+                    var now = DateTimeHelper.GetVietnamNow();
                     var entity = new ForumComment
                     {
                         Id = Guid.NewGuid(),
@@ -172,7 +156,7 @@ namespace SDLS.Services.Services
                     await _notificationService.CreateAsync(notificationDto);
 
                     await transaction.CommitAsync();
-                    return true;
+                    return _mapper.Map<ForumCommentDTO>(entity);
                 }
                 catch
                 {
@@ -182,25 +166,25 @@ namespace SDLS.Services.Services
             });
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ForumCommentUpdateDTO dto)
+        public async Task<ForumCommentDTO> UpdateAsync(Guid id, ForumCommentUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy ForumComment.");
+                throw ApiException.NotFound("Không tìm thấy ForumComment.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.ReplyId.HasValue)
             {
                 if (dto.ReplyId.Value == Guid.Empty || dto.ReplyId.Value == id)
-                    throw new ArgumentException("ReplyId không hợp lệ.");
+                    throw ApiException.BadRequest("ReplyId không hợp lệ.");
 
                 var parent = await _repository.GetByIdAsync(dto.ReplyId.Value);
                 if (parent == null)
-                    throw new KeyNotFoundException("Không tìm thấy comment cha.");
+                    throw ApiException.NotFound("Không tìm thấy comment cha.");
 
                 if (parent.ForumPostId != dto.ForumPostId)
-                    throw new ArgumentException("Reply phải cùng ForumPostId với comment cha.");
+                    throw ApiException.BadRequest("Reply phải cùng ForumPostId với comment cha.");
             }
 
             existing.ReplyId = dto.ReplyId;
@@ -208,38 +192,38 @@ namespace SDLS.Services.Services
             existing.UserId = currentUserId;
             existing.Content = dto.Content.Trim();
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ForumCommentDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ForumCommentDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var target = await _repository.GetByIdAsync(id, role);
+            if (target == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            target.Status = 0;
+            target.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<ForumCommentDTO>(target);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ForumCommentDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var target = await _repository.GetByIdAsync(id, role);
+            if (target == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<ForumCommentDTO>(target);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
-        private ForumCommentDTO BuildCommentTree(
-            ForumComment comment,
-            Dictionary<Guid, List<ForumComment>> replyLookup)
-        {
-            var dto = _mapper.Map<ForumCommentDTO>(comment);
-
-            if (replyLookup.TryGetValue(comment.Id, out var replies))
-            {
-                dto.Replies = replies
-                    .Select(x => BuildCommentTree(x, replyLookup))
-                    .ToList();
-            }
-
-            return dto;
-        }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.SavedTrafficSign;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -12,15 +14,18 @@ namespace SDLS.Services.Services
     public class SavedTrafficSignService : ISavedTrafficSignService
     {
         private readonly ISavedTrafficSignRepository _repository;
+        private readonly ITrafficSignRepository _trafficSignRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public SavedTrafficSignService(
             ISavedTrafficSignRepository repository,
+            ITrafficSignRepository trafficSignRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _trafficSignRepository = trafficSignRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -61,68 +66,94 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<SavedTrafficSignDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<SavedTrafficSignDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(SavedTrafficSignCreateDTO dto)
+        public async Task<SavedTrafficSignDTO> CreateAsync(SavedTrafficSignCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.TrafficSignId == Guid.Empty)
-                throw new ArgumentException("TrafficSignId không được rỗng");
+                throw ApiException.BadRequest("TrafficSignId không được rỗng");
+
+            var trafficSign = await _trafficSignRepository.GetByIdAsync(dto.TrafficSignId);
+            if (trafficSign == null)
+                throw ApiException.BadRequest("TrafficSignId không tồn tại");
 
             var existing = await _repository.GetByUserAndTrafficSignAsync(currentUserId, dto.TrafficSignId);
             if (existing != null && existing.Any())
-                throw new InvalidOperationException("SavedTrafficSign cho UserId và TrafficSignId này đã tồn tại.");
+                throw ApiException.Conflict("SavedTrafficSign cho UserId và TrafficSignId này đã tồn tại.");
 
             var entity = new SavedTrafficSign
             {
                 Id = Guid.NewGuid(),
                 UserId = currentUserId,
                 TrafficSignId = dto.TrafficSignId,
-                CreateAt = DateTime.UtcNow.ToLocalTime(),
-                UpdateAt = DateTime.UtcNow.ToLocalTime(),
+                CreateAt = DateTimeHelper.GetVietnamNow(),
+                UpdateAt = DateTimeHelper.GetVietnamNow(),
                 Status = 1
             };
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<SavedTrafficSignDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SavedTrafficSignUpdateDTO dto)
+        public async Task<SavedTrafficSignDTO> UpdateAsync(Guid id, SavedTrafficSignUpdateDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return false;
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy SavedTrafficSign");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             var isChangingKeys = existing.UserId != currentUserId || existing.TrafficSignId != dto.TrafficSignId;
+
+            var trafficSign = await _trafficSignRepository.GetByIdAsync(dto.TrafficSignId);
+            if (trafficSign == null)
+                throw ApiException.BadRequest("TrafficSignId không tồn tại");
+
             if (isChangingKeys)
             {
                 var conflict = await _repository.GetByUserAndTrafficSignAsync(currentUserId, dto.TrafficSignId);
                 if (conflict != null && conflict.Any(x => x.Id != id))
-                    throw new InvalidOperationException("Cặp UserId và TrafficSignId mới đã tồn tại ở record khác.");
+                    throw ApiException.Conflict("Cặp UserId và TrafficSignId mới đã tồn tại ở record khác.");
             }
 
             existing.UserId = currentUserId;
             existing.TrafficSignId = dto.TrafficSignId;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<SavedTrafficSignDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<SavedTrafficSignDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<SavedTrafficSignDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<SavedTrafficSignDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<SavedTrafficSignDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

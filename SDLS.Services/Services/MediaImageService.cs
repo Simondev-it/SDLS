@@ -2,6 +2,7 @@ using SDLS.Model.DTOs.Media;
 using SDLS.Model.Enumerations;
 using SDLS.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
+using SDLS.Services.ApiExceptions;
 
 namespace SDLS.Services.Services;
 
@@ -34,14 +35,14 @@ public class MediaImageService : IMediaImageService
         string imageTarget)
     {
         if (files == null || files.Count == 0)
-            throw new ArgumentException("Không có file nào được upload.");
+            throw ApiException.BadRequest("Không có file nào được upload.");
 
         // Validate
         ValidateFiles(files);
 
         // Parse ImageTarget enum
         if (!Enum.TryParse<ImageTarget>(imageTarget, out var imageTargetEnum))
-            throw new ArgumentException($"ImageTarget '{imageTarget}' không hợp lệ.");
+            throw ApiException.BadRequest($"ImageTarget '{imageTarget}' không hợp lệ.");
 
         var responses = new List<MediaUploadResponseDTO>();
 
@@ -71,10 +72,10 @@ public class MediaImageService : IMediaImageService
     public async Task<bool> DeleteAsync(string fileUrl, string imageTarget)
     {
         if (string.IsNullOrWhiteSpace(fileUrl))
-            throw new ArgumentException("fileUrl là bắt buộc.");
+            throw ApiException.BadRequest("fileUrl là bắt buộc.");
 
         if (!Enum.TryParse<ImageTarget>(imageTarget, out var imageTargetEnum))
-            throw new ArgumentException($"ImageTarget '{imageTarget}' không hợp lệ.");
+            throw ApiException.BadRequest($"ImageTarget '{imageTarget}' không hợp lệ.");
 
         await _storageService.DeleteImageAsync(fileUrl, imageTargetEnum);
 
@@ -117,21 +118,21 @@ public class MediaImageService : IMediaImageService
                 continue;
 
             if (file.Length <= 0)
-                throw new ArgumentException($"File ở vị trí {i + 1} không hợp lệ.");
+                throw ApiException.BadRequest($"File ở vị trí {i + 1} không hợp lệ.");
 
             if (file.Length > MaxFileSizeBytes)
-                throw new ArgumentException($"Dung lượng file '{file.FileName}' vượt quá 3MB.");
+                throw ApiException.BadRequest($"Dung lượng file '{file.FileName}' vượt quá 3MB.");
 
             totalSize += file.Length;
             if (totalSize > MaxTotalSizeBytes)
-                throw new ArgumentException("Tổng dung lượng file vượt quá 10MB.");
+                throw ApiException.BadRequest("Tổng dung lượng file vượt quá 10MB.");
 
             var ext = Path.GetExtension(file.FileName);
             if (string.IsNullOrWhiteSpace(ext) || !AllowedExtensions.Contains(ext))
-                throw new ArgumentException($"Định dạng file '{file.FileName}' không được hỗ trợ.");
+                throw ApiException.BadRequest($"Định dạng file '{file.FileName}' không được hỗ trợ.");
 
             if (!string.IsNullOrWhiteSpace(file.ContentType) && !AllowedContentTypes.Contains(file.ContentType))
-                throw new ArgumentException($"Content-Type '{file.ContentType}' không hợp lệ.");
+                throw ApiException.BadRequest($"Content-Type '{file.ContentType}' không hợp lệ.");
         }
     }
 }

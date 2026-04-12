@@ -2,31 +2,42 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Question;
+using SDLS.Model.DTOs.QuestionTag;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace SDLS.Services.Services
 {
     public class QuestionService : IQuestionService
     {
         private readonly IQuestionRepository _questionRepository;
+        private readonly IQuestionTopicRepository _questionTopicRepository;
+        private readonly IQuestionLessonRepository _questionLessonRepository;
+        private readonly IQuestionCategoryRepository _questionCategoryRepository;
+        private readonly ITagRepository _tagRepository;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public QuestionService(
             IQuestionRepository questionRepository,
+            IQuestionTopicRepository questionTopicRepository,
+            IQuestionLessonRepository questionLessonRepository,
+            IQuestionCategoryRepository questionCategoryRepository,
+            ITagRepository tagRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _questionRepository = questionRepository;
+            _questionTopicRepository = questionTopicRepository;
+            _questionLessonRepository = questionLessonRepository;
+            _questionCategoryRepository = questionCategoryRepository;
+            _tagRepository = tagRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -88,21 +99,33 @@ namespace SDLS.Services.Services
 
             var question = await _questionRepository.GetByIdAsync(id, role);
             if (question == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<QuestionDTO>(question);
         }
 
 
-        public async Task<bool> CreateAsync(QuestionCreateDTO dto)
+        public async Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto)
         {
             if (dto.Answers == null || !dto.Answers.Any())
-                throw new ArgumentException("Question must have at least 1 answer");
+                throw ApiException.BadRequest("Question must have at least 1 answer");
 
-            if (!dto.Answers.Any(a => a.Iscorrect))
-                throw new ArgumentException("At least one answer must be correct");
+            if (!dto.Answers.Any(a => a.IsCorrect))
+                throw ApiException.BadRequest("At least one answer must be correct");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (lesson == null)
+                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
+
+            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+            if (topic == null)
+                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
+
+            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
+
+            var now = DateTimeHelper.GetVietnamNow();
 
             var newQuestion = _mapper.Map<Question>(dto);
             newQuestion.Id = Guid.NewGuid();
@@ -110,6 +133,17 @@ namespace SDLS.Services.Services
             newQuestion.UpdateAt = now;
             newQuestion.Status = 1;
             newQuestion.Image = dto.Image;
+
+            if (dto.Index.HasValue)
+            {
+                newQuestion.Index = dto.Index.Value;
+            }
+            else
+            {
+                var allActive = await _questionRepository.GetAllAsync(status: 1);
+                var maxIndex = allActive.Max(q => q.Index ?? 0);
+                newQuestion.Index = maxIndex + 1;
+            }
 
             foreach (var ans in newQuestion.Answers)
             {
@@ -121,49 +155,78 @@ namespace SDLS.Services.Services
 
             foreach (var questionTag in newQuestion.QuestionTags)
             {
+                var tag = await _tagRepository.GetByIdAsync(questionTag.TagId);
+                if (tag == null)
+                    throw ApiException.BadRequest($"TagId {questionTag.TagId} không tồn tại.");
+
                 questionTag.QuestionId = newQuestion.Id;
                 questionTag.CreateAt = now;
                 questionTag.UpdateAt = now;
                 questionTag.Status = 1;
             }
 
-            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(dto.QuestionLessonId);
-            var ordered = BuildOrderedLinkedList(lessonQuestions);
-
-            var position = NormalizePosition(dto.Position, ordered.Count);
-            ResolveInsertNeighbors(ordered, position, out var prevId, out var nextId);
-
-            newQuestion.ParentId = nextId;
-
-            if (prevId.HasValue)
-            {
-                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
-                if (prevTracked == null)
-                    throw new KeyNotFoundException($"Previous question not found: {prevId.Value}");
-
-                prevTracked.ParentId = newQuestion.Id;
-                prevTracked.UpdateAt = now;
-            }
+            newQuestion.ParentId = null;
 
             await _questionRepository.AddAsync(newQuestion);
-            return true;
+            await RebuildGlobalParentLinksAsync(now);
+            return _mapper.Map<QuestionDTO>(newQuestion);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto)
+        public async Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw ApiException.BadRequest("Danh sách câu hỏi không được rỗng.");
+
+            await using var transaction = await _questionRepository.BeginTransactionAsync();
+            try
+            {
+                var createdItems = new List<QuestionDTO>();
+
+                foreach (var dto in dtos)
+                {
+                    var created = await CreateAsync(dto);
+                    createdItems.Add(created);
+                }
+
+                await transaction.CommitAsync();
+                return createdItems;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy câu hỏi");
+                throw ApiException.NotFound("Không tìm thấy câu hỏi");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+            if (lesson == null)
+                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
+
+            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+            if (topic == null)
+                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
+
+            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+            if (category == null)
+                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
+
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.QuestionLessonId = dto.QuestionLessonId;
             existing.QuestionTopicId = dto.QuestionTopicId;
             existing.QuestionCategoryId = dto.QuestionCategoryId;
+            existing.Index = dto.Index ?? existing.Index;
             existing.Content = dto.Content;
             existing.Image = dto.Image;
             existing.Explanation = dto.Explanation;
             existing.Type = dto.Type;
+            existing.Status = dto.Status ?? existing.Status;
             existing.UpdateAt = now;
 
             if (dto.Answers != null)
@@ -173,15 +236,15 @@ namespace SDLS.Services.Services
                 foreach (var answerDto in dto.Answers)
                 {
                     if (answerDto.QuestionId != id)
-                        throw new ArgumentException($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
+                        throw ApiException.BadRequest($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
 
                     if (answerDto.Id.HasValue)
                     {
                         if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
-                            throw new KeyNotFoundException($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
 
                         answer.Content = answerDto.Content;
-                        answer.IsCorrect = answerDto.Iscorrect;
+                        answer.IsCorrect = answerDto.IsCorrect;
                         answer.UpdateAt = now;
                         answer.Status = answerDto.Status ?? answer.Status ?? 1;
                     }
@@ -191,7 +254,7 @@ namespace SDLS.Services.Services
                         {
                             QuestionId = id,
                             Content = answerDto.Content,
-                            IsCorrect = answerDto.Iscorrect,
+                            IsCorrect = answerDto.IsCorrect,
                             CreateAt = now,
                             UpdateAt = now,
                             Status = answerDto.Status ?? 1
@@ -216,6 +279,10 @@ namespace SDLS.Services.Services
 
                 foreach (var tagId in newTagIds)
                 {
+                    var tag = await _tagRepository.GetByIdAsync(tagId);
+                    if (tag == null)
+                        throw ApiException.BadRequest($"TagId {tagId} không tồn tại.");
+
                     var newQuestionTag = new QuestionTag
                     {
                         QuestionId = id,
@@ -229,184 +296,206 @@ namespace SDLS.Services.Services
                 }
             }
 
-            // Reorder chỉ khi có Position
-            if (dto.Position.HasValue)
-            {
-                var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-                var ordered = BuildOrderedLinkedList(lessonQuestions);
-
-                var currentIndex = ordered.FindIndex(q => q.Id == existing.Id);
-                if (currentIndex < 0)
-                    throw new InvalidOperationException("Question không tồn tại trong chuỗi linked list hiện tại.");
-
-                // oldPrev là node đang trỏ tới existing
-                var oldPrevId = ordered.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
-                var oldNextId = existing.ParentId;
-
-                // Gỡ existing khỏi vị trí cũ: oldPrev -> oldNext
-                if (oldPrevId.HasValue)
-                {
-                    var oldPrevTracked = await _questionRepository.GetByIdForUpdateAsync(oldPrevId.Value);
-                    if (oldPrevTracked != null)
-                    {
-                        oldPrevTracked.ParentId = oldNextId;
-                        oldPrevTracked.UpdateAt = now;
-                    }
-                }
-
-                // Remove existing khỏi list để tính vị trí mới
-                ordered.RemoveAt(currentIndex);
-
-                var newPosition = NormalizePosition(dto.Position, ordered.Count);
-                ResolveInsertNeighbors(ordered, newPosition, out var newPrevId, out var newNextId);
-
-                // existing -> newNext
-                existing.ParentId = newNextId;
-
-                // newPrev -> existing
-                if (newPrevId.HasValue)
-                {
-                    var newPrevTracked = await _questionRepository.GetByIdForUpdateAsync(newPrevId.Value);
-                    if (newPrevTracked != null)
-                    {
-                        newPrevTracked.ParentId = existing.Id;
-                        newPrevTracked.UpdateAt = now;
-                    }
-                }
-            }
-
             await _questionRepository.UpdateAsync(existing);
-            return true;
+            await RebuildGlobalParentLinksAsync(now);
+            return _mapper.Map<QuestionDTO>(existing);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            return await DeleteSoftAsync(id);
-        }
-
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionDTO> DeleteSoftAsync(Guid id)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với Id {id}");
+                throw ApiException.NotFound($"Không tìm thấy câu hỏi với Id {id}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
-
-            var lessonQuestions = await _questionRepository.GetAllByLessonAsync(existing.QuestionLessonId);
-            var prevId = lessonQuestions.FirstOrDefault(q => q.ParentId == existing.Id)?.Id;
-            var nextId = existing.ParentId;
-
-            if (prevId.HasValue)
-            {
-                var prevTracked = await _questionRepository.GetByIdForUpdateAsync(prevId.Value);
-                if (prevTracked != null)
-                {
-                    prevTracked.ParentId = nextId;
-                    prevTracked.UpdateAt = now;
-                }
-            }
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Status = 0;
             existing.UpdateAt = now;
             existing.ParentId = null;
 
             await _questionRepository.UpdateAsync(existing);
-            return true;
+            await RebuildGlobalParentLinksAsync(now);
+            return _mapper.Map<QuestionDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _questionRepository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<QuestionDTO>(existing);
             await _questionRepository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
+
+
+        
 
 
         // private method
 
-        private static int NormalizePosition(int? inputPosition, int currentCount)
-        {
-            if (!inputPosition.HasValue)
-                return currentCount + 1;
-
-            if (inputPosition.Value < 1)
-                return 1;
-
-            if (inputPosition.Value > currentCount + 1)
-                return currentCount + 1;
-
-            return inputPosition.Value;
-        }
-
-        private static void ResolveInsertNeighbors(List<Question> ordered, int position, out Guid? prevId, out Guid? nextId)
-        {
-            prevId = null;
-            nextId = null;
-
-            if (ordered.Count == 0)
-                return;
-
-            if (position == 1)
-            {
-                nextId = ordered[0].Id;
-                return;
-            }
-
-            if (position == ordered.Count + 1)
-            {
-                prevId = ordered[^1].Id;
-                return;
-            }
-
-            prevId = ordered[position - 2].Id;
-            nextId = ordered[position - 1].Id;
-        }
-
         private List<Question> BuildOrderedLinkedList(IEnumerable<Question> all)
         {
-            var allList = all.ToList();
-            if (allList.Count == 0)
-                return new List<Question>();
+            return all
+                .OrderBy(q => q.Index ?? int.MaxValue)
+                .ThenBy(q => q.CreateAt ?? DateTime.MinValue)
+                .ThenBy(q => q.Id)
+                .ToList();
+        }
 
-            var byId = allList.ToDictionary(q => q.Id, q => q);
-            var referencedAsNext = allList
-                .Where(q => q.ParentId.HasValue)
-                .Select(q => q.ParentId!.Value)
-                .ToHashSet();
-
-            // Head: question không nằm trong ParentId của question khác
-            var heads = allList
-                .Where(q => !referencedAsNext.Contains(q.Id))
+        private async Task RebuildGlobalParentLinksAsync(DateTime now)
+        {
+            var allActive = await _questionRepository.GetAllAsync(status: 1);
+            var ordered = allActive
+                .OrderBy(q => q.Index ?? int.MaxValue)
+                .ThenBy(q => q.CreateAt ?? DateTime.MinValue)
+                .ThenBy(q => q.Id)
                 .ToList();
 
-            if (!heads.Any())
-                heads.Add(allList[0]);
+            if (!ordered.Any())
+                return;
 
-            var result = new List<Question>();
-            var visited = new HashSet<Guid>();
+            var changedTracked = new List<Question>();
 
-            foreach (var head in heads)
+            for (var i = 0; i < ordered.Count; i++)
             {
-                var current = head;
+                var currentId = ordered[i].Id;
+                var expectedParentId = i + 1 < ordered.Count ? ordered[i + 1].Id : (Guid?)null;
 
-                while (current != null && visited.Add(current.Id))
-                {
-                    result.Add(current);
+                if (ordered[i].ParentId == expectedParentId)
+                    continue;
 
-                    if (current.ParentId.HasValue && byId.TryGetValue(current.ParentId.Value, out var next))
-                        current = next;
-                    else
-                        current = null;
-                }
+                var tracked = await _questionRepository.GetByIdForUpdateAsync(currentId);
+                if (tracked == null)
+                    continue;
+
+                tracked.ParentId = expectedParentId;
+                tracked.UpdateAt = now;
+                changedTracked.Add(tracked);
             }
 
-            // Nếu có cycle/disconnected node thì append nốt
-            foreach (var q in allList)
+            if (changedTracked.Any())
             {
-                if (!visited.Contains(q.Id))
-                    result.Add(q);
+                await _questionRepository.UpdateAsync(changedTracked[0]);
+            }
+        }
+
+        private static QuestionCreateDTO BuildQuestionCreateDto(
+            Dictionary<string, string> row,
+            int rowNo,
+            IReadOnlyDictionary<string, Guid> lessonLookup,
+            IReadOnlyDictionary<string, Guid> topicLookup,
+            IReadOnlyDictionary<string, Guid> categoryLookup,
+            IReadOnlyDictionary<string, Guid> tagLookup)
+        {
+            var importRow = new QuestionImportRowDTO
+            {
+                QuestionLessonName = GetRequired(row, "QuestionLessonName", rowNo),
+                QuestionTopicName = GetRequired(row, "QuestionTopicName", rowNo),
+                QuestionCategoryName = GetRequired(row, "QuestionCategoryName", rowNo),
+                Index = ParseIntOptional(row, "Index"),
+                Content = GetRequired(row, "Content", rowNo),
+                Image = GetOptional(row, "Image"),
+                Explanation = GetOptional(row, "Explanation"),
+                Type = GetOptional(row, "Type"),
+                Answers = GetRequired(row, "Answers", rowNo),
+                QuestionTagNames = GetOptional(row, "QuestionTagNames")
+            };
+
+            var lessonKey = NormalizeLookupKey(importRow.QuestionLessonName);
+            if (!lessonLookup.TryGetValue(lessonKey, out var lessonId))
+                throw new ArgumentException($"Không tìm thấy QuestionLesson theo tên: '{importRow.QuestionLessonName}'.");
+
+            var topicKey = NormalizeLookupKey(importRow.QuestionTopicName);
+            if (!topicLookup.TryGetValue(topicKey, out var topicId))
+                throw new ArgumentException($"Không tìm thấy QuestionTopic theo tên: '{importRow.QuestionTopicName}'.");
+
+            var categoryKey = NormalizeLookupKey(importRow.QuestionCategoryName);
+            if (!categoryLookup.TryGetValue(categoryKey, out var categoryId))
+                throw new ArgumentException($"Không tìm thấy QuestionCategory theo tên: '{importRow.QuestionCategoryName}'.");
+
+            var dto = new QuestionCreateDTO
+            {
+                QuestionLessonId = lessonId,
+                QuestionTopicId = topicId,
+                QuestionCategoryId = categoryId,
+                Index = importRow.Index,
+                Content = importRow.Content,
+                Image = importRow.Image,
+                Explanation = importRow.Explanation,
+                Type = importRow.Type,
+                Answers = ParseAnswers(importRow.Answers),
+                QuestionTags = ParseQuestionTags(importRow.QuestionTagNames, tagLookup)
+            };
+
+            return dto;
+        }
+
+        private static List<AnswerCreateDTO> ParseAnswers(string raw)
+        {
+            var result = new List<AnswerCreateDTO>();
+
+            foreach (var part in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var pieces = part.Split('|', 2, StringSplitOptions.TrimEntries);
+                if (pieces.Length != 2)
+                    throw new ArgumentException("Cột Answers sai định dạng. Dùng: Content|true;Content|false");
+
+                if (!bool.TryParse(pieces[1], out var isCorrect))
+                    throw new ArgumentException("IsCorrect trong cột Answers phải là true/false.");
+
+                result.Add(new AnswerCreateDTO
+                {
+                    Content = pieces[0],
+                    IsCorrect = isCorrect
+                });
             }
 
             return result;
+        }
+
+        private static List<QuestionTagCreateDTO> ParseQuestionTags(string? raw, IReadOnlyDictionary<string, Guid> tagLookup)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return new List<QuestionTagCreateDTO>();
+
+            var tags = new List<QuestionTagCreateDTO>();
+            foreach (var part in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var key = NormalizeLookupKey(part);
+                if (!tagLookup.TryGetValue(key, out var tagId))
+                    throw new ArgumentException($"Không tìm thấy Tag theo tên: '{part}'.");
+
+                tags.Add(new QuestionTagCreateDTO { TagId = tagId });
+            }
+
+            return tags;
+        }
+
+        private static int? ParseIntOptional(Dictionary<string, string> row, string key)
+        {
+            var raw = GetOptional(row, key);
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
+        }
+
+        private static string GetRequired(Dictionary<string, string> row, string key, int rowNo)
+        {
+            if (!row.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException($"Thiếu cột bắt buộc {key}.");
+            return value.Trim();
+        }
+
+        private static string? GetOptional(Dictionary<string, string> row, string key)
+        {
+            return row.TryGetValue(key, out var value) ? value?.Trim() : null;
+        }
+
+        private static string NormalizeLookupKey(string? value)
+        {
+            return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
     }
 }

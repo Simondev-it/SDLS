@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -10,6 +11,9 @@ namespace SDLS.Repositories.Repositories
     {
         public async Task<IEnumerable<DrivingLicense>> GetAllAsync(
             Guid? id = null,
+            string? name = null,
+            string? description = null,
+            string? vehicleName = null,
             int? status = null,
             string? role = null)
         {
@@ -24,6 +28,15 @@ namespace SDLS.Repositories.Repositories
 
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(x => x.Name != null && EF.Functions.ILike(x.Name, $"%{name}%"));
+
+            if (!string.IsNullOrWhiteSpace(description))
+                query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, $"%{description}%"));
+
+            if (!string.IsNullOrWhiteSpace(vehicleName))
+                query = query.Where(x => x.Vehicles.Any(v => v.Status != 0 && v.Name != null && EF.Functions.ILike(v.Name, $"%{vehicleName}%")));
 
             query = query.ApplyRoleFilter(role);
 
@@ -70,7 +83,7 @@ namespace SDLS.Repositories.Repositories
 
             if (existing == null) return;
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             existing.Status = 0;
             existing.UpdateAt = now;
 
@@ -97,5 +110,6 @@ namespace SDLS.Repositories.Repositories
             _context.DrivingLicenses.Remove(existing);
             await _context.SaveChangesAsync();
         }
+
     }
 }

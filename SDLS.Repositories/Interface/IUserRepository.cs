@@ -19,5 +19,6 @@ namespace SDLS.Repositories.Interface
         Task AddAsync(User user);
 
         Task UpdateAsync(User user);
+        Task RemoveAsync(User user);
     }
 }

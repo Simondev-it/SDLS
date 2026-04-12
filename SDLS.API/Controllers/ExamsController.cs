@@ -36,7 +36,7 @@ namespace SDLS.API.Controllers
             return Ok(exam);
         }
 
-        [Authorize(Roles = "Instructor,Student")]
+        [Authorize(Roles = "Instructor,Student,Admin")]
         //[Authorize]
         [HttpPost]
         public async Task<ActionResult<ExamDTO>> Create([FromBody] ExamCreateDTO dto)
@@ -46,7 +46,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<ExamDTO>> Update(Guid id, [FromBody] ExamUpdateDTO dto)
@@ -57,22 +57,22 @@ namespace SDLS.API.Controllers
             return Ok(updated);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<ExamDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<ExamDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

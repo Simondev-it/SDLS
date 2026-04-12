@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.QuestionChapter;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using System.Globalization;
 using System.Text;
@@ -14,15 +16,18 @@ namespace SDLS.Services.Services
     public class QuestionChapterService : IQuestionChapterService
     {
         private readonly IQuestionChapterRepository _repository;
+        private readonly IDrivingLicenseRepository _drivingLicenseRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public QuestionChapterService(
             IQuestionChapterRepository repository,
+            IDrivingLicenseRepository drivingLicenseRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _drivingLicenseRepository = drivingLicenseRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -64,51 +69,74 @@ namespace SDLS.Services.Services
 
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(QuestionChapterCreateDTO dto)
+        public async Task<QuestionChapterDTO> CreateAsync(QuestionChapterCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(dto.DrivingLicenseId);
+            if (drivingLicense == null)
+                throw ApiException.BadRequest($"DrivingLicense with ID {dto.DrivingLicenseId} does not exist");
+
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<QuestionChapter>(dto);
             entity.Id = Guid.NewGuid();
+            entity.Index = dto.Index;
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
-            return true;
+            return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionChapterUpdateDTO dto)
+        public async Task<QuestionChapterDTO> UpdateAsync(Guid id, QuestionChapterUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy QuestionChapter");
+                throw ApiException.NotFound("Không tìm thấy QuestionChapter");
+
+            var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(dto.DrivingLicenseId);
+            if (drivingLicense == null)
+                throw ApiException.BadRequest($"DrivingLicense with ID {dto.DrivingLicenseId} does not exist");
 
             existing.DrivingLicenseId = dto.DrivingLicenseId;
+            existing.Index = dto.Index;
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<QuestionChapterDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionChapterDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            entity.Status = 0;
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<QuestionChapterDTO>(entity);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionChapterDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role);
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<QuestionChapterDTO>(entity);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

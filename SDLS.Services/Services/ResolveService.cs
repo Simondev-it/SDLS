@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 
 namespace SDLS.Services.Services
@@ -70,26 +72,29 @@ namespace SDLS.Services.Services
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
-            return entity != null ? _mapper.Map<ResolveDTO>(entity) : null;
+            if (entity == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            return _mapper.Map<ResolveDTO>(entity);
         }
 
-        public async Task<bool> CreateAsync(ResolveCreateDTO dto)
+        public async Task<ResolveDTO> CreateAsync(ResolveCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
             if (dto.ReportId == Guid.Empty)
-                throw new ArgumentException("ReportId không được rỗng.");
+                throw ApiException.BadRequest("ReportId không được rỗng.");
 
-            await _executionStrategyRepository.ExecuteAsync(async () =>
+            return await _executionStrategyRepository.ExecuteAsync(async () =>
             {
                 await using var transaction = await _repository.BeginTransactionAsync();
                 try
                 {
-                    var now = DateTime.UtcNow.ToLocalTime();
+                    var now = DateTimeHelper.GetVietnamNow();
 
                     var report = await _reportRepository.GetByIdAsync(dto.ReportId);
                     if (report == null)
-                        throw new KeyNotFoundException("Không tìm thấy Report.");
+                        throw ApiException.NotFound("Không tìm thấy Report.");
 
                     var entity = new Resolve
                     {
@@ -126,6 +131,7 @@ namespace SDLS.Services.Services
                     await _notificationService.CreateAsync(notificationDto);
 
                     await transaction.CommitAsync();
+                    return _mapper.Map<ResolveDTO>(entity);
                 }
                 catch
                 {
@@ -133,15 +139,13 @@ namespace SDLS.Services.Services
                     throw;
                 }
             });
-
-            return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ResolveUpdateDTO dto)
+        public async Task<ResolveDTO> UpdateAsync(Guid id, ResolveUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy Resolve");
+                throw ApiException.NotFound("Không tìm thấy Resolve");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
 
@@ -150,22 +154,35 @@ namespace SDLS.Services.Services
             existing.Title = dto.Title;
             existing.Content = dto.Content;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ResolveDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ResolveDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
             await _repository.DeleteSoftAsync(id);
-            return true;
+            existing.Status = 0;
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<ResolveDTO>(existing);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ResolveDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var existing = await _repository.GetByIdAsync(id, role);
+            if (existing == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<ResolveDTO>(existing);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
     }
 }

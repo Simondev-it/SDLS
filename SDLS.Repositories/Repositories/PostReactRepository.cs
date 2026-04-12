@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
@@ -87,6 +88,13 @@ namespace SDLS.Repositories.Repositories
 
         public async Task UpdateAsync(PostReact entity)
         {
+            _context.PostReacts.Attach(entity);
+            _context.Entry(entity).Property(x => x.UserId).IsModified = true;
+            _context.Entry(entity).Property(x => x.ForumPostId).IsModified = true;
+            _context.Entry(entity).Property(x => x.ReactType).IsModified = true;
+            _context.Entry(entity).Property(x => x.UpdateAt).IsModified = true;
+            _context.Entry(entity).Property(x => x.Status).IsModified = true;
+
             await _context.SaveChangesAsync();
         }
 
@@ -99,7 +107,7 @@ namespace SDLS.Repositories.Repositories
                 return;
 
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 

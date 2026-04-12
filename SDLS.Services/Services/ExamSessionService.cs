@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ExamSession;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -16,12 +18,14 @@ namespace SDLS.Services.Services
     public class ExamSessionService : IExamSessionService
     {
         private readonly IExamSessionRepository _examSessionRepository;
+        private readonly IExamRepository _examRepository;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ExamSessionService(IExamSessionRepository examSessionRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public ExamSessionService(IExamSessionRepository examSessionRepository, IExamRepository examRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _examSessionRepository = examSessionRepository;
+            _examRepository = examRepository;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -61,22 +65,27 @@ namespace SDLS.Services.Services
             var examSession = await _examSessionRepository.GetByIdAsync(id, role);
 
             if (examSession == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
-        public async Task<bool> CreateAsync(ExamSessionCreateDTO dto)
+        public async Task<ExamSessionDTO> CreateAsync(ExamSessionCreateDTO dto)
         {
+            var exam = await _examRepository.GetByIdAsync(dto.ExamId);
+            if (exam == null)
+                throw ApiException.BadRequest($"Exam with ID {dto.ExamId} does not exist.");
+
             if (dto.ExamDetails == null || !dto.ExamDetails.Any())
-                throw new ArgumentException("ExamSession must have at least 1 exam detail");
+                throw ApiException.BadRequest("ExamSession must have at least 1 exam detail");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var newExamSession = _mapper.Map<ExamSession>(dto);
             newExamSession.Id = Guid.NewGuid();
             newExamSession.UserId = currentUserId;
+            newExamSession.TotalDuration = dto.TotalDuration;
             newExamSession.CreateAt = now;
             newExamSession.UpdateAt = now;
             newExamSession.Status = 1;
@@ -90,21 +99,26 @@ namespace SDLS.Services.Services
             }
 
             await _examSessionRepository.AddAsync(newExamSession);
-            return true;
+            return _mapper.Map<ExamSessionDTO>(newExamSession);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ExamSessionUpdateDTO dto)
+        public async Task<ExamSessionDTO> UpdateAsync(Guid id, ExamSessionUpdateDTO dto)
         {
             var existing = await _examSessionRepository.GetByIdForUpdateAsync(id);
             if (existing == null)
-                throw new KeyNotFoundException("Không tìm thấy exam session");
+                throw ApiException.NotFound("Không tìm thấy exam session");
+
+            var exam = await _examRepository.GetByIdAsync(dto.ExamId);
+            if (exam == null)
+                throw ApiException.BadRequest($"Exam with ID {dto.ExamId} does not exist.");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.ExamId = dto.ExamId;
             existing.UserId = currentUserId;
             existing.Score = dto.Score;
+            existing.TotalDuration = dto.TotalDuration;
             existing.IsPassed = dto.IsPassed;
             existing.UpdateAt = now;
 
@@ -115,12 +129,12 @@ namespace SDLS.Services.Services
                 foreach (var detailDto in dto.ExamDetails)
                 {
                     if (detailDto.ExamSessionId != id)
-                        throw new ArgumentException($"ExamDetail.ExamSessionId ({detailDto.ExamSessionId}) không khớp ExamSession Id ({id}).");
+                        throw ApiException.BadRequest($"ExamDetail.ExamSessionId ({detailDto.ExamSessionId}) không khớp ExamSession Id ({id}).");
 
                     if (detailDto.Id.HasValue)
                     {
                         if (!existingDetailsById.TryGetValue(detailDto.Id.Value, out var detail))
-                            throw new KeyNotFoundException($"Không tìm thấy ExamDetail với Id {detailDto.Id.Value}");
+                            throw ApiException.NotFound($"Không tìm thấy ExamDetail với Id {detailDto.Id.Value}");
 
                         detail.AnswerId = detailDto.AnswerId;
                         detail.UpdateAt = now;
@@ -143,19 +157,33 @@ namespace SDLS.Services.Services
             }
 
             await _examSessionRepository.UpdateAsync(existing);
-            return true;
+            return _mapper.Map<ExamSessionDTO>(existing);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<ExamSessionDTO> DeleteSoftAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var examSession = await _examSessionRepository.GetByIdAsync(id, role);
+
+            if (examSession == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
             await _examSessionRepository.DeleteSoftAsync(id);
-            return true;
+            examSession.Status = 0;
+            examSession.UpdateAt = DateTimeHelper.GetVietnamNow();
+            return _mapper.Map<ExamSessionDTO>(examSession);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<ExamSessionDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var examSession = await _examSessionRepository.GetByIdAsync(id, role);
+
+            if (examSession == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+            var result = _mapper.Map<ExamSessionDTO>(examSession);
             await _examSessionRepository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
+
     }
 }

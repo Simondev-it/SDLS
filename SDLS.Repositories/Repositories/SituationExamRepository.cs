@@ -1,4 +1,5 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
@@ -108,7 +109,7 @@ namespace SDLS.Repositories.Repositories
             if (existing == null)
                 return;
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             existing.Status = 0;
             existing.UpdateAt = now;
 
@@ -155,6 +156,18 @@ namespace SDLS.Repositories.Repositories
 
             _context.SituationExams.Remove(existing);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetPassScoreAsync(Guid situationExamId)
+        {
+            var exam = await _context.SituationExams
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == situationExamId && x.Status == 1);
+
+            if (exam == null)
+                throw new KeyNotFoundException("Không tìm thấy SituationExam.");
+
+            return exam.PassScore ?? 0;
         }
     }
 }

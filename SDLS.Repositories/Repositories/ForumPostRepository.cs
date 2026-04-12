@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
 using SDLS.Repositories.Helper;
@@ -18,7 +19,17 @@ namespace SDLS.Repositories.Repositories
             int? status = null,
             string? role = null)
         {
-            var query = _context.ForumPosts.AsQueryable();
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<ForumPost> query = isPrivileged
+                ? _context.ForumPosts
+                    .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
+                    .Include(x => x.ForumComments)
+                : _context.ForumPosts
+                    .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
+                    .Include(x => x.ForumComments.Where(c => c.Status != 0));
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -52,14 +63,35 @@ namespace SDLS.Repositories.Repositories
 
             query = query.ApplyRoleFilter(role);
 
+            if (!isPrivileged)
+            {
+                query = query.Where(x => x.User == null || x.User.Status != 0);
+            }
+
             return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<ForumPost?> GetByIdAsync(Guid id, string? role = null)
         {
-            var query = _context.ForumPosts
-                .Where(x => x.Id == id)
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
+
+            IQueryable<ForumPost> query = isPrivileged
+                ? _context.ForumPosts
+                    .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
+                    .Include(x => x.ForumComments)
+                : _context.ForumPosts
+                    .Include(x => x.User)
+                        .ThenInclude(x => x.Role)
+                    .Include(x => x.ForumComments.Where(c => c.Status != 0));
+
+            query = query.Where(x => x.Id == id)
                 .ApplyRoleFilter(role);
+
+            if (!isPrivileged)
+            {
+                query = query.Where(x => x.User == null || x.User.Status != 0);
+            }
 
             return await query.AsNoTracking().FirstOrDefaultAsync();
         }
@@ -90,7 +122,7 @@ namespace SDLS.Repositories.Repositories
                 return;
 
             forumPost.Status = 0;
-            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -143,5 +175,6 @@ namespace SDLS.Repositories.Repositories
                     .SetProperty(x => x.Status, 0)
                     .SetProperty(x => x.UpdateAt, now));
         }
+
     }
 }

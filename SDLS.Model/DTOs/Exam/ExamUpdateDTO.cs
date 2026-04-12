@@ -12,8 +12,8 @@ namespace SDLS.Model.DTOs.Exam
         [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Description { get; set; }
 
-        [Range(1, 600, ErrorMessage = "Giá trị không hợp lệ.")]
-        public int? Duration { get; set; }
+        [Range(0d, double.MaxValue, ErrorMessage = "Giá trị không hợp lệ.")]
+        public double? Duration { get; set; }
 
         [Range(0, 100, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? PassScore { get; set; }

@@ -10,6 +10,7 @@ namespace SDLS.Model.DTOs.SimulationScenario
         public Guid SimulationChapterId { get; set; }
         public Guid SimulationCategoryId { get; set; }
         public Guid SimulationDifficultyLevelId { get; set; }
+        public int? Index { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public string? Video { get; set; }
@@ -17,6 +18,8 @@ namespace SDLS.Model.DTOs.SimulationScenario
         public double StartPoint { get; set; }
         public double EndPoint { get; set; }
         public int? Status { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
 
         //public SimulationDifficultyLevelBriefDTO? SimulationDifficultyLevel { get; set; }
         //public SimulationCategoryBriefDTO? SimulationCategory { get; set; }

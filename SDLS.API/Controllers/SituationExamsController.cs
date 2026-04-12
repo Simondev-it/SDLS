@@ -39,38 +39,38 @@ namespace SDLS.API.Controllers
             return Ok(item);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Student,Admin")]
         [HttpPost]
-        public async Task<ActionResult<bool>> Create([FromBody] SituationExamCreateDTO dto)
+        public async Task<ActionResult<SituationExamDTO>> Create([FromBody] SituationExamCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var created = await _service.CreateAsync(dto);
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> Update(Guid id, [FromBody] SituationExamUpdateDTO dto)
+        public async Task<ActionResult<SituationExamDTO>> Update(Guid id, [FromBody] SituationExamUpdateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var updated = await _service.UpdateAsync(id, dto);
             return Ok(updated);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpPatch("{id}")]
-        public async Task<IActionResult> SoftDelete(Guid id)
+        public async Task<ActionResult<SituationExamDTO>> SoftDelete(Guid id)
         {
-            await _service.DeleteSoftAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Instructor,Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDelete(Guid id)
+        public async Task<ActionResult<SituationExamDTO>> HardDelete(Guid id)
         {
-            await _service.DeleteHardAsync(id);
-            return NoContent();
+            var deleted = await _service.DeleteHardAsync(id);
+            return Ok(deleted);
         }
     }
 }

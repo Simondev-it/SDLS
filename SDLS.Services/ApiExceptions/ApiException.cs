@@ -37,6 +37,9 @@ namespace SDLS.Services.ApiExceptions
         public static ApiException Conflict(string message = "Conflict")
             => new ApiException(message, (int)HttpStatusCode.Conflict);
 
+        public static ApiException Validation(string message = "Validation failed", object? errors = null)
+            => new ApiException(message, (int)HttpStatusCode.BadRequest, errors);
+
         public static ApiException PaymentRequired(string message = "Payment Required")
             => new ApiException(message, (int)HttpStatusCode.PaymentRequired);
 

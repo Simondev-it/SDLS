@@ -1,5 +1,6 @@
 ﻿using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Question;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,11 +20,10 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(QuestionCreateDTO dto);
-        Task<bool> UpdateAsync(Guid id, QuestionUpdateDTO dto);
-
-        Task<bool> DeleteAsync(Guid id);
-        Task<bool> DeleteSoftAsync(Guid id);
-        Task<bool> DeleteHardAsync(Guid id);
+        Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto);
+        Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos);
+        Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto);
+        Task<QuestionDTO> DeleteSoftAsync(Guid id);
+        Task<QuestionDTO> DeleteHardAsync(Guid id);
     }
 }

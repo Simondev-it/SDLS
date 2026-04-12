@@ -1,4 +1,5 @@
 using SDLS.Model.Models;
+using System.Threading.Tasks;
 
 namespace SDLS.Repositories.Interface
 {
@@ -18,5 +19,7 @@ namespace SDLS.Repositories.Interface
         Task UpdateAsync(SituationExam entity);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
+
+        Task<int> GetPassScoreAsync(Guid situationExamId);
     }
 }

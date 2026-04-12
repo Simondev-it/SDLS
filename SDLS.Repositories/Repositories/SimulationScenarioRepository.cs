@@ -1,4 +1,5 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
@@ -95,7 +96,7 @@ namespace SDLS.Repositories.Repositories
             if (existing == null) return;
 
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -106,6 +107,22 @@ namespace SDLS.Repositories.Repositories
 
             _context.SimulationScenarios.Remove(existing);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<double> CalculateDurationAsync(List<Guid> scenarioIds)
+        {
+            if (scenarioIds.Count == 0)
+                return 0d;
+
+            var scenarios = await _context.SimulationScenarios
+                .Where(x => scenarioIds.Contains(x.Id) && x.Status == 1)
+                .Select(x => new { x.Id, x.TotalTime })
+                .ToListAsync();
+
+            if (scenarios.Count != scenarioIds.Count)
+                throw new KeyNotFoundException("Có SimulationScenario không tồn tại hoặc không active.");
+
+            return scenarios.Sum(x => x.TotalTime);
         }
     }
 }

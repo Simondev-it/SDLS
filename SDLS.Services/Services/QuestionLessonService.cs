@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
+using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using SDLS.Services.Utilities;
 
@@ -13,15 +15,18 @@ namespace SDLS.Services.Services
     public class QuestionLessonService : IQuestionLessonService
     {
         private readonly IQuestionLessonRepository _repository;
+        private readonly IQuestionChapterRepository _questionChapterRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public QuestionLessonService(
             IQuestionLessonRepository repository,
+            IQuestionChapterRepository questionChapterRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
+            _questionChapterRepository = questionChapterRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -77,7 +82,7 @@ namespace SDLS.Services.Services
 
             var lesson = await _repository.GetByIdAsync(id, role);
             if (lesson == null)
-                throw new KeyNotFoundException($"Not found with ID {id}");
+                throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<QuestionLessonDTO>(lesson);
             var images = await _repository.GetLessonImagesByLessonIdsAsync(new List<Guid> { id }, role);
@@ -86,17 +91,22 @@ namespace SDLS.Services.Services
             return dto;
         }
 
-        public async Task<bool> CreateAsync(QuestionLessonCreateDTO dto)
+        public async Task<QuestionLessonDTO> CreateAsync(QuestionLessonCreateDTO dto)
         {
             if (dto.QuestionChapterId == Guid.Empty)
-                throw new ArgumentException("QuestionChapterId không hợp lệ.");
+                throw ApiException.BadRequest("QuestionChapterId không hợp lệ.");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var chapter = await _questionChapterRepository.GetByIdAsync(dto.QuestionChapterId);
+            if (chapter == null)
+                throw ApiException.BadRequest("Không tìm thấy QuestionChapter với Id " + dto.QuestionChapterId);
+
+            var now = DateTimeHelper.GetVietnamNow();
 
             var lesson = new QuestionLesson
             {
                 Id = Guid.NewGuid(),
                 QuestionChapterId = dto.QuestionChapterId,
+                Index = dto.Index,
                 Name = dto.Name,
                 Description = dto.Description,
                 Content = dto.Content,
@@ -110,22 +120,26 @@ namespace SDLS.Services.Services
             await SyncLessonImagesFromContentAsync(lesson.Id, dto.Content, now);
             await _repository.UpdateAsync(lesson);
 
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
+        public async Task<QuestionLessonDTO> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
             if (lesson == null)
-                throw new KeyNotFoundException("Không tìm thấy QuestionLesson");
+                throw ApiException.NotFound("Không tìm thấy QuestionLesson");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             var changed = false;
 
             if (dto.QuestionChapterId.HasValue)
             {
                 if (dto.QuestionChapterId.Value == Guid.Empty)
-                    throw new ArgumentException("QuestionChapterId không hợp lệ.");
+                    throw ApiException.BadRequest("QuestionChapterId không hợp lệ.");
+
+                var chapter = await _questionChapterRepository.GetByIdAsync(dto.QuestionChapterId.Value);
+                if (chapter == null)
+                    throw ApiException.BadRequest("Không tìm thấy QuestionChapter với Id " + dto.QuestionChapterId);
 
                 if (lesson.QuestionChapterId != dto.QuestionChapterId.Value)
                 {
@@ -134,11 +148,17 @@ namespace SDLS.Services.Services
                 }
             }
 
+            if (dto.Index.HasValue && lesson.Index != dto.Index.Value)
+            {
+                lesson.Index = dto.Index.Value;
+                changed = true;
+            }
+
             if (dto.Name != null)
             {
                 var newName = dto.Name.Trim();
                 if (string.IsNullOrWhiteSpace(newName))
-                    throw new ArgumentException("Name không được để trống.");
+                    throw ApiException.BadRequest("Name không được để trống.");
 
                 if (!string.Equals(lesson.Name, newName, StringComparison.Ordinal))
                 {
@@ -171,40 +191,53 @@ namespace SDLS.Services.Services
             }
 
             if (!changed)
-                return true;
+                return _mapper.Map<QuestionLessonDTO>(lesson);
 
             lesson.UpdateAt = now;
 
             await _repository.UpdateAsync(lesson);
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteAsync(Guid id)
         {
             return await DeleteSoftAsync(id);
         }
 
-        public async Task<bool> DeleteSoftAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteSoftAsync(Guid id)
         {
             var lesson = await _repository.GetByIdForUpdateAsync(id);
-            if (lesson == null || lesson.Status != 1)
-                throw new KeyNotFoundException($"Không tìm thấy QuestionLesson với Id {id}");
+            if (lesson == null)
+                throw ApiException.NotFound($"Không tìm thấy QuestionLesson với Id {id}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
-            lesson.Status = 0;
+            var currentStatus = lesson.Status ?? 1;
+            var nextStatus = currentStatus == 0 ? 1 : 0;
+
+            lesson.Status = nextStatus;
             lesson.UpdateAt = now;
 
-            await _repository.SoftDeleteLessonImagesAsync(id, now);
+            if (nextStatus == 0)
+                await _repository.SoftDeleteLessonImagesAsync(id, now);
+            else
+                await _repository.RestoreLessonImagesAsync(id, now);
+
             await _repository.UpdateAsync(lesson);
 
-            return true;
+            return _mapper.Map<QuestionLessonDTO>(lesson);
         }
 
-        public async Task<bool> DeleteHardAsync(Guid id)
+        public async Task<QuestionLessonDTO> DeleteHardAsync(Guid id)
         {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var lesson = await _repository.GetByIdAsync(id, role);
+            if (lesson == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var result = _mapper.Map<QuestionLessonDTO>(lesson);
             await _repository.DeleteHardAsync(id);
-            return true;
+            return result;
         }
 
         private async Task SyncLessonImagesFromContentAsync(Guid lessonId, string? content, DateTime now)
