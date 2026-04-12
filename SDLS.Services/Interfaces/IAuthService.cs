@@ -12,5 +12,9 @@ namespace SDLS.Services.Interfaces
         Task<object> Login(string email, string password);
         Task<object> Refresh(string refreshToken);
         Task<object> Register(UserRegisterDTO dto);
+
+        Task<string> RegisterWithOtpAsync(UserRegisterRequest request);
+        Task<bool> ConfirmOtpAsync(ConfirmOtpModel model);
+        Task<string> SendOtpAsync(string email);
     }
 }
