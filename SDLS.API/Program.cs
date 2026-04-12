@@ -189,6 +189,9 @@ namespace SDLS.API
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
 
+            builder.Services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
+            builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
+
             builder.Services.AddScoped<IPayOSService, PayOSService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
