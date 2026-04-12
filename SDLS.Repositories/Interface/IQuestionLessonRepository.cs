@@ -25,5 +25,6 @@ namespace SDLS.Repositories.Interface
         void RemoveLessonImages(IEnumerable<LessonImage> images);
         void AddLessonImages(IEnumerable<LessonImage> images);
         Task SoftDeleteLessonImagesAsync(Guid lessonId, DateTime now);
+        Task RestoreLessonImagesAsync(Guid lessonId, DateTime now);
     }
 }

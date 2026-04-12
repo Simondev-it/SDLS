@@ -38,6 +38,7 @@ using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.DTOs.SituationExam;
 using SDLS.Model.DTOs.SimulationSession;
 using SDLS.Model.DTOs.Role;
+using SDLS.Model.DTOs.SystemConfig;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -59,7 +60,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<LessonImageDTO, LessonImage>().ReverseMap();
             CreateMap<LessonImageCreateDTO, LessonImage>().ReverseMap();
 
-            CreateMap<ExamDTO, Exam>().ReverseMap();
+            CreateMap<Exam, ExamDTO>()
+                .ForMember(dest => dest.ExamQuestionCount, opt => opt.MapFrom(src => src.ExamQuestions.Count));
+            CreateMap<ExamDTO, Exam>();
             CreateMap<ExamCreateDTO, Exam>().ReverseMap();
             CreateMap<ExamUpdateDTO, Exam>().ReverseMap();
 
@@ -107,7 +110,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<ForumPostUpdateDTO, ForumPost>().ReverseMap();
 
             CreateMap<ForumPostImageDTO, PostImage>().ReverseMap();
-            CreateMap<User, ForumPostUserBriefDTO>().ReverseMap();
+            CreateMap<User, ForumPostUserBriefDTO>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.Name : null));
+            CreateMap<ForumPostUserBriefDTO, User>();
             CreateMap<TagDTO, Tag>().ReverseMap();
             CreateMap<TagCreateDTO, Tag>().ReverseMap();
             CreateMap<TagUpdateDTO, Tag>().ReverseMap();
@@ -223,6 +228,10 @@ namespace SDLS.Model.AutoMapper
             CreateMap<RoleDTO, Role>().ReverseMap();
             CreateMap<RoleCreateDTO, Role>().ReverseMap();
             CreateMap<RoleUpdateDTO, Role>().ReverseMap();
+
+            CreateMap<SystemConfigDTO, SystemConfig>().ReverseMap();
+            CreateMap<SystemConfigCreateDTO, SystemConfig>().ReverseMap();
+            CreateMap<SystemConfigUpdateDTO, SystemConfig>().ReverseMap();
         }
     }
 }

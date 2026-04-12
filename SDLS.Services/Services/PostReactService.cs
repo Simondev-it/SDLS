@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.PostReact;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -103,8 +104,8 @@ namespace SDLS.Services.Services
                 UserId = currentUserId,
                 ForumPostId = dto.ForumPostId,
                 ReactType = dto.ReactType,
-                CreateAt = DateTime.UtcNow.ToLocalTime(),
-                UpdateAt = DateTime.UtcNow.ToLocalTime(),
+                CreateAt = DateTimeHelper.GetVietnamNow(),
+                UpdateAt = DateTimeHelper.GetVietnamNow(),
                 Status = 1
             };
 
@@ -136,7 +137,7 @@ namespace SDLS.Services.Services
             existing.UserId = currentUserId;
             existing.ForumPostId = dto.ForumPostId;
             existing.ReactType = dto.ReactType;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
@@ -152,7 +153,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<PostReactDTO>(entity);
         }
 

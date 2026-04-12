@@ -6,6 +6,7 @@ namespace SDLS.Model.DTOs.ForumPost
         public string? Name { get; set; }
         public string? Email { get; set; }
         public string? Avatar { get; set; }
+        public string? RoleName { get; set; }
         public int? Status { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Constants;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.ForumPost;
 using SDLS.Model.Models;
@@ -114,7 +115,7 @@ namespace SDLS.Services.Services
         private async Task<ForumPostDTO> CreateInternalAsync(ForumPostCreateDTO dto, int status)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
                 if (dto.ForumTopicId == Guid.Empty)
                     throw ApiException.BadRequest("ForumTopicId khong hop le.");
@@ -176,7 +177,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Khong tim thay ForumPost");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             var changed = false;
 
             if (dto.ForumTopicId.HasValue)
@@ -262,7 +263,32 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 1;
-            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
+            await _repository.UpdateAsync(forumPost);
+
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
+        public async Task<ForumPostDTO> ToggleStatusAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound("Khong tim thay ForumPost");
+
+            if (forumPost.Status == 1)
+            {
+                forumPost.Status = 4;
+            }
+            else if (forumPost.Status == 4)
+            {
+                forumPost.Status = 1;
+            }
+            else
+            {
+                throw ApiException.BadRequest("Ch? cho phép chuy?n tr?ng thái gi?a 1 và 4.");
+            }
+
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _repository.UpdateAsync(forumPost);
 
             return _mapper.Map<ForumPostDTO>(forumPost);
@@ -275,7 +301,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Khong tim thay ForumPost");
 
             forumPost.Status = 3;
-            forumPost.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _repository.UpdateAsync(forumPost);
 
             return _mapper.Map<ForumPostDTO>(forumPost);
@@ -288,7 +314,7 @@ namespace SDLS.Services.Services
             if (forumPost == null)
                 throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
             forumPost.Status = 0;
             forumPost.UpdateAt = now;
 
@@ -354,5 +380,6 @@ namespace SDLS.Services.Services
                 _repository.AddPostImages(imagesToAdd);
             }
         }
+
     }
 }

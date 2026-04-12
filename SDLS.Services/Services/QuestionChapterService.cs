@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.QuestionChapter;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -79,7 +80,7 @@ namespace SDLS.Services.Services
             if (drivingLicense == null)
                 throw ApiException.BadRequest($"DrivingLicense with ID {dto.DrivingLicenseId} does not exist");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<QuestionChapter>(dto);
             entity.Id = Guid.NewGuid();
@@ -107,7 +108,7 @@ namespace SDLS.Services.Services
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<QuestionChapterDTO>(existing);
@@ -122,7 +123,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<QuestionChapterDTO>(entity);
         }
 

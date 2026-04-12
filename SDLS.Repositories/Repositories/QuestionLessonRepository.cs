@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Models;
+using SDLS.Model.Helpers;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -95,7 +96,7 @@ namespace SDLS.Repositories.Repositories
                 return;
 
             lesson.Status = 0;
-            lesson.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            lesson.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
 
@@ -146,6 +147,15 @@ namespace SDLS.Repositories.Repositories
                 .Where(x => x.QuestionLessonId == lessonId && x.Status == 1)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(x => x.Status, 0)
+                    .SetProperty(x => x.UpdateAt, now));
+        }
+
+        public async Task RestoreLessonImagesAsync(Guid lessonId, DateTime now)
+        {
+            await _context.LessonImages
+                .Where(x => x.QuestionLessonId == lessonId && x.Status == 0)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.Status, 1)
                     .SetProperty(x => x.UpdateAt, now));
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SDLS.Model.Models;
 
@@ -16,6 +17,6 @@ public partial class Role
     public DateTime? UpdateAt { get; set; }
 
     public int? Status { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

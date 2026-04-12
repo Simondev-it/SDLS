@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Constants;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.Notification;
 using SDLS.Model.DTOs.Report;
 using SDLS.Model.Models;
@@ -136,7 +137,7 @@ namespace SDLS.Services.Services
                         throw ApiException.BadRequest("Report Category không tồn tại.");
 
                     var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-                    var now = DateTime.UtcNow.ToLocalTime();
+                    var now = DateTimeHelper.GetVietnamNow();
 
                     var entity = _mapper.Map<Report>(dto);
                     entity.Id = Guid.NewGuid();
@@ -223,7 +224,7 @@ namespace SDLS.Services.Services
             existing.Content = dto.Content;
             existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<ReportDTO>(existing);
@@ -236,7 +237,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Không tìm thấy Report");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             report.Status = 1;
             report.UpdateAt = now;
@@ -266,7 +267,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Không tìm thấy Report");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             report.Status = 3;
             report.UpdateAt = now;
@@ -298,7 +299,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             report.Status = 0;
-            report.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            report.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ReportDTO>(report);
         }
 

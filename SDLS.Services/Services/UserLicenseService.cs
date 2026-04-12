@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
@@ -89,8 +90,8 @@ namespace SDLS.Services.Services
             var entity = _mapper.Map<UserLicense>(dto);
             entity.Id = Guid.NewGuid();
             entity.UserId = currentUserId;
-            entity.CreateAt = DateTime.UtcNow.ToLocalTime();
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.CreateAt = DateTimeHelper.GetVietnamNow();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             entity.Status = 1;
 
             await _repository.AddAsync(entity);
@@ -120,7 +121,7 @@ namespace SDLS.Services.Services
 
             existing.UserId = currentUserId;
             existing.DrivingLicenseId = dto.DrivingLicenseId;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             existing.Status = dto.Status ?? existing.Status;
 
             await _repository.UpdateAsync(existing);
@@ -136,7 +137,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<UserLicenseDTO>(entity);
         }
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.ForumTopic;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -70,7 +71,7 @@ namespace SDLS.Services.Services
 
         public async Task<ForumTopicDTO> CreateAsync(ForumTopicCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = new ForumTopic
             {
@@ -95,7 +96,7 @@ namespace SDLS.Services.Services
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
             return _mapper.Map<ForumTopicDTO>(existing);
@@ -110,7 +111,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             existing.Status = 0;
-            existing.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<ForumTopicDTO>(existing);
         }
 
@@ -125,5 +126,6 @@ namespace SDLS.Services.Services
             await _repository.DeleteHardAsync(id);
             return result;
         }
+
     }
 }

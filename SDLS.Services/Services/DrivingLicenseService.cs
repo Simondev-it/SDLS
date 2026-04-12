@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.DrivingLicense;
+using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -36,7 +37,10 @@ namespace SDLS.Services.Services
             int pageSize = 20)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role)).ToList();
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
             var total = all.Count;
 
             var pagedEntities = all
@@ -64,8 +68,12 @@ namespace SDLS.Services.Services
             string? vehicleName = null)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = await _repository.GetAllAsync(id, name, description, vehicleName, status, role);
-            return _mapper.Map<List<DrivingLicenseDTO>>(all.ToList());
+            var all = (await _repository.GetAllAsync(id, name, description, vehicleName, status, role))
+                .OrderBy(x => x.Name ?? string.Empty)
+                .ThenBy(x => x.Id)
+                .ToList();
+
+            return _mapper.Map<List<DrivingLicenseDTO>>(all);
         }
 
         public async Task<DrivingLicenseDTO> GetByIdAsync(Guid id)
@@ -80,7 +88,7 @@ namespace SDLS.Services.Services
 
         public async Task<DrivingLicenseDTO> CreateAsync(DrivingLicenseCreateDTO dto)
         {
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             var entity = _mapper.Map<DrivingLicense>(dto);
             entity.Id = Guid.NewGuid();
@@ -109,7 +117,7 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy DrivingLicense");
 
-            var now = DateTime.UtcNow.ToLocalTime();
+            var now = DateTimeHelper.GetVietnamNow();
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
@@ -165,7 +173,7 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteSoftAsync(id);
             entity.Status = 0;
-            entity.UpdateAt = DateTime.UtcNow.ToLocalTime();
+            entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             if (entity.Vehicles != null)
             {
                 foreach (var vehicle in entity.Vehicles.Where(v => v.Status == 1))
