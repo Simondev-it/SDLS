@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using PayOS;
 using SDLS.API.Middlewares;
 using SDLS.Model.AutoMapper;
+using SDLS.Model.DTOs.User;
 using SDLS.Model.Models;
 using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
@@ -105,6 +106,7 @@ namespace SDLS.API
 
             builder.Services.AddScoped<ISignCategoryRepository, SignCategoryRepository>();
             builder.Services.AddScoped<ISignCategoryService, SignCategoryService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
             builder.Services.AddScoped<IReportCategoryService, ReportCategoryService>();
@@ -194,6 +196,9 @@ namespace SDLS.API
 
             builder.Services.AddScoped<IPayOSService, PayOSService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+            builder.Services.Configure<EmailSettings>(
+            builder.Configuration.GetSection("EmailSettings")); 
 
             builder.Services.AddHttpContextAccessor();
 
@@ -321,10 +326,16 @@ namespace SDLS.API
 
             if (app.Environment.IsDevelopment())
             {
+                app.UseHttpsRedirection();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SDLS API");
+                c.RoutePrefix = "swagger";
+            });
 
             app.UseHttpsRedirection();
 
