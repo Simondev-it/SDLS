@@ -23,4 +23,28 @@ namespace SDLS.Model.DTOs.User
         public string? Gender { get; set; }
         public DateOnly? DateOfBirth { get; set; }
     }
+    public class UserRegisterRequest
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; }
+        public string Name { get; set; }
+        public string Phone { get; set; }
+        public string Avatar { get; set; }
+        public Guid RoleId { get; set; }
+    }
+
+    public class ConfirmOtpModel
+    {
+        public string Email { get; set; }
+        public string Otp { get; set; }
+    }
+
+    public class OtpEmailRequest
+    {
+        public string Email { get; set; }
+    }
 }
