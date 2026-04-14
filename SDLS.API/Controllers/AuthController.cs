@@ -81,5 +81,52 @@ namespace SDLS.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
+
+        /////forget pass
+        ///
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            try
+            {
+                var result = await _auth.ForgotPasswordAsync(request.Email);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(VerifyOtpRequest request)
+        {
+            try
+            {
+                await _auth.VerifyForgotPasswordOtpAsync(request);
+                return Ok(new { message = "OTP hợp lệ" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                await _auth.ResetPasswordAsync(request);
+                return Ok(new { message = "Đổi mật khẩu thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
