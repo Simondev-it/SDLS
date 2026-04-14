@@ -308,10 +308,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Không tìm thấy câu hỏi với Id {id}");
 
             var now = DateTimeHelper.GetVietnamNow();
+            var nextStatus = existing.Status == 0 ? 1 : 0;
 
-            existing.Status = 0;
+            existing.Status = nextStatus;
             existing.UpdateAt = now;
-            existing.ParentId = null;
+            if (nextStatus == 0)
+                existing.ParentId = null;
 
             await _questionRepository.UpdateAsync(existing);
             await RebuildGlobalParentLinksAsync(now);
