@@ -41,7 +41,7 @@ namespace SDLS.API.Controllers
             return Ok(forumPost);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Instructor,Student,Admin")]
         [HttpPost]
         public async Task<ActionResult<ForumPostDTO>> Create([FromBody] ForumPostCreateDTO dto)
         {
