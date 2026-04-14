@@ -120,11 +120,11 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteSoftAsync(Guid id)
         {
-            var existing = await _context.Questions.FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var existing = await _context.Questions.FirstOrDefaultAsync(x => x.Id == id && (x.Status == 1 || x.Status == 0));
             if (existing == null)
                 return;
 
-            existing.Status = 0;
+            existing.Status = existing.Status == 0 ? 1 : 0;
             existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }

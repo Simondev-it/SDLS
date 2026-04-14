@@ -83,10 +83,10 @@ namespace SDLS.Repositories.Repositories
 
         public async Task DeleteSoftAsync(Guid id)
         {
-            var chapter = await _context.QuestionChapters.FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+            var chapter = await _context.QuestionChapters.FirstOrDefaultAsync(x => x.Id == id && (x.Status == 1 || x.Status == 0));
             if (chapter == null) return;
 
-            chapter.Status = 0;
+            chapter.Status = chapter.Status == 0 ? 1 : 0;
             chapter.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }

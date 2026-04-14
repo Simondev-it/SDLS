@@ -116,13 +116,14 @@ namespace SDLS.Services.Services
 
         public async Task<QuestionChapterDTO> DeleteSoftAsync(Guid id)
         {
-            var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entity = await _repository.GetByIdAsync(id, role);
+            var entity = await _repository.GetByIdForUpdateAsync(id);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            var nextStatus = entity.Status == 0 ? 1 : 0;
+
             await _repository.DeleteSoftAsync(id);
-            entity.Status = 0;
+            entity.Status = nextStatus;
             entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<QuestionChapterDTO>(entity);
         }
