@@ -33,6 +33,8 @@ namespace SDLS.Model.DTOs.User
         public string Password { get; set; }
         public string Name { get; set; }
         public string Phone { get; set; }
+
+        public string? Gender { get; set; }
         public string Avatar { get; set; }
         public Guid RoleId { get; set; }
     }
@@ -46,5 +48,22 @@ namespace SDLS.Model.DTOs.User
     public class OtpEmailRequest
     {
         public string Email { get; set; }
+    }
+
+    public class ForgotPasswordRequest
+    {
+        public string Email { get; set; }
+    }
+
+    public class VerifyOtpRequest
+    {
+        public string Email { get; set; }
+        public string Otp { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string Email { get; set; }
+        public string NewPassword { get; set; }
     }
 }
