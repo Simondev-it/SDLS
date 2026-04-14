@@ -79,18 +79,31 @@ namespace SDLS.Repositories.Repositories
         {
             var existing = await _context.DrivingLicenses
                 .Include(x => x.Vehicles)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id && (x.Status == 1 || x.Status == 0));
 
             if (existing == null) return;
 
             var now = DateTimeHelper.GetVietnamNow();
-            existing.Status = 0;
+            var nextStatus = existing.Status == 0 ? 1 : 0;
+
+            existing.Status = nextStatus;
             existing.UpdateAt = now;
 
-            foreach (var vehicle in existing.Vehicles.Where(v => v.Status == 1))
+            if (nextStatus == 0)
             {
-                vehicle.Status = 0;
-                vehicle.UpdateAt = now;
+                foreach (var vehicle in existing.Vehicles.Where(v => v.Status == 1))
+                {
+                    vehicle.Status = 0;
+                    vehicle.UpdateAt = now;
+                }
+            }
+            else
+            {
+                foreach (var vehicle in existing.Vehicles.Where(v => v.Status == 0))
+                {
+                    vehicle.Status = 1;
+                    vehicle.UpdateAt = now;
+                }
             }
 
             await _context.SaveChangesAsync();
