@@ -103,6 +103,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Vehicle> Vehicles { get; set; }
 
+    public virtual DbSet<SystemConfig> SystemConfigs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseNpgsql("Host=ep-silent-recipe-ad74p7pa-pooler.c-2.us-east-1.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_iFezOVo38tPS;SSL Mode=Require;Trust Server Certificate=true");
@@ -1671,6 +1673,41 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.DrivingLicenseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Vehicle_drivingLicenseId_fkey");
+        });
+
+        modelBuilder.Entity<SystemConfig>(entity =>
+        {
+            entity.ToTable("SystemConfig");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                  .HasColumnName("id");
+
+            entity.Property(e => e.Name)
+                  .HasColumnName("name")
+                  .IsRequired();
+
+            entity.Property(e => e.Value)
+                  .HasColumnName("value")
+                  .IsRequired();
+
+            entity.Property(e => e.Description)
+                  .HasColumnName("description");
+
+            entity.Property(e => e.CreateAt)
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                  .HasColumnType("timestamp without time zone")
+                  .HasColumnName("createAt");
+
+            entity.Property(e => e.UpdateAt)
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                  .HasColumnType("timestamp without time zone")
+                  .HasColumnName("updateAt");
+
+            entity.Property(e => e.Status)
+                  .HasDefaultValue(1)
+                  .HasColumnName("status");
         });
 
         OnModelCreatingPartial(modelBuilder);

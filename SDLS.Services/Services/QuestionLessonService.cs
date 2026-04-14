@@ -18,17 +18,20 @@ namespace SDLS.Services.Services
         private readonly IQuestionChapterRepository _questionChapterRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
+        private readonly ILessonImageService _lessonImageService;
 
         public QuestionLessonService(
             IQuestionLessonRepository repository,
             IQuestionChapterRepository questionChapterRepository,
             IHttpContextAccessor httpContextAccessor,
-            IMapper mapper)
+            IMapper mapper,
+            ILessonImageService lessonImageService)
         {
             _repository = repository;
             _questionChapterRepository = questionChapterRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
+            _lessonImageService = lessonImageService;
         }
 
         public async Task<PagedResult<QuestionLessonDTO>> GetAllAsync(
@@ -257,6 +260,10 @@ namespace SDLS.Services.Services
 
             if (imagesToRemove.Any())
             {
+                foreach (var img in imagesToRemove)
+                {
+                    await _lessonImageService.DeleteAsync(img.Id);
+                }
                 _repository.RemoveLessonImages(imagesToRemove);
             }
 

@@ -46,15 +46,15 @@ namespace SDLS.Services.Services
             return _mapper.Map<LessonImageDTO>(image);
         }
 
-        public async Task<LessonImageDTO> GetByLessonIdAsync(Guid lessonId)
+        public async Task<IEnumerable<LessonImageDTO>> GetByLessonIdAsync(Guid lessonId)
         {
-            var image = await _lessonImageRepository.GetByLessonIdAsync(lessonId);
-            if (image == null)
+            var images = await _lessonImageRepository.GetByLessonIdAsync(lessonId);
+            if (images == null || !images.Any())
             {
                 throw ApiException.NotFound($"Lesson image not found for lesson ID {lessonId}");
             }
 
-            return _mapper.Map<LessonImageDTO>(image);
+            return _mapper.Map<List<LessonImageDTO>>(images);
         }
 
         public async Task<LessonImageDTO> CreateAsync(IFormFile file, Guid lessonId, string? name = null)
