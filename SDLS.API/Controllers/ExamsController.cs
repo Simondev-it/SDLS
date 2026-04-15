@@ -46,6 +46,15 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [Authorize(Roles = "Instructor,Student,Admin")]
+        [HttpPost("random")]
+        public async Task<ActionResult<ExamDTO>> CreateRandom([FromBody] ExamRandomCreateDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var created = await _service.CreateRandomAsync(dto);
+            return Ok(created);
+        }
+
         [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpPut("{id}")]

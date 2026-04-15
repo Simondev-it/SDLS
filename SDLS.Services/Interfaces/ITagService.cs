@@ -1,5 +1,6 @@
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Tag;
+using Microsoft.AspNetCore.Http;
 
 namespace SDLS.Services.Interfaces
 {
@@ -23,6 +24,8 @@ namespace SDLS.Services.Interfaces
 
         Task<TagDTO> GetByIdAsync(Guid id);
         Task<TagDTO> CreateAsync(TagCreateDTO dto);
+        Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync();
+        Task<List<TagDTO>> ImportAsync(IFormFile file);
         Task<TagDTO> UpdateAsync(Guid id, TagUpdateDTO dto);
         Task<TagDTO> DeleteSoftAsync(Guid id);
         Task<TagDTO> DeleteHardAsync(Guid id);

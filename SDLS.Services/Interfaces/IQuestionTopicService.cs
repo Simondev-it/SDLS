@@ -1,5 +1,6 @@
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.QuestionTopic;
+using Microsoft.AspNetCore.Http;
 
 namespace SDLS.Services.Interfaces
 {
@@ -21,6 +22,8 @@ namespace SDLS.Services.Interfaces
 
         Task<QuestionTopicDTO> GetByIdAsync(Guid id);
         Task<QuestionTopicDTO> CreateAsync(QuestionTopicCreateDTO dto);
+        Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync();
+        Task<List<QuestionTopicDTO>> ImportAsync(IFormFile file);
         Task<QuestionTopicDTO> UpdateAsync(Guid id, QuestionTopicUpdateDTO dto);
         Task<QuestionTopicDTO> DeleteSoftAsync(Guid id);
         Task<QuestionTopicDTO> DeleteHardAsync(Guid id);
