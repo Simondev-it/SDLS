@@ -64,7 +64,7 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
-        [Authorize(Roles = "Instructor,Admin")]
+        //[Authorize(Roles = "Instructor,Admin")]
         [HttpGet("template")]
         public async Task<IActionResult> DownloadTemplate()
         {
