@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.TrafficSign;
@@ -61,6 +62,23 @@ namespace SDLS.API.Controllers
 
             var created = await _service.CreateManyAsync(dtos);
             return Ok(created);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("template")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var template = await _service.GenerateImportTemplateAsync();
+            return File(template.Content, template.ContentType, template.FileName);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPost("import")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<List<TrafficSignDTO>>> Import([FromForm] IFormFile file)
+        {
+            var imported = await _service.ImportAsync(file);
+            return Ok(imported);
         }
 
         [Authorize(Roles = "Instructor,Admin")]
