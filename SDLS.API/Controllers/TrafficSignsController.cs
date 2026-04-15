@@ -72,12 +72,13 @@ namespace SDLS.API.Controllers
             return File(template.Content, template.ContentType, template.FileName);
         }
 
-        [Authorize(Roles = "Instructor,Admin")]
+        //[Authorize(Roles = "Instructor,Admin")]
         [HttpPost("import")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult<List<TrafficSignDTO>>> Import([FromForm] IFormFile file)
+        public async Task<ActionResult<List<TrafficSignDTO>>> Import(
+    [FromForm] ImportTrafficSignRequest request)
         {
-            var imported = await _service.ImportAsync(file);
+            var imported = await _service.ImportAsync(request.File);
             return Ok(imported);
         }
 
