@@ -147,6 +147,7 @@ namespace SDLS.Services.Services
                 Password = request.Password,
                 Name = request.Name,
                 Phone = request.Phone,
+                Gender = request.Gender,
                 Avatar = request.Avatar,
                 RoleId = request.RoleId,
                 Otp = otp
@@ -354,6 +355,123 @@ namespace SDLS.Services.Services
                 _emailSettings.SenderEmail,
                 _emailSettings.SenderPassword);
 
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
+        }
+
+
+        ///forget pass ///
+        ///
+
+        public async Task<string> ForgotPasswordAsync(string email)
+        {
+            var user = await _userRepo.GetByEmailAsync(email);
+            if (user == null)
+                throw new Exception("Email không tồn tại");
+
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            var temp = new TempForgotPasswordModel
+            {
+                Email = email,
+                Otp = otp
+            };
+
+            _cache.Set(email + "_fp", temp, TimeSpan.FromMinutes(5));
+
+            await SendOtpEmail(email, user.Name, otp);
+
+            return "Đã gửi OTP";
+        }
+        public async Task<bool> VerifyForgotPasswordOtpAsync(VerifyOtpRequest request)
+        {
+            if (!_cache.TryGetValue(request.Email + "_fp", out TempForgotPasswordModel temp))
+                throw new Exception("OTP đã hết hạn");
+
+            if (temp.Otp != request.Otp)
+                throw new Exception("OTP không đúng");
+
+            temp.IsVerified = true;
+
+            _cache.Set(request.Email + "_fp", temp, TimeSpan.FromMinutes(5));
+
+            return true;
+        }
+        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            if (!_cache.TryGetValue(request.Email + "_fp", out TempForgotPasswordModel temp))
+                throw new Exception("Chưa xác thực OTP");
+
+            if (!temp.IsVerified)
+                throw new Exception("OTP chưa được xác thực");
+
+            var user = await _userRepo.GetByEmailAsync(request.Email);
+            if (user == null)
+                throw new Exception("User không tồn tại");
+
+            // 🔐 Hash password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.UpdateAt = DateTime.UtcNow;
+
+            await _userRepo.UpdateAsync(user);
+
+            // 🧹 Xóa cache
+            _cache.Remove(request.Email + "_fp");
+
+            // 📧 gửi mail thông báo đổi pass
+            try
+            {
+                await SendResetPasswordSuccessEmail(user.Email, user.Name);
+            }
+            catch { }
+
+            return true;
+        }
+
+
+        private async Task SendOtpEmail(string to, string name, string otp)
+        {
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
+            email.To.Add(MailboxAddress.Parse(to));
+            email.Subject = "🔐 OTP Reset Password";
+
+            email.Body = new TextPart("html")
+            {
+                Text = $@"
+            <div style='text-align:center'>
+                <h2>Xin chào {name}</h2>
+                <h1 style='color:red'>{otp}</h1>
+                <p>OTP có hiệu lực 5 phút</p>
+            </div>"
+            };
+
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
+            await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
+        }
+
+        private async Task SendResetPasswordSuccessEmail(string to, string name)
+        {
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
+            email.To.Add(MailboxAddress.Parse(to));
+            email.Subject = "🔐 Password Changed Successfully";
+
+            email.Body = new TextPart("html")
+            {
+                Text = $@"
+            <div style='font-family:Arial'>
+                <h2>Hi {name}</h2>
+                <p>Your password has been changed successfully.</p>
+            </div>"
+            };
+
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
+            await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.SenderPassword);
             await smtp.SendAsync(email);
             await smtp.DisconnectAsync(true);
         }
