@@ -1,5 +1,6 @@
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SimulationScenario;
+using Microsoft.AspNetCore.Http;
 
 namespace SDLS.Services.Interfaces
 {
@@ -17,6 +18,8 @@ namespace SDLS.Services.Interfaces
         Task<SimulationScenarioDTO> GetByIdAsync(Guid id);
         Task<SimulationScenarioDTO> CreateAsync(SimulationScenarioCreateDTO dto);
         Task<List<SimulationScenarioDTO>> CreateManyAsync(List<SimulationScenarioCreateDTO> dtos);
+        Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync();
+        Task<List<SimulationScenarioDTO>> ImportAsync(IFormFile file);
         Task<SimulationScenarioDTO> UpdateAsync(Guid id, SimulationScenarioUpdateDTO dto);
         Task<SimulationScenarioDTO> DeleteSoftAsync(Guid id);
         Task<SimulationScenarioDTO> DeleteHardAsync(Guid id);

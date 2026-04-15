@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.Helpers;
@@ -57,6 +58,49 @@ namespace SDLS.Services.Services
                 PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling(total / (double)pageSize)
             };
+        }
+
+        public async Task<(byte[] Content, string FileName, string ContentType)> ExportToExcelAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null)
+        {
+            var items = await GetAllAsync(id, name, description, status);
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("SimulationChapters");
+
+            var headers = new[] { "Id", "Index", "Name", "Description", "Status", "CreateAt", "UpdateAt" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            for (int row = 0; row < items.Count; row++)
+            {
+                var item = items[row];
+                var r = row + 2;
+
+                worksheet.Cell(r, 1).Value = item.Id.ToString();
+                worksheet.Cell(r, 2).Value = item.Index;
+                worksheet.Cell(r, 3).Value = item.Name;
+                worksheet.Cell(r, 4).Value = item.Description ?? string.Empty;
+                worksheet.Cell(r, 5).Value = item.Status;
+                worksheet.Cell(r, 6).Value = item.CreateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+                worksheet.Cell(r, 7).Value = item.UpdateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return (
+                stream.ToArray(),
+                "simulation-chapters.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
 
         public async Task<SimulationChapterDTO> GetByIdAsync(Guid id)
