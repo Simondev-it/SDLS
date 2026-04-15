@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.Helpers;
@@ -8,6 +9,7 @@ using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
+using System.Text;
 
 namespace SDLS.Services.Services
 {
@@ -107,6 +109,59 @@ namespace SDLS.Services.Services
             return createdItems;
         }
 
+        public Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("TrafficSigns");
+
+            var headers = new[]
+            {
+                "SignCategoryId",
+                "Index",
+                "Name",
+                "Code",
+                "Description",
+                "VectorData",
+                "Image"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return Task.FromResult((
+                stream.ToArray(),
+                "traffic-sign-import-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        }
+
+        public async Task<List<TrafficSignDTO>> ImportAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw ApiException.BadRequest("File không hợp lệ hoặc rỗng.");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            List<TrafficSignCreateDTO> items = extension switch
+            {
+                ".xlsx" => await ParseXlsxAsync(file),
+                ".csv" => await ParseCsvAsync(file),
+                _ => throw ApiException.BadRequest("Chỉ hỗ trợ file .csv hoặc .xlsx")
+            };
+
+            if (items.Count == 0)
+                throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
+
+            return await CreateManyAsync(items);
+        }
+
         public async Task<TrafficSignDTO> UpdateAsync(Guid id, TrafficSignUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);
@@ -153,6 +208,185 @@ namespace SDLS.Services.Services
 
             var result = _mapper.Map<TrafficSignDTO>(entity);
             await _repository.DeleteHardAsync(id);
+            return result;
+        }
+
+        private async Task<List<TrafficSignCreateDTO>> ParseXlsxAsync(IFormFile file)
+        {
+            await using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault()
+                ?? throw ApiException.BadRequest("File Excel không có worksheet.");
+
+            var firstRow = worksheet.FirstRowUsed();
+            if (firstRow == null)
+                throw ApiException.BadRequest("File Excel không có header.");
+
+            var headerMap = BuildHeaderMap(firstRow.CellsUsed().Select(c => c.GetString()).ToList());
+            var result = new List<TrafficSignCreateDTO>();
+
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    continue;
+
+                result.Add(BuildTrafficSignDto(key => GetCellValue(row, headerMap, key), row.RowNumber()));
+            }
+
+            return result;
+        }
+
+        private async Task<List<TrafficSignCreateDTO>> ParseCsvAsync(IFormFile file)
+        {
+            using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8, true);
+            var headerLine = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(headerLine))
+                throw ApiException.BadRequest("File CSV không có header.");
+
+            var headers = ParseCsvLine(headerLine);
+            var headerMap = BuildHeaderMap(headers);
+
+            var result = new List<TrafficSignCreateDTO>();
+            var rowNumber = 1;
+
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+                rowNumber++;
+
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                var values = ParseCsvLine(line);
+                if (values.All(string.IsNullOrWhiteSpace))
+                    continue;
+
+                result.Add(BuildTrafficSignDto(key => GetCsvValue(values, headerMap, key), rowNumber));
+            }
+
+            return result;
+        }
+
+        private static TrafficSignCreateDTO BuildTrafficSignDto(Func<string, string?> getValue, int rowNumber)
+        {
+            var signCategoryRaw = getValue("SignCategoryId");
+            if (!Guid.TryParse(signCategoryRaw, out var signCategoryId) || signCategoryId == Guid.Empty)
+                throw ApiException.BadRequest($"Dòng {rowNumber}: SignCategoryId không hợp lệ.");
+
+            var name = getValue("Name")?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                throw ApiException.BadRequest($"Dòng {rowNumber}: Name là bắt buộc.");
+
+            var code = getValue("Code")?.Trim();
+            if (string.IsNullOrWhiteSpace(code))
+                throw ApiException.BadRequest($"Dòng {rowNumber}: Code là bắt buộc.");
+
+            int? index = null;
+            var indexRaw = getValue("Index")?.Trim();
+            if (!string.IsNullOrWhiteSpace(indexRaw))
+            {
+                if (!int.TryParse(indexRaw, out var parsedIndex) || parsedIndex <= 0)
+                    throw ApiException.BadRequest($"Dòng {rowNumber}: Index không hợp lệ.");
+
+                index = parsedIndex;
+            }
+
+            return new TrafficSignCreateDTO
+            {
+                SignCategoryId = signCategoryId,
+                Index = index,
+                Name = name,
+                Code = code,
+                Description = getValue("Description")?.Trim(),
+                VectorData = getValue("VectorData")?.Trim(),
+                Image = getValue("Image")?.Trim()
+            };
+        }
+
+        private static Dictionary<string, int> BuildHeaderMap(List<string> headers)
+        {
+            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var key = NormalizeHeader(headers[i]);
+                if (string.IsNullOrWhiteSpace(key))
+                    continue;
+
+                map[key] = i;
+            }
+
+            var required = new[] { "signcategoryid", "name", "code" };
+            foreach (var req in required)
+            {
+                if (!map.ContainsKey(req))
+                    throw ApiException.BadRequest($"Thiếu cột bắt buộc: {req}");
+            }
+
+            return map;
+        }
+
+        private static string? GetCellValue(IXLRow row, Dictionary<string, int> headerMap, string key)
+        {
+            var normalizedKey = NormalizeHeader(key);
+            if (!headerMap.TryGetValue(normalizedKey, out var index))
+                return null;
+
+            return row.Cell(index + 1).GetString();
+        }
+
+        private static string? GetCsvValue(List<string> values, Dictionary<string, int> headerMap, string key)
+        {
+            var normalizedKey = NormalizeHeader(key);
+            if (!headerMap.TryGetValue(normalizedKey, out var index))
+                return null;
+
+            return index < values.Count ? values[index] : null;
+        }
+
+        private static string NormalizeHeader(string? value)
+        {
+            return (value ?? string.Empty)
+                .Trim()
+                .Replace("_", string.Empty)
+                .Replace(" ", string.Empty)
+                .ToLowerInvariant();
+        }
+
+        private static List<string> ParseCsvLine(string line)
+        {
+            var result = new List<string>();
+            var current = new StringBuilder();
+            var inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                var ch = line[i];
+
+                if (ch == '"')
+                {
+                    if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = !inQuotes;
+                    }
+                }
+                else if (ch == ',' && !inQuotes)
+                {
+                    result.Add(current.ToString());
+                    current.Clear();
+                }
+                else
+                {
+                    current.Append(ch);
+                }
+            }
+
+            result.Add(current.ToString());
             return result;
         }
     }
