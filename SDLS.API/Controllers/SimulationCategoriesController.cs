@@ -41,6 +41,17 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("export")]
+        public async Task<IActionResult> Export(
+            [FromQuery] Guid? id,
+            [FromQuery] string? name,
+            [FromQuery] string? description,
+            [FromQuery] int? status = null)
+        {
+            var file = await _service.ExportToExcelAsync(id, name, description, status);
+            return File(file.Content, file.ContentType, file.FileName);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<SimulationCategoryDTO>> GetById(Guid id)
         {
