@@ -100,6 +100,14 @@ namespace SDLS.API.Controllers
             return Ok(deleted);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/force-delete")]
+        public async Task<ActionResult<ForumPostDTO>> ForceDelete(Guid id)
+        {
+            var deleted = await _service.ForceDeleteAsync(id);
+            return Ok(deleted);
+        }
+
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ForumPostDTO>> HardDelete(Guid id)

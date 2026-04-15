@@ -324,6 +324,19 @@ namespace SDLS.Services.Services
             return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
+        public async Task<ForumPostDTO> ForceDeleteAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
+
+            forumPost.Status = 2;
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
+
+            await _repository.UpdateAsync(forumPost);
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
         public async Task<ForumPostDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
