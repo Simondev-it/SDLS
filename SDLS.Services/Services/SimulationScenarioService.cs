@@ -59,9 +59,12 @@ namespace SDLS.Services.Services
                 .Take(pageSize)
                 .ToList();
 
+            var mappedItems = _mapper.Map<List<SimulationScenarioDTO>>(pagedEntities);
+            mappedItems.ForEach(ApplyGetRounding);
+
             return new PagedResult<SimulationScenarioDTO>
             {
-                Items = _mapper.Map<List<SimulationScenarioDTO>>(pagedEntities),
+                Items = mappedItems,
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -77,7 +80,9 @@ namespace SDLS.Services.Services
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
-            return _mapper.Map<SimulationScenarioDTO>(entity);
+            var result = _mapper.Map<SimulationScenarioDTO>(entity);
+            ApplyGetRounding(result);
+            return result;
         }
 
         public async Task<SimulationScenarioDTO> CreateAsync(SimulationScenarioCreateDTO dto)
@@ -378,5 +383,15 @@ namespace SDLS.Services.Services
                 .Replace(" ", string.Empty)
                 .ToLowerInvariant();
         }
+
+        private static void ApplyGetRounding(SimulationScenarioDTO dto)
+        {
+            dto.TotalTime = Round2(dto.TotalTime);
+            dto.StartPoint = Round2(dto.StartPoint);
+            dto.EndPoint = Round2(dto.EndPoint);
+        }
+
+        private static double Round2(double value)
+            => Math.Round(value, 2, MidpointRounding.AwayFromZero);
     }
 }
