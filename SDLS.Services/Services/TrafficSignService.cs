@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
+using SDLS.Model.Enumerations;
 using SDLS.Model.DTOs;
 using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.TrafficSign;
@@ -17,17 +18,20 @@ namespace SDLS.Services.Services
     {
         private readonly ITrafficSignRepository _repository;
         private readonly ISignCategoryRepository _signCategoryRepository;
+        private readonly IMediaImageService _mediaImageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
         public TrafficSignService(
             ITrafficSignRepository repository,
             ISignCategoryRepository signCategoryRepository,
+            IMediaImageService mediaImageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
             _repository = repository;
             _signCategoryRepository = signCategoryRepository;
+            _mediaImageService = mediaImageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -178,6 +182,14 @@ namespace SDLS.Services.Services
             existing.Code = dto.Code;
             existing.Description = dto.Description;
             existing.VectorData = dto.VectorData;
+
+            if (!string.IsNullOrWhiteSpace(dto.Image)
+                && !string.IsNullOrWhiteSpace(existing.Image)
+                && !string.Equals(existing.Image, dto.Image, StringComparison.OrdinalIgnoreCase))
+            {
+                await _mediaImageService.DeleteAsync(existing.Image, ImageTarget.TrafficSign.ToString());
+            }
+
             existing.Image = dto.Image;
             existing.Status = dto.Status ?? existing.Status ?? 1;
             existing.UpdateAt = DateTimeHelper.GetVietnamNow();
@@ -205,6 +217,11 @@ namespace SDLS.Services.Services
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
+
+            if (!string.IsNullOrWhiteSpace(entity.Image))
+            {
+                await _mediaImageService.DeleteAsync(entity.Image, ImageTarget.TrafficSign.ToString());
+            }
 
             var result = _mapper.Map<TrafficSignDTO>(entity);
             await _repository.DeleteHardAsync(id);
