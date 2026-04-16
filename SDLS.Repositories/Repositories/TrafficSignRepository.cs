@@ -90,12 +90,12 @@ namespace SDLS.Repositories.Repositories
         public async Task DeleteSoftAsync(Guid id)
         {
             var existing = await _context.TrafficSigns
-                .FirstOrDefaultAsync(x => x.Id == id && x.Status == 1);
+                .FirstOrDefaultAsync(x => x.Id == id && (x.Status == 1 || x.Status == 0));
 
             if (existing == null)
                 return;
 
-            existing.Status = 0;
+            existing.Status = existing.Status == 0 ? 1 : 0;
             existing.UpdateAt = DateTimeHelper.GetVietnamNow();
             await _context.SaveChangesAsync();
         }
@@ -103,10 +103,14 @@ namespace SDLS.Repositories.Repositories
         public async Task DeleteHardAsync(Guid id)
         {
             var existing = await _context.TrafficSigns
+                .Include(x => x.SavedTrafficSigns)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (existing == null)
                 return;
+
+            if (existing.SavedTrafficSigns.Any())
+                _context.SavedTrafficSigns.RemoveRange(existing.SavedTrafficSigns);
 
             _context.TrafficSigns.Remove(existing);
             await _context.SaveChangesAsync();

@@ -194,7 +194,7 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             await _repository.DeleteSoftAsync(id);
-            entity.Status = 0;
+            entity.Status = entity.Status == 0 ? 1 : 0;
             entity.UpdateAt = DateTimeHelper.GetVietnamNow();
             return _mapper.Map<TrafficSignDTO>(entity);
         }
