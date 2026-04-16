@@ -72,6 +72,9 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.ExamSessions
                 .Include(es => es.Exam)
+                    .ThenInclude(e => e.ExamQuestions)
+                        .ThenInclude(eq => eq.Question)
+                            .ThenInclude(q => q.Answers)
                 .Include(es => es.ExamDetails)
                     .ThenInclude(ed => ed.Answer)
                 .AsNoTracking()
@@ -85,10 +88,16 @@ namespace SDLS.Repositories.Repositories
             IQueryable<ExamSession> query = isPrivileged
                 ? _context.ExamSessions
                     .Include(es => es.Exam)
+                        .ThenInclude(e => e.ExamQuestions)
+                            .ThenInclude(eq => eq.Question)
+                                .ThenInclude(q => q.Answers)
                     .Include(es => es.ExamDetails)
                         .ThenInclude(ed => ed.Answer)
                 : _context.ExamSessions
                     .Include(es => es.Exam)
+                        .ThenInclude(e => e.ExamQuestions.Where(eq => eq.Status != 0))
+                            .ThenInclude(eq => eq.Question)
+                                .ThenInclude(q => q.Answers.Where(a => a.Status != 0))
                     .Include(es => es.ExamDetails.Where(ed => ed.Status != 0))
                         .ThenInclude(ed => ed.Answer);
 
@@ -105,6 +114,13 @@ namespace SDLS.Repositories.Repositories
                 entity.ExamDetails = entity.ExamDetails
                     .Where(ed => ed.Answer == null || ed.Answer.Status != 0)
                     .ToList();
+
+                if (entity.Exam?.ExamQuestions != null)
+                {
+                    entity.Exam.ExamQuestions = entity.Exam.ExamQuestions
+                        .Where(eq => eq.Question == null || eq.Question.Status != 0)
+                        .ToList();
+                }
             }
 
             return entity;
