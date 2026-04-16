@@ -56,9 +56,12 @@ namespace SDLS.Services.Services
                 .Take(pageSize)
                 .ToList();
 
+            var mappedItems = _mapper.Map<List<SimulationSessionDTO>>(items);
+            mappedItems.ForEach(ApplyGetRounding);
+
             return new PagedResult<SimulationSessionDTO>
             {
-                Items = _mapper.Map<List<SimulationSessionDTO>>(items),
+                Items = mappedItems,
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -74,7 +77,9 @@ namespace SDLS.Services.Services
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
-            return _mapper.Map<SimulationSessionDTO>(entity);
+            var result = _mapper.Map<SimulationSessionDTO>(entity);
+            ApplyGetRounding(result);
+            return result;
         }
 
         public async Task<SimulationSessionDTO> CreateAsync(SimulationSessionCreateDTO dto)
@@ -89,14 +94,21 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
             ValidateDetailCreateList(dto.SimulationSessionDetails);
-
-            var passScore = await _situationExamRepository.GetPassScoreAsync(dto.SituationExamId);
             await _simulationExamRepository.ValidateSimulationExamIdsAsync(
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
 
+            var passScore = situationExamExists.PassScore ?? 0;
+            var totalBaseScore = situationExamExists.SimulationExams
+                .Where(x => x.Status == 1)
+                .Sum(x => x.BaseScore ?? 0);
+
+            if (totalBaseScore <= 0)
+                throw ApiException.BadRequest("Tổng BaseScore của SimulationExams phải lớn hơn 0.");
+
             var now = DateTimeHelper.GetVietnamNow();
-            var totalScore = dto.SimulationSessionDetails.Sum(x => x.Score ?? 0);
+            var totalRawScore = dto.SimulationSessionDetails.Sum(x => x.Score ?? 0);
+            var totalScore = (int)Math.Round(totalRawScore * 100d / totalBaseScore, MidpointRounding.AwayFromZero);
             var totalDuration = dto.SimulationSessionDetails.Sum(x => x.DurationSecond ?? 0d);
 
             var entity = new SimulationSession
@@ -142,11 +154,17 @@ namespace SDLS.Services.Services
                 throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
             ValidateDetailUpdateList(dto.SimulationSessionDetails);
-
-            var passScore = await _situationExamRepository.GetPassScoreAsync(dto.SituationExamId);
             await _simulationExamRepository.ValidateSimulationExamIdsAsync(
                 dto.SituationExamId,
                 dto.SimulationSessionDetails.Select(x => x.SimulationExamId).Distinct().ToList());
+
+            var passScore = situationExamExists.PassScore ?? 0;
+            var totalBaseScore = situationExamExists.SimulationExams
+                .Where(x => x.Status == 1)
+                .Sum(x => x.BaseScore ?? 0);
+
+            if (totalBaseScore <= 0)
+                throw ApiException.BadRequest("Tổng BaseScore của SimulationExams phải lớn hơn 0.");
 
             var now = DateTimeHelper.GetVietnamNow();
 
@@ -206,7 +224,8 @@ namespace SDLS.Services.Services
                 .Where(x => x.Status == 1)
                 .ToList();
 
-            var totalScore = activeDetails.Sum(x => x.Score ?? 0);
+            var totalRawScore = activeDetails.Sum(x => x.Score ?? 0);
+            var totalScore = (int)Math.Round(totalRawScore * 100d / totalBaseScore, MidpointRounding.AwayFromZero);
             var totalDuration = activeDetails.Sum(x => x.DurationSecond ?? 0d);
 
             existing.TotalScore = totalScore;
@@ -267,5 +286,33 @@ namespace SDLS.Services.Services
             if (duplicate != null)
                 throw ApiException.Conflict($"SimulationExamId bị trùng: {duplicate.Key}");
         }
+
+        private static void ApplyGetRounding(SimulationSessionDTO dto)
+        {
+            dto.TotalDuration = Round2(dto.TotalDuration);
+
+            if (dto.SituationExam != null)
+            {
+                dto.SituationExam.Duration = Round2(dto.SituationExam.Duration);
+
+                foreach (var simulationExam in dto.SituationExam.SimulationExams)
+                {
+                    if (simulationExam.Simulation == null)
+                        continue;
+
+                    simulationExam.Simulation.TotalTime = Round2(simulationExam.Simulation.TotalTime);
+                    simulationExam.Simulation.StartPoint = Round2(simulationExam.Simulation.StartPoint);
+                    simulationExam.Simulation.EndPoint = Round2(simulationExam.Simulation.EndPoint);
+                }
+            }
+        }
+
+        private static double? Round2(double? value)
+            => value.HasValue
+                ? Math.Round(value.Value, 2, MidpointRounding.AwayFromZero)
+                : null;
+
+        private static double Round2(double value)
+            => Math.Round(value, 2, MidpointRounding.AwayFromZero);
     }
 }
