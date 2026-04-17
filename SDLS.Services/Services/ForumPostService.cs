@@ -56,9 +56,20 @@ namespace SDLS.Services.Services
             pageSize = pageSize < 1 ? 20 : pageSize;
 
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
             var filtered = await _repository.GetAllAsync(
                 id, forumTopicId, userId, name, title, content, status, role);
+
+            filtered = filtered.Where(x =>
+                x.Status != 0 &&
+                (
+                    x.Status == 1 ||
+                    (x.Status == 4 && currentUserId.HasValue && x.UserId == currentUserId.Value) ||
+                    ((x.Status == -1 || x.Status == 2 || x.Status == 3) &&
+                        (isPrivileged || (currentUserId.HasValue && x.UserId == currentUserId.Value)))
+                ));
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
@@ -90,9 +101,22 @@ namespace SDLS.Services.Services
         public async Task<ForumPostDTO> GetByIdAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
             var forumPost = await _repository.GetByIdAsync(id, role);
             if (forumPost == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var canView = forumPost.Status != 0 &&
+                (
+                    forumPost.Status == 1 ||
+                    (forumPost.Status == 4 && currentUserId.HasValue && forumPost.UserId == currentUserId.Value) ||
+                    ((forumPost.Status == -1 || forumPost.Status == 2 || forumPost.Status == 3) &&
+                        (isPrivileged || (currentUserId.HasValue && forumPost.UserId == currentUserId.Value)))
+                );
+
+            if (!canView)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<ForumPostDTO>(forumPost);
@@ -321,6 +345,19 @@ namespace SDLS.Services.Services
             await _repository.SoftDeletePostImagesAsync(id, now);
             await _repository.UpdateAsync(forumPost);
 
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
+        public async Task<ForumPostDTO> ForceDeleteAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
+
+            forumPost.Status = 2;
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
+
+            await _repository.UpdateAsync(forumPost);
             return _mapper.Map<ForumPostDTO>(forumPost);
         }
 

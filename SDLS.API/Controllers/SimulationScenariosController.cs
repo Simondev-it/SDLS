@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.SimulationScenario;
@@ -66,6 +67,23 @@ namespace SDLS.API.Controllers
 
             var created = await _service.CreateManyAsync(dtos);
             return Ok(created);
+        }
+
+        //[Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("template")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var template = await _service.GenerateImportTemplateAsync();
+            return File(template.Content, template.ContentType, template.FileName);
+        }
+
+        //[Authorize(Roles = "Instructor,Admin")]
+        [HttpPost("import")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<List<SimulationScenarioDTO>>> Import([FromForm] ImportSimulationScenarioRequest request)
+        {
+            var imported = await _service.ImportAsync(request.File);
+            return Ok(imported);
         }
 
         [Authorize(Roles = "Instructor,Admin")]

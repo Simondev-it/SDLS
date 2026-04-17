@@ -15,6 +15,7 @@ namespace SDLS.Services.Interfaces
 
         Task<ExamDTO> GetByIdAsync(Guid id);
         Task<ExamDTO> CreateAsync(ExamCreateDTO dto);
+        Task<ExamDTO> CreateRandomAsync(ExamRandomCreateDTO dto);
         Task<ExamDTO> UpdateAsync(Guid id, ExamUpdateDTO dto);
         Task<ExamDTO> DeleteSoftAsync(Guid id);
         Task<ExamDTO> DeleteHardAsync(Guid id);

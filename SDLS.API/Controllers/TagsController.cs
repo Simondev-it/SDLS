@@ -59,6 +59,23 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        //[Authorize(Roles = "Admin")]
+        [HttpGet("template")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var template = await _service.GenerateImportTemplateAsync();
+            return File(template.Content, template.ContentType, template.FileName);
+        }
+
+        //[Authorize(Roles = "Admin")]
+        [HttpPost("import")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<List<TagDTO>>> Import([FromForm] ImportTagRequest request)
+        {
+            var imported = await _service.ImportAsync(request.File);
+            return Ok(imported);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<ActionResult<TagDTO>> Update(Guid id, [FromBody] TagUpdateDTO dto)

@@ -51,10 +51,12 @@ namespace SDLS.Services.Services
             var total = ordered.Count;
 
             var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var mappedItems = _mapper.Map<List<SituationExamDTO>>(items);
+            mappedItems.ForEach(ApplyGetRounding);
 
             return new PagedResult<SituationExamDTO>
             {
-                Items = _mapper.Map<List<SituationExamDTO>>(items),
+                Items = mappedItems,
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
@@ -69,7 +71,9 @@ namespace SDLS.Services.Services
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
-            return _mapper.Map<SituationExamDTO>(entity);
+            var result = _mapper.Map<SituationExamDTO>(entity);
+            ApplyGetRounding(result);
+            return result;
         }
 
         public async Task<SituationExamDTO> CreateAsync(SituationExamCreateDTO dto)
@@ -238,5 +242,28 @@ namespace SDLS.Services.Services
             if (duplicate != null)
                 throw ApiException.Conflict($"SimulationId bị trùng: {duplicate.Key}");
         }
+
+        private static void ApplyGetRounding(SituationExamDTO dto)
+        {
+            dto.Duration = Round2(dto.Duration);
+
+            foreach (var simulationExam in dto.SimulationExams)
+            {
+                if (simulationExam.Simulation == null)
+                    continue;
+
+                simulationExam.Simulation.TotalTime = Round2(simulationExam.Simulation.TotalTime);
+                simulationExam.Simulation.StartPoint = Round2(simulationExam.Simulation.StartPoint);
+                simulationExam.Simulation.EndPoint = Round2(simulationExam.Simulation.EndPoint);
+            }
+        }
+
+        private static double? Round2(double? value)
+            => value.HasValue
+                ? Math.Round(value.Value, 2, MidpointRounding.AwayFromZero)
+                : null;
+
+        private static double Round2(double value)
+            => Math.Round(value, 2, MidpointRounding.AwayFromZero);
     }
 }
