@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
+using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.User;
 using SDLS.Model.Models;
+using SDLS.Repositories.Helper;
 using SDLS.Repositories.Interface;
 using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
@@ -19,6 +22,7 @@ namespace SDLS.Services.Services
         private readonly IQuestionLessonRepository _questionLessonRepository;
         private readonly IUserLicenseRepository _userLicenseRepository;
         private readonly IDrivingLicenseRepository _drivingLicenseRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMediaImageService _mediaImageService;
         private readonly IMapper _mapper;
 
@@ -28,6 +32,7 @@ namespace SDLS.Services.Services
             IQuestionLessonRepository questionLessonRepository,
             IUserLicenseRepository userLicenseRepository,
             IDrivingLicenseRepository drivingLicenseRepository,
+            IHttpContextAccessor httpContextAccessor,
             IMediaImageService mediaImageService,
             IMapper mapper)
         {
@@ -36,6 +41,7 @@ namespace SDLS.Services.Services
             _questionLessonRepository = questionLessonRepository;
             _userLicenseRepository = userLicenseRepository;
             _drivingLicenseRepository = drivingLicenseRepository;
+            _httpContextAccessor = httpContextAccessor;
             _mediaImageService = mediaImageService;
             _mapper = mapper;
         }
@@ -176,17 +182,29 @@ namespace SDLS.Services.Services
             existing.LicenseType = user.LicenseType;
             existing.Status = user.Status ?? existing.Status;
 
-            if (!string.IsNullOrWhiteSpace(user.Password))
-                existing.Password = user.Password;
-
-            if (user.DrivingLicenseIds != null)
-                await UpdateUserLicensesAsync(existing.Id, user.DrivingLicenseIds);
+            await UpdateUserLicensesAsync(existing.Id, user.DrivingLicenseIds);
 
             if (!string.Equals(oldAvatar, user.Avatar, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAvatar))
                 await _mediaImageService.DeleteAsync(oldAvatar, "UserAvatar");
 
             await _userRepository.UpdateAsync(existing);
             return _mapper.Map<UserDTO>(existing);
+        }
+
+        public async Task<bool> ChangePasswordCurrentUserAsync(UserChangePasswordDTO dto)
+        {
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+            var existing = await _userRepository.GetByIdAsync(currentUserId);
+            if (existing == null)
+                throw ApiException.NotFound("Không tìm thấy user hiện tại.");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, existing.Password))
+                throw ApiException.BadRequest("Mật khẩu hiện tại không đúng.");
+
+            existing.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _userRepository.UpdateAsync(existing);
+
+            return true;
         }
 
         public async Task<UserDTO?> ToggleActiveStatusAsync(Guid id)
@@ -233,8 +251,16 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        private async Task UpdateUserLicensesAsync(Guid userId, List<Guid> drivingLicenseIds)
+        private async Task UpdateUserLicensesAsync(Guid userId, List<Guid>? drivingLicenseIds)
         {
+            var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(userId, null);
+
+            foreach (var existingUserLicense in existingUserLicenses)
+                await _userLicenseRepository.DeleteHardAsync(existingUserLicense.Id);
+
+            if (drivingLicenseIds == null)
+                return;
+
             var distinctIds = drivingLicenseIds
                 .Where(x => x != Guid.Empty)
                 .Distinct()
@@ -247,35 +273,17 @@ namespace SDLS.Services.Services
                     throw ApiException.BadRequest($"DrivingLicenseId không tồn tại: {drivingLicenseId}");
             }
 
-            var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(userId, null);
-
             foreach (var drivingLicenseId in distinctIds)
             {
-                var matched = existingUserLicenses.FirstOrDefault(x => x.DrivingLicenseId == drivingLicenseId);
-                if (matched == null)
+                await _userLicenseRepository.AddAsync(new UserLicense
                 {
-                    await _userLicenseRepository.AddAsync(new UserLicense
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = userId,
-                        DrivingLicenseId = drivingLicenseId,
-                        CreateAt = DateTime.UtcNow,
-                        UpdateAt = DateTime.UtcNow,
-                        Status = 1
-                    });
-                    continue;
-                }
-
-                if (matched.Status == 0)
-                {
-                    var tracked = await _userLicenseRepository.GetByIdForUpdateAsync(matched.Id);
-                    if (tracked != null)
-                    {
-                        tracked.Status = 1;
-                        tracked.UpdateAt = DateTime.UtcNow;
-                        await _userLicenseRepository.UpdateAsync(tracked);
-                    }
-                }
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    DrivingLicenseId = drivingLicenseId,
+                    CreateAt = DateTime.UtcNow,
+                    UpdateAt = DateTime.UtcNow,
+                    Status = 1
+                });
             }
         }
 
