@@ -1,5 +1,4 @@
-﻿using SDLS.Model.Models;
-using AutoMapper;
+﻿using AutoMapper;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.User;
 using SDLS.Model.Models;
@@ -20,6 +19,7 @@ namespace SDLS.Services.Services
         private readonly IQuestionLessonRepository _questionLessonRepository;
         private readonly IUserLicenseRepository _userLicenseRepository;
         private readonly IDrivingLicenseRepository _drivingLicenseRepository;
+        private readonly IMediaImageService _mediaImageService;
         private readonly IMapper _mapper;
 
         public UserService(
@@ -28,6 +28,7 @@ namespace SDLS.Services.Services
             IQuestionLessonRepository questionLessonRepository,
             IUserLicenseRepository userLicenseRepository,
             IDrivingLicenseRepository drivingLicenseRepository,
+            IMediaImageService mediaImageService,
             IMapper mapper)
         {
             _userRepository = userRepository;
@@ -35,6 +36,7 @@ namespace SDLS.Services.Services
             _questionLessonRepository = questionLessonRepository;
             _userLicenseRepository = userLicenseRepository;
             _drivingLicenseRepository = drivingLicenseRepository;
+            _mediaImageService = mediaImageService;
             _mapper = mapper;
         }
 
@@ -153,6 +155,7 @@ namespace SDLS.Services.Services
         {
             var existing = await _userRepository.GetByIdAsync(id);
             if (existing == null) return null;
+            var oldAvatar = existing.Avatar;
 
             if (!string.IsNullOrWhiteSpace(user.Email) &&
                 !string.Equals(existing.Email, user.Email, StringComparison.OrdinalIgnoreCase))
@@ -178,6 +181,9 @@ namespace SDLS.Services.Services
 
             if (user.DrivingLicenseIds != null)
                 await UpdateUserLicensesAsync(existing.Id, user.DrivingLicenseIds);
+
+            if (!string.Equals(oldAvatar, user.Avatar, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(oldAvatar))
+                await _mediaImageService.DeleteAsync(oldAvatar, "UserAvatar");
 
             await _userRepository.UpdateAsync(existing);
             return _mapper.Map<UserDTO>(existing);
@@ -213,6 +219,9 @@ namespace SDLS.Services.Services
         {
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) return false;
+
+            if (!string.IsNullOrWhiteSpace(user.Avatar))
+                await _mediaImageService.DeleteAsync(user.Avatar, "UserAvatar");
 
             // Nếu bạn có soft delete thì sửa lại
             // user.IsDeleted = true;
