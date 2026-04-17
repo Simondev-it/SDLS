@@ -21,9 +21,13 @@ namespace SDLS.Repositories.Repositories
             IQueryable<SimulationSession> query = isPrivileged
                 ? _context.SimulationSessions
                     .Include(x => x.SituationExam)
+                        .ThenInclude(se => se.SimulationExams)
+                            .ThenInclude(sex => sex.Simulation)
                     .Include(x => x.SimulationSessionDetails)
                 : _context.SimulationSessions
                     .Include(x => x.SituationExam)
+                        .ThenInclude(se => se.SimulationExams.Where(sex => sex.Status != 0))
+                            .ThenInclude(sex => sex.Simulation)
                     .Include(x => x.SimulationSessionDetails.Where(d => d.Status != 0));
 
             if (id.HasValue)
@@ -43,7 +47,10 @@ namespace SDLS.Repositories.Repositories
             if (!isPrivileged)
                 query = query.Where(x => x.SituationExam == null || x.SituationExam.Status != 0);
 
-            return await query.AsNoTracking().ToListAsync();
+            return await query
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<SimulationSession?> GetByIdAsync(Guid id, string? role = null)
@@ -53,9 +60,13 @@ namespace SDLS.Repositories.Repositories
             IQueryable<SimulationSession> query = isPrivileged
                 ? _context.SimulationSessions
                     .Include(x => x.SituationExam)
+                        .ThenInclude(se => se.SimulationExams)
+                            .ThenInclude(sex => sex.Simulation)
                     .Include(x => x.SimulationSessionDetails)
                 : _context.SimulationSessions
                     .Include(x => x.SituationExam)
+                        .ThenInclude(se => se.SimulationExams.Where(sex => sex.Status != 0))
+                            .ThenInclude(sex => sex.Simulation)
                     .Include(x => x.SimulationSessionDetails.Where(d => d.Status != 0));
 
             query = query.Where(x => x.Id == id)
@@ -64,7 +75,10 @@ namespace SDLS.Repositories.Repositories
             if (!isPrivileged)
                 query = query.Where(x => x.SituationExam == null || x.SituationExam.Status != 0);
 
-            return await query.AsNoTracking().FirstOrDefaultAsync();
+            return await query
+                .AsSplitQuery()
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
         }
 
         public async Task<SimulationSession?> GetByIdForUpdateAsync(Guid id)
