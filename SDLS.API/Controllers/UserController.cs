@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.User;
 using SDLS.Services.Interfaces;
@@ -82,6 +84,19 @@ namespace SDLS.API.Controllers
             if (result == null) return NotFound();
 
             return Ok(result);
+        }
+
+        // PATCH: api/user/change-password
+        [Authorize]
+        [HttpPatch("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var result = await _userService.ChangePasswordCurrentUserAsync(dto);
+            if (!result) return BadRequest();
+
+            return Ok("Changed password successfully");
         }
 
         // PATCH: api/user/{id}/toggle-active

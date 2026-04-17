@@ -11,9 +11,6 @@ namespace SDLS.Model.DTOs.User
         [EmailAddress]
         public string? Email { get; set; }
 
-        [MinLength(6)]
-        public string? Password { get; set; }
-
         public string? Name { get; set; }
         public string? Avatar { get; set; }
         public string? Phone { get; set; }

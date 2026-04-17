@@ -26,6 +26,7 @@ namespace SDLS.Services.Interfaces
         Task<UserDTO?> GetByEmailAsync(string email);
         Task<UserDTO> CreateAsync(UserCreateDTO user);
         Task<UserDTO?> UpdateAsync(Guid id, UserUpdateDTO user);
+        Task<bool> ChangePasswordCurrentUserAsync(UserChangePasswordDTO dto);
         Task<UserDTO?> ToggleActiveStatusAsync(Guid id);
         Task<UserDTO?> ToggleLockStatusAsync(Guid id);
         Task<bool> DeleteAsync(Guid id);
