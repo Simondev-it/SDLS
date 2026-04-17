@@ -22,5 +22,6 @@ namespace SDLS.Model.DTOs.User
         public DateOnly? DateOfBirth { get; set; }
         public string? LicenseType { get; set; }
         public int? Status { get; set; }
+        public List<Guid>? DrivingLicenseIds { get; set; }
     }
 }
