@@ -27,6 +27,7 @@ namespace SDLS.Model.DTOs.User
 
         public int LearningProgressQuestionCount { get; set; }
         public int TotalQuestionCount { get; set; }
+        public int TotalQuestionLessonCount { get; set; }
         public double ExamPassRate { get; set; }
         public double SimulationPassRate { get; set; }
 

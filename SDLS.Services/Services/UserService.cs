@@ -17,12 +17,24 @@ namespace SDLS.Services.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IQuestionRepository _questionRepository;
+        private readonly IQuestionLessonRepository _questionLessonRepository;
+        private readonly IUserLicenseRepository _userLicenseRepository;
+        private readonly IDrivingLicenseRepository _drivingLicenseRepository;
         private readonly IMapper _mapper;
 
-        public UserService(IUserRepository userRepository, IQuestionRepository questionRepository, IMapper mapper)
+        public UserService(
+            IUserRepository userRepository,
+            IQuestionRepository questionRepository,
+            IQuestionLessonRepository questionLessonRepository,
+            IUserLicenseRepository userLicenseRepository,
+            IDrivingLicenseRepository drivingLicenseRepository,
+            IMapper mapper)
         {
             _userRepository = userRepository;
             _questionRepository = questionRepository;
+            _questionLessonRepository = questionLessonRepository;
+            _userLicenseRepository = userLicenseRepository;
+            _drivingLicenseRepository = drivingLicenseRepository;
             _mapper = mapper;
         }
 
@@ -105,8 +117,9 @@ namespace SDLS.Services.Services
                 return null;
 
             var totalQuestionCount = (await _questionRepository.GetAllAsync(status: 1)).Count();
+            var totalQuestionLessonCount = (await _questionLessonRepository.GetAllAsync(status: 1)).Count();
             var dto = _mapper.Map<UserDTO>(user);
-            PopulateUserGetData(dto, user, totalQuestionCount);
+            PopulateUserGetData(dto, user, totalQuestionCount, totalQuestionLessonCount);
             return dto;
         }
 
@@ -117,8 +130,9 @@ namespace SDLS.Services.Services
                 return null;
 
             var totalQuestionCount = (await _questionRepository.GetAllAsync(status: 1)).Count();
+            var totalQuestionLessonCount = (await _questionLessonRepository.GetAllAsync(status: 1)).Count();
             var dto = _mapper.Map<UserDTO>(user);
-            PopulateUserGetData(dto, user, totalQuestionCount);
+            PopulateUserGetData(dto, user, totalQuestionCount, totalQuestionLessonCount);
             return dto;
         }
 
@@ -161,6 +175,9 @@ namespace SDLS.Services.Services
 
             if (!string.IsNullOrWhiteSpace(user.Password))
                 existing.Password = user.Password;
+
+            if (user.DrivingLicenseIds != null)
+                await UpdateUserLicensesAsync(existing.Id, user.DrivingLicenseIds);
 
             await _userRepository.UpdateAsync(existing);
             return _mapper.Map<UserDTO>(existing);
@@ -207,9 +224,56 @@ namespace SDLS.Services.Services
             return true;
         }
 
-        private static void PopulateUserGetData(UserDTO dto, User user, int totalQuestionCount)
+        private async Task UpdateUserLicensesAsync(Guid userId, List<Guid> drivingLicenseIds)
+        {
+            var distinctIds = drivingLicenseIds
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            foreach (var drivingLicenseId in distinctIds)
+            {
+                var drivingLicense = await _drivingLicenseRepository.GetByIdAsync(drivingLicenseId);
+                if (drivingLicense == null)
+                    throw ApiException.BadRequest($"DrivingLicenseId không tồn tại: {drivingLicenseId}");
+            }
+
+            var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(userId, null);
+
+            foreach (var drivingLicenseId in distinctIds)
+            {
+                var matched = existingUserLicenses.FirstOrDefault(x => x.DrivingLicenseId == drivingLicenseId);
+                if (matched == null)
+                {
+                    await _userLicenseRepository.AddAsync(new UserLicense
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        DrivingLicenseId = drivingLicenseId,
+                        CreateAt = DateTime.UtcNow,
+                        UpdateAt = DateTime.UtcNow,
+                        Status = 1
+                    });
+                    continue;
+                }
+
+                if (matched.Status == 0)
+                {
+                    var tracked = await _userLicenseRepository.GetByIdForUpdateAsync(matched.Id);
+                    if (tracked != null)
+                    {
+                        tracked.Status = 1;
+                        tracked.UpdateAt = DateTime.UtcNow;
+                        await _userLicenseRepository.UpdateAsync(tracked);
+                    }
+                }
+            }
+        }
+
+        private static void PopulateUserGetData(UserDTO dto, User user, int totalQuestionCount, int totalQuestionLessonCount)
         {
             dto.TotalQuestionCount = totalQuestionCount;
+            dto.TotalQuestionLessonCount = totalQuestionLessonCount;
 
             dto.LearningProgresses = dto.LearningProgresses
                 .Where(x => x.Status != 0)
