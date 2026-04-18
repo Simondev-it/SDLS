@@ -36,16 +36,7 @@ namespace SDLS.Services.Services
             int page = 1,
             int pageSize = 20)
         {
-            var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var filtered = (await _repository.GetAllAsync(userId, title, content, status, role)).AsEnumerable();
-
-            sortBy = (sortBy ?? "time").Trim().ToLowerInvariant();
-            filtered = sortBy switch
-            {
-                "title_asc" => filtered.OrderBy(n => n.Title),
-                "title_desc" => filtered.OrderByDescending(n => n.Title),
-                _ => filtered.OrderByDescending(n => n.UpdateAt ?? n.CreateAt)
-            };
+            var filtered = await GetSortedEntitiesAsync(userId, title, content, status, sortBy);
 
             var total = filtered.Count();
             var pagedEntities = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -60,12 +51,37 @@ namespace SDLS.Services.Services
             };
         }
 
+        public async Task<List<NotificationDTO>> GetListAsync(
+            Guid? userId = null,
+            string? title = null,
+            string? content = null,
+            int? status = null,
+            string? sortBy = "time")
+        {
+            var filtered = await GetSortedEntitiesAsync(userId, title, content, status, sortBy);
+            return _mapper.Map<List<NotificationDTO>>(filtered.ToList());
+        }
+
         public async Task<NotificationDTO?> GetByIdAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
             var entity = await _repository.GetByIdAsync(id, role);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
+
+            if (entity.Status != 1)
+            {
+                var entityForUpdate = await _repository.GetByIdForUpdateAsync(id);
+                if (entityForUpdate != null)
+                {
+                    entityForUpdate.Status = 1;
+                    entityForUpdate.UpdateAt = DateTimeHelper.GetVietnamNow();
+                    await _repository.UpdateAsync(entityForUpdate);
+
+                    entity.Status = 1;
+                    entity.UpdateAt = entityForUpdate.UpdateAt;
+                }
+            }
 
             return _mapper.Map<NotificationDTO>(entity);
         }
@@ -164,6 +180,25 @@ namespace SDLS.Services.Services
 
             await _repository.DeleteHardAsync(id);
             return _mapper.Map<NotificationDTO>(entity);
+        }
+
+        private async Task<IEnumerable<Notification>> GetSortedEntitiesAsync(
+            Guid? userId,
+            string? title,
+            string? content,
+            int? status,
+            string? sortBy)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var filtered = (await _repository.GetAllAsync(userId, title, content, status, role)).AsEnumerable();
+
+            sortBy = (sortBy ?? "time").Trim().ToLowerInvariant();
+            return sortBy switch
+            {
+                "title_asc" => filtered.OrderBy(n => n.Title),
+                "title_desc" => filtered.OrderByDescending(n => n.Title),
+                _ => filtered.OrderByDescending(n => n.UpdateAt ?? n.CreateAt)
+            };
         }
     }
 }

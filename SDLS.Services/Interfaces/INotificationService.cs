@@ -5,6 +5,13 @@ namespace SDLS.Services.Interfaces
 {
     public interface INotificationService
     {
+        Task<List<NotificationDTO>> GetListAsync(
+            Guid? userId = null,
+            string? title = null,
+            string? content = null,
+            int? status = null,
+            string? sortBy = "time");
+
         Task<PagedResult<NotificationDTO>> GetAllAsync(
             Guid? userId = null,
             string? title = null,
