@@ -92,6 +92,14 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/toggle-pin")]
+        public async Task<ActionResult<ForumPostDTO>> TogglePinStatus(Guid id)
+        {
+            var result = await _service.TogglePinStatusAsync(id);
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPatch("{id}")]
         public async Task<ActionResult<ForumPostDTO>> SoftDelete(Guid id)
