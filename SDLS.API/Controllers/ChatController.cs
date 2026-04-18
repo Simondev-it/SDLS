@@ -43,6 +43,7 @@ namespace SDLS.API.Controllers
             {
                 reply = result
             });
+
         }
 
         [HttpGet("history/{sessionId}")]
@@ -54,4 +55,6 @@ namespace SDLS.API.Controllers
     }
 
     public record ChatRequest(string Prompt, string? UserIdentifier);
+
+    //test chhat 
 }
