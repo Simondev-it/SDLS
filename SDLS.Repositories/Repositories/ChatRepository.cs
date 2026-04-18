@@ -21,19 +21,29 @@ namespace SDLS.Repositories.Repositories
 
         public List<(string Question, string Answer)> GetHistory(string sessionId)
         {
-            return _memoryCache.Get<List<(string, string)>>(HistoryPrefix + sessionId) ?? new();
+            return _memoryCache.Get<List<(string, string)>>(HistoryPrefix + sessionId)
+                   ?? new List<(string, string)>();
         }
 
         public void SaveToHistory(string sessionId, string question, string answer)
         {
             var key = HistoryPrefix + sessionId;
-            var history = _memoryCache.Get<List<(string, string)>>(key) ?? new();
+
+            var history = _memoryCache.Get<List<(string, string)>>(key)
+                          ?? new List<(string, string)>();
+
             history.Add((question, answer));
 
             _memoryCache.Set(key, history, new MemoryCacheEntryOptions
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+                SlidingExpiration = TimeSpan.FromMinutes(30) // 🔥 thêm để tối ưu
             });
+        }
+
+        public void ClearHistory(string sessionId)
+        {
+            _memoryCache.Remove(HistoryPrefix + sessionId);
         }
     }
 }

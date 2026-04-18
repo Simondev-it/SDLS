@@ -29,6 +29,21 @@ namespace SDLS.API.Controllers
 
             return Ok(new { reply, sessionId });
         }
+        [HttpPost("ask/Exercise")]
+        public async Task<IActionResult> AskExercise([FromBody] string question)
+        {
+            if (string.IsNullOrWhiteSpace(question))
+            {
+                return BadRequest("Câu hỏi không được để trống");
+            }
+
+            var result = await _chatService.AskExerciseAsync(question);
+
+            return Ok(new
+            {
+                reply = result
+            });
+        }
 
         [HttpGet("history/{sessionId}")]
         public IActionResult GetHistory(string sessionId, [FromServices] IChatRepository repo)

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SDLS.Model.DTOs.DrivingLicense;
+using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
 using SDLS.Repositories.Interface;
@@ -64,5 +66,6 @@ namespace SDLS.Repositories.Repositories
         {
             _context.Users.Remove(user);
         }
+        
     }
 }
