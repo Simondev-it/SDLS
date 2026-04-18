@@ -38,6 +38,8 @@ using SDLS.Model.DTOs.Resolve;
 using SDLS.Model.DTOs.SituationExam;
 using SDLS.Model.DTOs.SimulationSession;
 using SDLS.Model.DTOs.Role;
+using SDLS.Model.DTOs.SystemConfig;
+using SDLS.Model.DTOs.User;
 
 namespace SDLS.Model.AutoMapper
 {
@@ -227,6 +229,15 @@ namespace SDLS.Model.AutoMapper
             CreateMap<RoleDTO, Role>().ReverseMap();
             CreateMap<RoleCreateDTO, Role>().ReverseMap();
             CreateMap<RoleUpdateDTO, Role>().ReverseMap();
+
+            CreateMap<SystemConfigDTO, SystemConfig>().ReverseMap();
+            CreateMap<SystemConfigCreateDTO, SystemConfig>().ReverseMap();
+            CreateMap<SystemConfigUpdateDTO, SystemConfig>().ReverseMap();
+
+            CreateMap<User, UserDTO>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.Name : null));
+            CreateMap<UserCreateDTO, User>();
+            CreateMap<UserUpdateDTO, User>();
         }
     }
 }

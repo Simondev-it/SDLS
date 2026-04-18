@@ -18,6 +18,19 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize]
+        [HttpGet("all")]
+        public async Task<ActionResult<List<NotificationDTO>>> GetList(
+            [FromQuery] Guid? userId,
+            [FromQuery] string? title,
+            [FromQuery] string? content,
+            [FromQuery] int? status = null,
+            [FromQuery] string? sortBy = "time")
+        {
+            var result = await _service.GetListAsync(userId, title, content, status, sortBy);
+            return Ok(result);
+        }
+
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<NotificationDTO>>> GetAll(
             [FromQuery] Guid? userId,

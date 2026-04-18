@@ -19,6 +19,12 @@ namespace SDLS.Services.Interfaces
             int page = 1,
             int pageSize = 20);
 
+        Task<(byte[] Content, string FileName, string ContentType)> ExportToExcelAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null);
+
         Task<SimulationDifficultyLevelDTO> GetByIdAsync(Guid id);
         Task<SimulationDifficultyLevelDTO> CreateAsync(SimulationDifficultyLevelCreateDTO dto);
         Task<SimulationDifficultyLevelDTO> UpdateAsync(Guid id, SimulationDifficultyLevelUpdateDTO dto);

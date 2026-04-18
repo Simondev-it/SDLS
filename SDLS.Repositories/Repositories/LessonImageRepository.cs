@@ -31,9 +31,9 @@ namespace SDLS.Repositories.Repositories
             return await _context.LessonImages.Include(l => l.QuestionLesson).FirstOrDefaultAsync(l => l.Id == id);
         }
 
-        public async Task<LessonImage> GetByLessonIdAsync(Guid id)
+        public async Task<IEnumerable<LessonImage>> GetByLessonIdAsync(Guid id)
         {
-            return await _context.LessonImages.Include(l => l.QuestionLesson).FirstOrDefaultAsync(l => l.QuestionLessonId == id);
+            return await _context.LessonImages.Include(l => l.QuestionLesson).Where(l => l.QuestionLessonId == id).ToListAsync();
         }
 
         public async Task<IEnumerable<LessonImage>> GetAllAsync()

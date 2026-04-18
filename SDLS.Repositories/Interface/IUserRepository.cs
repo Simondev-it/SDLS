@@ -15,6 +15,7 @@ namespace SDLS.Repositories.Interface
         Task<int> SaveAsync();
 
         Task<IEnumerable<User>> GetAllAsync();
+        Task<IEnumerable<User>> GetAllBasicAsync();
 
         Task AddAsync(User user);
 

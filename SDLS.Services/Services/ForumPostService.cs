@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Constants;
@@ -56,9 +56,20 @@ namespace SDLS.Services.Services
             pageSize = pageSize < 1 ? 20 : pageSize;
 
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
             var filtered = await _repository.GetAllAsync(
                 id, forumTopicId, userId, name, title, content, status, role);
+
+            filtered = filtered.Where(x =>
+                x.Status != 0 &&
+                (
+                    x.Status == 1 ||
+                    ((x.Status == 4 || x.Status == 5) && currentUserId.HasValue && x.UserId == currentUserId.Value) ||
+                    ((x.Status == -1 || x.Status == 2 || x.Status == 3) &&
+                        (isPrivileged || (currentUserId.HasValue && x.UserId == currentUserId.Value)))
+                ));
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
@@ -90,9 +101,22 @@ namespace SDLS.Services.Services
         public async Task<ForumPostDTO> GetByIdAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
             var forumPost = await _repository.GetByIdAsync(id, role);
             if (forumPost == null)
+                throw ApiException.NotFound($"Not found with ID {id}");
+
+            var canView = forumPost.Status != 0 &&
+                (
+                    forumPost.Status == 1 ||
+                    ((forumPost.Status == 4 || forumPost.Status == 5) && currentUserId.HasValue && forumPost.UserId == currentUserId.Value) ||
+                    ((forumPost.Status == -1 || forumPost.Status == 2 || forumPost.Status == 3) &&
+                        (isPrivileged || (currentUserId.HasValue && forumPost.UserId == currentUserId.Value)))
+                );
+
+            if (!canView)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             var dto = _mapper.Map<ForumPostDTO>(forumPost);
@@ -155,8 +179,8 @@ namespace SDLS.Services.Services
                 {
                     var notification = new NotificationCreateDTO
                     {
-                        Title = "B�i vi?t m?i",
-                        Content = $"C� b�i vi?t m?i c?n duy?t: '{forumPost.Title}'.",
+                        Title = "Bài vi?t m?i",
+                        Content = $"Có bài vi?t m?i c?n duy?t: '{forumPost.Title}'.",
                         Status = 2,
                         UserNotifications = instructorUserIds
                             .Select(userId => new UserNotificationCreateDTO { UserId = userId })
@@ -256,6 +280,31 @@ namespace SDLS.Services.Services
             return _mapper.Map<ForumPostDTO>(forumPost);
         }
 
+        public async Task<ForumPostDTO> TogglePinStatusAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound("Khong tim thay ForumPost");
+
+            if (forumPost.Status == 1)
+            {
+                forumPost.Status = 5;
+            }
+            else if (forumPost.Status == 5)
+            {
+                forumPost.Status = 1;
+            }
+            else
+            {
+                throw ApiException.BadRequest("Chỉ cho phép ghim/bỏ ghim khi trạng thái là 1 hoặc 5.");
+            }
+
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
+            await _repository.UpdateAsync(forumPost);
+
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
         public async Task<ForumPostDTO> ApproveAsync(Guid id)
         {
             var forumPost = await _repository.GetByIdForUpdateAsync(id);
@@ -275,7 +324,7 @@ namespace SDLS.Services.Services
             if (forumPost == null)
                 throw ApiException.NotFound("Khong tim thay ForumPost");
 
-            if (forumPost.Status == 1)
+            if (forumPost.Status == 1 || forumPost.Status == 5)
             {
                 forumPost.Status = 4;
             }
@@ -285,7 +334,7 @@ namespace SDLS.Services.Services
             }
             else
             {
-                throw ApiException.BadRequest("Ch? cho ph�p chuy?n tr?ng th�i gi?a 1 v� 4.");
+                throw ApiException.BadRequest("Ch? cho phép chuy?n tr?ng thái gi?a 1 và 4.");
             }
 
             forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
@@ -321,6 +370,19 @@ namespace SDLS.Services.Services
             await _repository.SoftDeletePostImagesAsync(id, now);
             await _repository.UpdateAsync(forumPost);
 
+            return _mapper.Map<ForumPostDTO>(forumPost);
+        }
+
+        public async Task<ForumPostDTO> ForceDeleteAsync(Guid id)
+        {
+            var forumPost = await _repository.GetByIdForUpdateAsync(id);
+            if (forumPost == null)
+                throw ApiException.NotFound($"Khong tim thay ForumPost voi Id {id}");
+
+            forumPost.Status = 2;
+            forumPost.UpdateAt = DateTimeHelper.GetVietnamNow();
+
+            await _repository.UpdateAsync(forumPost);
             return _mapper.Map<ForumPostDTO>(forumPost);
         }
 

@@ -20,7 +20,18 @@ namespace SDLS.Repositories.Repositories
         public async Task<User> GetByEmailAsync(string email)
         {
             return await _context.Users
-                .Include(x => x.Role) 
+                .Include(x => x.Role)
+                .Include(x => x.LearningProgresses)
+                    .ThenInclude(lp => lp.Question)
+                .Include(x => x.ExamSessions)
+                    .ThenInclude(es => es.Exam)
+                .Include(x => x.UserLicenses)
+                    .ThenInclude(ul => ul.DrivingLicense)
+                .Include(x => x.LessonProgresses)
+                    .ThenInclude(lp => lp.QuestionLesson)
+                .Include(x => x.SimulationSessions)
+                    .ThenInclude(ss => ss.SituationExam)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Email == email);
         }
 
@@ -28,6 +39,17 @@ namespace SDLS.Repositories.Repositories
         {
             return await _context.Users
                 .Include(x => x.Role)
+                .Include(x => x.LearningProgresses)
+                    .ThenInclude(lp => lp.Question)
+                .Include(x => x.ExamSessions)
+                    .ThenInclude(es => es.Exam)
+                .Include(x => x.UserLicenses)
+                    .ThenInclude(ul => ul.DrivingLicense)
+                .Include(x => x.LessonProgresses)
+                    .ThenInclude(lp => lp.QuestionLesson)
+                .Include(x => x.SimulationSessions)
+                    .ThenInclude(ss => ss.SituationExam)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
         // ✅ IMPLEMENT CREATE
@@ -40,6 +62,24 @@ namespace SDLS.Repositories.Repositories
             return await _context.SaveChangesAsync();
         }
         public async Task<IEnumerable<User>> GetAllAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Include(x => x.LearningProgresses)
+                    .ThenInclude(lp => lp.Question)
+                .Include(x => x.ExamSessions)
+                    .ThenInclude(es => es.Exam)
+                .Include(x => x.UserLicenses)
+                    .ThenInclude(ul => ul.DrivingLicense)
+                .Include(x => x.LessonProgresses)
+                    .ThenInclude(lp => lp.QuestionLesson)
+                .Include(x => x.SimulationSessions)
+                    .ThenInclude(ss => ss.SituationExam)
+                .AsSplitQuery()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<User>> GetAllBasicAsync()
         {
             return await _context.Users
                 .Include(u => u.Role)

@@ -44,12 +44,12 @@ namespace SDLS.API.Controllers
         }
 
         [HttpGet("lesson/{lessonId}")]
-        public async Task<ActionResult<LessonImageDTO>> GetByLessonId(Guid lessonId)
+        public async Task<ActionResult<IEnumerable<LessonImageDTO>>> GetByLessonId(Guid lessonId)
         {
             try
             {
-                var image = await _service.GetByLessonIdAsync(lessonId);
-                return Ok(image);
+                var images = await _service.GetByLessonIdAsync(lessonId);
+                return Ok(images);
             }
             catch (KeyNotFoundException)
             {

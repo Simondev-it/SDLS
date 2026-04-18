@@ -41,7 +41,7 @@ namespace SDLS.API.Controllers
             return Ok(forumPost);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Instructor,Student,Admin")]
         [HttpPost]
         public async Task<ActionResult<ForumPostDTO>> Create([FromBody] ForumPostCreateDTO dto)
         {
@@ -92,11 +92,27 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/toggle-pin")]
+        public async Task<ActionResult<ForumPostDTO>> TogglePinStatus(Guid id)
+        {
+            var result = await _service.TogglePinStatusAsync(id);
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpPatch("{id}")]
         public async Task<ActionResult<ForumPostDTO>> SoftDelete(Guid id)
         {
             var deleted = await _service.DeleteSoftAsync(id);
+            return Ok(deleted);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpPatch("{id}/force-delete")]
+        public async Task<ActionResult<ForumPostDTO>> ForceDelete(Guid id)
+        {
+            var deleted = await _service.ForceDeleteAsync(id);
             return Ok(deleted);
         }
 

@@ -190,6 +190,9 @@ namespace SDLS.API
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
 
+            builder.Services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
+            builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
+
             builder.Services.AddScoped<IPayOSService, PayOSService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
@@ -342,10 +345,6 @@ namespace SDLS.API
             app.UseCors("AllowAll");
 
             app.UseAuthentication();
-            
-
-
-            
 
             app.UseAuthorization();
             app.UseMiddleware<ExceptionMiddleware>();
