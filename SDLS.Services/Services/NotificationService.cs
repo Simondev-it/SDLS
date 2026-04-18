@@ -69,6 +69,20 @@ namespace SDLS.Services.Services
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
+            if (entity.Status != 1)
+            {
+                var entityForUpdate = await _repository.GetByIdForUpdateAsync(id);
+                if (entityForUpdate != null)
+                {
+                    entityForUpdate.Status = 1;
+                    entityForUpdate.UpdateAt = DateTimeHelper.GetVietnamNow();
+                    await _repository.UpdateAsync(entityForUpdate);
+
+                    entity.Status = 1;
+                    entity.UpdateAt = entityForUpdate.UpdateAt;
+                }
+            }
+
             return _mapper.Map<NotificationDTO>(entity);
         }
 
