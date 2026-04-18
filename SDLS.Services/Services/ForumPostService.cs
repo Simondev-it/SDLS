@@ -133,7 +133,7 @@ namespace SDLS.Services.Services
 
         public async Task<ForumPostDTO> CreateByInstructorAsync(ForumPostCreateDTO dto)
         {
-            return await CreateInternalAsync(dto, 1);
+            return await CreateInternalAsync(dto, 4);
         }
 
         private async Task<ForumPostDTO> CreateInternalAsync(ForumPostCreateDTO dto, int status)
