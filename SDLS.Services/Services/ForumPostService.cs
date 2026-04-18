@@ -179,8 +179,8 @@ namespace SDLS.Services.Services
                 {
                     var notification = new NotificationCreateDTO
                     {
-                        Title = "Bài vi?t m?i",
-                        Content = $"Có bài vi?t m?i c?n duy?t: '{forumPost.Title}'.",
+                        Title = "Bài viết mới",
+                        Content = $"Có bài viết mới cần duyệt: '{forumPost.Title}'.",
                         Status = 2,
                         UserNotifications = instructorUserIds
                             .Select(userId => new UserNotificationCreateDTO { UserId = userId })
