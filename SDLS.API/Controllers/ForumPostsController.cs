@@ -51,7 +51,7 @@ namespace SDLS.API.Controllers
         }
 
         [Authorize(Roles = "Instructor,Admin")]
-        [HttpPost("instructor")]
+        [HttpPost("manager")]
         public async Task<ActionResult<ForumPostDTO>> CreateByInstructor([FromBody] ForumPostCreateDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
