@@ -70,8 +70,8 @@ namespace SDLS.Services.Services
                 orderCode,
                 amount = model.Amount,
                 description = $"OC:{orderCode}", 
-                cancelUrl = "https://yourdomain.com/cancel",
-                returnUrl = "https://yourdomain.com/success",
+                cancelUrl = "https://green-light-app.vercel.app/?message=Thanh%20toán%20thất%20bại",
+                returnUrl = "https://xnovaapi20251024123055.azurewebsites.net/api/Payment/webhook",
                 items
             };
 
@@ -190,6 +190,23 @@ namespace SDLS.Services.Services
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(raw));
 
             return Convert.ToHexString(hash).ToLower();
+        }
+        public async Task<List<PaymentDTO>> GetAllPaymentsAsync()
+        {
+            var payments = await _paymentRepository.GetAllPaymentsAsync();
+
+            return payments.Select(p => new PaymentDTO
+            {
+                Id = p.Id,
+                UserId = p.UserId,
+                OrderCode = p.OrderCode,
+                Method = p.Method,
+                Amount = p.Amount,
+                Note = p.Note,
+                Response = p.Response,
+                CreateAt = p.CreateAt,
+                Status = p.Status
+            }).ToList();
         }
     }
 }
