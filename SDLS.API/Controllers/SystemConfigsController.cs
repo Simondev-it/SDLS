@@ -43,7 +43,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet("dashboard-summary")]
         public async Task<ActionResult<SystemDashboardSummaryDTO>> GetDashboardSummary()
         {
