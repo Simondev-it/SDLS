@@ -34,7 +34,11 @@ namespace SDLS.Services.Services
             int? status = null)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = await _repository.GetAllAsync(id, name, description, status, role);
+            var all = (await _repository.GetAllAsync(id, name, description, status, role))
+                .OrderByDescending(x => x.UpdateAt ?? x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .ToList();
             return _mapper.Map<List<ForumTopicDTO>>(all);
         }
 

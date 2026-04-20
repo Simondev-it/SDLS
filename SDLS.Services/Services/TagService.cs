@@ -33,7 +33,11 @@ namespace SDLS.Services.Services
             int? status = null)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entities = await _repository.GetAllAsync(id, name, description, colorCode, status, role);
+            var entities = (await _repository.GetAllAsync(id, name, description, colorCode, status, role))
+                .OrderByDescending(x => x.UpdateAt ?? x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .ToList();
             return _mapper.Map<List<TagDTO>>(entities);
         }
 
