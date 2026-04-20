@@ -35,7 +35,11 @@ namespace SDLS.Services.Services
             int? status = null)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = await _repository.GetAllAsync(id, name, description, status, role);
+            var all = (await _repository.GetAllAsync(id, name, description, status, role))
+                .OrderByDescending(x => x.UpdateAt ?? x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .ToList();
             return _mapper.Map<List<QuestionTopicDTO>>(all);
         }
 
@@ -152,14 +156,16 @@ namespace SDLS.Services.Services
 
         public async Task<QuestionTopicDTO> DeleteSoftAsync(Guid id)
         {
-            var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entity = await _repository.GetByIdAsync(id, role);
+            var entity = await _repository.GetByIdForUpdateAsync(id);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
-            await _repository.DeleteSoftAsync(id);
-            entity.Status = 0;
+            if (entity.Status != 0 && entity.Status != 1)
+                throw ApiException.BadRequest("Chỉ hỗ trợ chuyển trạng thái giữa 0 và 1.");
+
+            entity.Status = entity.Status == 1 ? 0 : 1;
             entity.UpdateAt = DateTimeHelper.GetVietnamNow();
+            await _repository.UpdateAsync(entity);
             return _mapper.Map<QuestionTopicDTO>(entity);
         }
 
