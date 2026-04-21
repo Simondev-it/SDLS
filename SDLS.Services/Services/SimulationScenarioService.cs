@@ -47,10 +47,19 @@ namespace SDLS.Services.Services
             int page = 1,
             int pageSize = 20)
         {
+            simulationCategoryId = simulationCategoryId == Guid.Empty ? null : simulationCategoryId;
+            simulationChapterId = simulationChapterId == Guid.Empty ? null : simulationChapterId;
+            simulationDifficultyLevelId = simulationDifficultyLevelId == Guid.Empty ? null : simulationDifficultyLevelId;
+
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             var filtered = await _repository.GetAllAsync(
                 simulationCategoryId, simulationChapterId, simulationDifficultyLevelId, name, status, role);
+
+            filtered = filtered.Where(x =>
+                (!simulationCategoryId.HasValue || x.SimulationCategoryId == simulationCategoryId.Value) &&
+                (!simulationChapterId.HasValue || x.SimulationChapterId == simulationChapterId.Value) &&
+                (!simulationDifficultyLevelId.HasValue || x.SimulationDifficultyLevelId == simulationDifficultyLevelId.Value));
 
             var total = filtered.Count();
 
