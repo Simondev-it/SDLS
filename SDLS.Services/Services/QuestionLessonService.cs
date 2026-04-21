@@ -264,7 +264,6 @@ namespace SDLS.Services.Services
                 {
                     await _lessonImageService.DeleteAsync(img.Id);
                 }
-                _repository.RemoveLessonImages(imagesToRemove);
             }
 
             var imagesToAdd = new List<LessonImage>();
