@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
+using SDLS.Model.Enumerations;
 using SDLS.Model.Helpers;
 using SDLS.Model.DTOs.QuestionLesson;
 using SDLS.Model.Models;
@@ -18,20 +19,20 @@ namespace SDLS.Services.Services
         private readonly IQuestionChapterRepository _questionChapterRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
-        private readonly ILessonImageService _lessonImageService;
+        private readonly IStorageService _storageService;
 
         public QuestionLessonService(
             IQuestionLessonRepository repository,
             IQuestionChapterRepository questionChapterRepository,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper,
-            ILessonImageService lessonImageService)
+            IStorageService storageService)
         {
             _repository = repository;
             _questionChapterRepository = questionChapterRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
-            _lessonImageService = lessonImageService;
+            _storageService = storageService;
         }
 
         public async Task<PagedResult<QuestionLessonDTO>> GetAllAsync(
@@ -262,8 +263,10 @@ namespace SDLS.Services.Services
             {
                 foreach (var img in imagesToRemove)
                 {
-                    await _lessonImageService.DeleteAsync(img.Id);
+                    if (!string.IsNullOrWhiteSpace(img.Url))
+                        await _storageService.DeleteImageAsync(img.Url, ImageTarget.LessonImage);
                 }
+                _repository.RemoveLessonImages(imagesToRemove);
             }
 
             var imagesToAdd = new List<LessonImage>();
