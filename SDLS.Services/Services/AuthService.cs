@@ -59,7 +59,9 @@ namespace SDLS.Services.Services
                     name = user.Name,
                     email = user.Email,
                     roleId = user.RoleId,
-                    roleName = user.Role?.Name
+                    roleName = user.Role?.Name,
+                    status = user.Status,
+                    avatar = user.Avatar
                 }
             };
         }

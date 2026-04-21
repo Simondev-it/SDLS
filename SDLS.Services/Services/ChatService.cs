@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using SDLS.Model.DTOs.User;
 using SDLS.Model.DTOs.UserLicense;
 using SDLS.Repositories.Interface;
 using SDLS.Services.Interfaces;
@@ -16,6 +17,7 @@ namespace SDLS.Services.Services
     {
         private readonly IChatRepository _chatRepository;
         private readonly IUserLicenseRepository _userLicenseRepo;
+        private readonly IUserRepository _userRepo;
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
 
@@ -25,13 +27,15 @@ namespace SDLS.Services.Services
             IChatRepository chatRepository,
             IUserLicenseRepository userLicenseRepo,
             IHttpClientFactory httpClientFactory,
-            IConfiguration config)
+            IConfiguration config,
+            IUserRepository userRepo)
         {
             _chatRepository = chatRepository;
             _userLicenseRepo = userLicenseRepo;
             _httpClient = httpClientFactory.CreateClient();
             _apiKey = config["Gemini:ApiKey"]
                 ?? throw new Exception("Missing API Key");
+            _userRepo = userRepo;
         }
 
         public string GetGreeting()
@@ -42,26 +46,33 @@ namespace SDLS.Services.Services
         // =========================
         public async Task<(string Reply, string SessionId)> AskAsync(string prompt, string? userId)
         {
-            string sessionId = userId ?? Guid.NewGuid().ToString(); // ✅ mỗi request 1 session (hoặc FE giữ)
+            string sessionId = userId ?? Guid.NewGuid().ToString();
             string cleanedPrompt = prompt.Trim();
 
-            // 🔥 FIX GUID an toàn
-            UserLicenseDTO? userLicense = null;
+            // 🔥 Lấy user + map sang AI profile
+            UserAIProfile? profile = null;
 
-            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out Guid parsedId))
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out Guid uid))
             {
-                userLicense = await _userLicenseRepo.GetByUserIdAsync(parsedId);
+                var user = await _userRepo.GetByIdAsync(uid);
+
+                if (user != null)
+                {
+                    profile = new UserAIProfile
+                    {
+                        Id = user.Id,
+                        Name = user.Name,
+                        LicenseType = user.LicenseType
+                    };
+                }
             }
 
-            string systemPrompt = SystemPromptBuilder.Build(userLicense);
+            string systemPrompt = SystemPromptBuilder.Build(profile);
 
-            var history = _chatRepository.GetHistory(sessionId);
-
-            // 🔥 FIX lạc đề
-            if (IsNewIntent(cleanedPrompt))
-            {
-                history = new List<(string, string)>();
-            }
+            // ❌ KHÔNG dùng history cho lộ trình → tránh lạc đề
+            var history = IsLearningIntent(cleanedPrompt)
+                ? new List<(string, string)>()
+                : _chatRepository.GetHistory(sessionId);
 
             string context = BuildContext(systemPrompt, history, cleanedPrompt);
 
@@ -72,10 +83,27 @@ namespace SDLS.Services.Services
             return (reply, sessionId);
         }
 
-
+        // =========================
+        // 📚 EXERCISE MODE
+        // =========================
         public async Task<string> AskExerciseAsync(string question)
         {
-            string prompt = BuildExercisePrompt(question);
+            string prompt = $"""
+                Bạn là AI giải đề GPLX.
+
+                ### ✅ Đáp án đúng:
+                (A/B/C/D)
+
+                ### 📌 Giải thích:
+                - Ngắn gọn dễ hiểu
+
+                ### ⚠️ Mẹo:
+                - Nhớ nhanh
+
+                Câu hỏi:
+                {question}
+                """;
+
             return await SendToGeminiAsync(prompt);
         }
 
@@ -107,60 +135,33 @@ namespace SDLS.Services.Services
         // =========================
         // 🔥 INTENT DETECT
         // =========================
-        private static bool IsNewIntent(string prompt)
+        private static bool IsLearningIntent(string prompt)
         {
             var p = prompt.ToLower();
 
             return p.Contains("lộ trình")
                 || p.Contains("kế hoạch")
                 || p.Contains("học")
-                || p.Contains("thi")
-                || p.Contains("sa hình")
-                || p.Contains("mẹo")
                 || p.Contains("bao lâu")
-                || p.Contains("như nào");
+                || p.Contains("mất bao lâu");
         }
 
         // =========================
-        // 🔥 PROMPT GIẢI BÀI
-        // =========================
-        private static string BuildExercisePrompt(string question)
-        {
-            return $"""
-                Bạn là AI giải đề GPLX.
-
-                ### ✅ Đáp án đúng:
-                (A/B/C/D)
-
-                ###📌 Giải thích:
-                - Ngắn gọn
-
-                ### ⚠️ Mẹo:
-                - Dễ nhớ
-
-                Câu hỏi:
-                {question}
-                """;
-        }
-
-        // =========================
-        // 🌐 CALL AI
+        // 🌐 CALL AI (ANTI 429)
         // =========================
         private async Task<string> SendToGeminiAsync(string prompt)
         {
             if (prompt.Length > 8000)
-                prompt = prompt.Substring(0, 8000);
+                prompt = prompt[..8000];
 
-            // 🔥 Anti spam backend (cực quan trọng)
-            if ((DateTime.Now - _lastCallTime).TotalMilliseconds < 800)
-            {
-                return "⚠️ Bạn gửi câu hỏi quá nhanh, hãy chờ 1 chút nhé!";
-            }
+            // 🔥 chống spam
+            if ((DateTime.Now - _lastCallTime).TotalMilliseconds < 1000)
+                return "⚠️ Bạn hỏi nhanh quá, chậm lại chút nhé!";
 
             _lastCallTime = DateTime.Now;
 
-            int retry = 4;
-            int delay = 1000; // 1s
+            int retry = 3;
+            int delay = 1000;
 
             while (retry-- > 0)
             {
@@ -199,16 +200,9 @@ namespace SDLS.Services.Services
                         .GetString() ?? "AI không trả lời.";
                 }
 
-                // 🔥 FIX 429 (Too Many Requests)
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    await Task.Delay(delay);
-                    delay *= 2; // exponential backoff
-                    continue;
-                }
-
-                // 🔥 FIX 503
-                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                // 🔥 FIX 429 + 503
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
+                    response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     await Task.Delay(delay);
                     delay *= 2;
@@ -218,48 +212,11 @@ namespace SDLS.Services.Services
                 return $"⚠️ Lỗi AI: {response.StatusCode}";
             }
 
-            return BuildFallbackAnswer(prompt);
-        }
-
-
-
-
-        private string BuildFallbackAnswer(string prompt)
-        {
-            if (prompt.ToLower().Contains("lộ trình"))
-            {
-                return """
-                ⚠️ AI đang bận, mình gợi ý nhanh:
-
-                ### 🚗 Lộ trình cơ bản
-                1. Học lý thuyết (1-2 tuần)
-                2. Làm 600 câu hỏi
-                3. Luyện sa hình
-                4. Ôn thi
-
-                📌 Khi hệ thống ổn định, mình sẽ tư vấn chi tiết hơn!
-                """;
-                            }
-
-                             if (prompt.ToLower().Contains("sa hình"))
-                            {
-                               return """
-                ⚠️ AI đang bận, mẹo nhanh:
-
-                ### 📌 Sa hình
-                - Đi chậm, đều ga
-                - Nhớ điểm canh
-                - Không vội
-
-                ✅ Luyện nhiều sẽ quen
-                """;
-            }
-
-            return "⚠️ Hệ thống đang bận, thử lại sau vài giây nhé!";
+            return "⚠️ AI quá tải, thử lại sau!";
         }
 
         // =========================
-        // 🧹 CLEAR SESSION
+        // 🧹 CLEAR
         // =========================
         public void ClearSession(string sessionId)
         {
