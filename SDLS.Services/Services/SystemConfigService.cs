@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Constants;
 using SDLS.Model.DTOs;
+using SDLS.Model.DTOs.ForumPost;
+using SDLS.Model.DTOs.Report;
 using SDLS.Model.DTOs.SystemConfig;
 using SDLS.Model.Helpers;
 using SDLS.Model.Models;
@@ -190,6 +192,61 @@ namespace SDLS.Services.Services
 
                 PendingContentChangeReportsCount = pendingContentChangeReportsCount,
                 PendingContentChangeReportsIncreaseFromYesterday = pendingContentChangeReportsToday - pendingContentChangeReportsYesterday
+            };
+        }
+
+        public async Task<InstructorDashboardSummaryDTO> GetInstructorDashboardSummaryAsync()
+        {
+            var contentChangeCategoryId = Guid.Parse("46936a12-e8cc-4298-beca-d381f74ed50e");
+
+            var forumPostCount = await _dbContext.ForumPosts
+                .AsNoTracking()
+                .CountAsync();
+
+            var forumPosts = await _dbContext.ForumPosts
+                .AsNoTracking()
+                .Include(x => x.User)
+                    .ThenInclude(u => u.Role)
+                .Include(x => x.PostImages.Where(img => img.Status != 0))
+                .OrderByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .Take(4)
+                .ToListAsync();
+
+            var contentChangeRequestCount = await _dbContext.Reports
+                .AsNoTracking()
+                .CountAsync(x => x.ReportCategoryId == contentChangeCategoryId && x.Status == -1);
+
+            var contentChangeReports = await _dbContext.Reports
+                .AsNoTracking()
+                .Include(x => x.User)
+                    .ThenInclude(u => u.Role)
+                .Include(x => x.ReportCategory)
+                .Include(x => x.ForumPost)
+                .Include(x => x.Question)
+                .Include(x => x.Simulation)
+                .Where(x => x.ReportCategoryId == contentChangeCategoryId && x.Status == -1)
+                .OrderByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .Take(4)
+                .ToListAsync();
+
+            var contentIssueReportCount = await _dbContext.Reports
+                .AsNoTracking()
+                .CountAsync(x => (x.SimulationId != null || x.QuestionId != null) && x.Status == -1);
+
+            var communityReportCount = await _dbContext.Reports
+                .AsNoTracking()
+                .CountAsync(x => (x.ForumPostId != null || x.ForumCommentId != null) && x.Status == -1);
+
+            return new InstructorDashboardSummaryDTO
+            {
+                ForumPostCount = forumPostCount,
+                ForumPosts = _mapper.Map<List<ForumPostDTO>>(forumPosts),
+                ContentChangeRequestCount = contentChangeRequestCount,
+                ContentChangeRequests = _mapper.Map<List<ReportDTO>>(contentChangeReports),
+                ContentIssueReportCount = contentIssueReportCount,
+                CommunityReportCount = communityReportCount
             };
         }
 

@@ -51,6 +51,14 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("dashboard-summary/instructor")]
+        public async Task<ActionResult<InstructorDashboardSummaryDTO>> GetInstructorDashboardSummary()
+        {
+            var result = await _service.GetInstructorDashboardSummaryAsync();
+            return Ok(result);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpGet("dashboard-summary/export")]
         public async Task<IActionResult> ExportDashboardSummary()
