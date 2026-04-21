@@ -75,6 +75,17 @@ namespace SDLS.API.Controllers
             return Ok(imported);
         }
 
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportToExcel(
+            [FromQuery] Guid? id,
+            [FromQuery] string? name,
+            [FromQuery] string? description,
+            [FromQuery] int? status = null)
+        {
+            var file = await _service.ExportToExcelAsync(id, name, description, status);
+            return File(file.Content, file.ContentType, file.FileName);
+        }
+
         [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpPut("{id}")]

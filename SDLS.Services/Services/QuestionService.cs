@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
@@ -196,6 +197,87 @@ namespace SDLS.Services.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Questions");
+
+            var headers = new[]
+            {
+                "QuestionLessonName",
+                "QuestionTopicName",
+                "QuestionCategoryName",
+                "Index",
+                "Content",
+                "Image",
+                "Explanation",
+                "Type",
+                "Answers",
+                "QuestionTagNames"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return Task.FromResult((
+                stream.ToArray(),
+                "question-import-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        }
+
+        public async Task<List<QuestionDTO>> ImportAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw ApiException.BadRequest("File không hợp lệ hoặc rỗng.");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension != ".xlsx")
+                throw ApiException.BadRequest("Chỉ hỗ trợ file .xlsx");
+
+            var rows = await ParseQuestionRowsFromXlsxAsync(file);
+            if (!rows.Any())
+                throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
+
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+
+            var lessonLookup = (await _questionLessonRepository.GetAllAsync(status: 1, role: role))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => NormalizeLookupKey(x.Name))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            var topicLookup = (await _questionTopicRepository.GetAllAsync(status: 1, role: role))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => NormalizeLookupKey(x.Name))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            var categoryLookup = (await _questionCategoryRepository.GetAllAsync(status: 1, role: role))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => NormalizeLookupKey(x.Name))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            var tagLookup = (await _tagRepository.GetAllAsync(status: 1, role: role))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => NormalizeLookupKey(x.Name))
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            var dtos = new List<QuestionCreateDTO>();
+            foreach (var row in rows)
+            {
+                var dto = BuildQuestionCreateDto(row.Data, row.RowNo, lessonLookup, topicLookup, categoryLookup, tagLookup);
+                dtos.Add(dto);
+            }
+
+            return await CreateManyAsync(dtos);
         }
 
         public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
@@ -501,6 +583,59 @@ namespace SDLS.Services.Services
         private static string NormalizeLookupKey(string? value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static async Task<List<(Dictionary<string, string> Data, int RowNo)>> ParseQuestionRowsFromXlsxAsync(IFormFile file)
+        {
+            await using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault()
+                ?? throw ApiException.BadRequest("File Excel không có worksheet.");
+
+            var firstRow = worksheet.FirstRowUsed();
+            if (firstRow == null)
+                throw ApiException.BadRequest("File Excel không có header.");
+
+            var headers = firstRow.CellsUsed()
+                .Select(c => c.GetString()?.Trim() ?? string.Empty)
+                .ToList();
+
+            var requiredHeaders = new[]
+            {
+                "QuestionLessonName",
+                "QuestionTopicName",
+                "QuestionCategoryName",
+                "Content",
+                "Answers"
+            };
+
+            foreach (var required in requiredHeaders)
+            {
+                if (!headers.Any(h => string.Equals(h, required, StringComparison.OrdinalIgnoreCase)))
+                    throw ApiException.BadRequest($"Thiếu cột bắt buộc: {required}.");
+            }
+
+            var result = new List<(Dictionary<string, string> Data, int RowNo)>();
+
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    continue;
+
+                var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < headers.Count; i++)
+                {
+                    var key = headers[i];
+                    if (string.IsNullOrWhiteSpace(key))
+                        continue;
+
+                    data[key] = row.Cell(i + 1).GetString();
+                }
+
+                result.Add((data, row.RowNumber()));
+            }
+
+            return result;
         }
     }
 }
