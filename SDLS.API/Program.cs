@@ -61,6 +61,8 @@ namespace SDLS.API
             builder.Services.AddScoped<ILessonImageRepository, LessonImageRepository>();
 
             builder.Services.AddScoped<ILessonImageService, LessonImageService>();
+            builder.Services.AddScoped<IPostImageRepository, PostImageRepository>();
+            builder.Services.AddScoped<IPostImageService, PostImageService>();
             builder.Services.AddScoped<IStorageService, StorageService>();
 
             builder.Services.AddScoped<ILearningProgressRepository, LearningProgressRepository>();
