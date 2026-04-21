@@ -206,16 +206,16 @@ namespace SDLS.Services.Services
 
             var headers = new[]
             {
-                "QuestionLessonName",
-                "QuestionTopicName",
-                "QuestionCategoryName",
+                "QuestionLessonId",
+                "QuestionTopicId",
+                "QuestionCategoryId",
                 "Index",
                 "Content",
                 "Image",
                 "Explanation",
                 "Type",
                 "Answers",
-                "QuestionTagNames"
+                "QuestionTagIds"
             };
 
             for (int i = 0; i < headers.Length; i++)
@@ -223,6 +223,17 @@ namespace SDLS.Services.Services
                 worksheet.Cell(1, i + 1).Value = headers[i];
                 worksheet.Cell(1, i + 1).Style.Font.Bold = true;
             }
+
+            worksheet.Cell(2, 1).Value = "00000000-0000-0000-0000-000000000001";
+            worksheet.Cell(2, 2).Value = "00000000-0000-0000-0000-000000000002";
+            worksheet.Cell(2, 3).Value = "00000000-0000-0000-0000-000000000003";
+            worksheet.Cell(2, 4).Value = "1";
+            worksheet.Cell(2, 5).Value = "Nội dung câu hỏi mẫu";
+            worksheet.Cell(2, 6).Value = "https://example.com/question-image.png";
+            worksheet.Cell(2, 7).Value = "Giải thích mẫu";
+            worksheet.Cell(2, 8).Value = "single";
+            worksheet.Cell(2, 9).Value = "Đáp án A|true;Đáp án B|false";
+            worksheet.Cell(2, 10).Value = "00000000-0000-0000-0000-000000000010;00000000-0000-0000-0000-000000000011";
 
             worksheet.Columns().AdjustToContents();
 
@@ -248,32 +259,10 @@ namespace SDLS.Services.Services
             if (!rows.Any())
                 throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
 
-            var role = UserContextHelper.GetRole(_httpContextAccessor);
-
-            var lessonLookup = (await _questionLessonRepository.GetAllAsync(status: 1, role: role))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var topicLookup = (await _questionTopicRepository.GetAllAsync(status: 1, role: role))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var categoryLookup = (await _questionCategoryRepository.GetAllAsync(status: 1, role: role))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
-            var tagLookup = (await _tagRepository.GetAllAsync(status: 1, role: role))
-                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                .GroupBy(x => NormalizeLookupKey(x.Name))
-                .ToDictionary(g => g.Key, g => g.First().Id);
-
             var dtos = new List<QuestionCreateDTO>();
             foreach (var row in rows)
             {
-                var dto = BuildQuestionCreateDto(row.Data, row.RowNo, lessonLookup, topicLookup, categoryLookup, tagLookup);
+                var dto = BuildQuestionCreateDto(row.Data, row.RowNo);
                 dtos.Add(dto);
             }
 
@@ -471,50 +460,36 @@ namespace SDLS.Services.Services
 
         private static QuestionCreateDTO BuildQuestionCreateDto(
             Dictionary<string, string> row,
-            int rowNo,
-            IReadOnlyDictionary<string, Guid> lessonLookup,
-            IReadOnlyDictionary<string, Guid> topicLookup,
-            IReadOnlyDictionary<string, Guid> categoryLookup,
-            IReadOnlyDictionary<string, Guid> tagLookup)
+            int rowNo)
         {
-            var importRow = new QuestionImportRowDTO
-            {
-                QuestionLessonName = GetRequired(row, "QuestionLessonName", rowNo),
-                QuestionTopicName = GetRequired(row, "QuestionTopicName", rowNo),
-                QuestionCategoryName = GetRequired(row, "QuestionCategoryName", rowNo),
-                Index = ParseIntOptional(row, "Index"),
-                Content = GetRequired(row, "Content", rowNo),
-                Image = GetOptional(row, "Image"),
-                Explanation = GetOptional(row, "Explanation"),
-                Type = GetOptional(row, "Type"),
-                Answers = GetRequired(row, "Answers", rowNo),
-                QuestionTagNames = GetOptional(row, "QuestionTagNames")
-            };
+            var lessonIdRaw = GetRequired(row, "QuestionLessonId", rowNo);
+            var topicIdRaw = GetRequired(row, "QuestionTopicId", rowNo);
+            var categoryIdRaw = GetRequired(row, "QuestionCategoryId", rowNo);
 
-            var lessonKey = NormalizeLookupKey(importRow.QuestionLessonName);
-            if (!lessonLookup.TryGetValue(lessonKey, out var lessonId))
-                throw new ArgumentException($"Không tìm thấy QuestionLesson theo tên: '{importRow.QuestionLessonName}'.");
+            if (!Guid.TryParse(lessonIdRaw, out var lessonId) || lessonId == Guid.Empty)
+                throw new ArgumentException($"QuestionLessonId không hợp lệ ở dòng {rowNo}.");
 
-            var topicKey = NormalizeLookupKey(importRow.QuestionTopicName);
-            if (!topicLookup.TryGetValue(topicKey, out var topicId))
-                throw new ArgumentException($"Không tìm thấy QuestionTopic theo tên: '{importRow.QuestionTopicName}'.");
+            if (!Guid.TryParse(topicIdRaw, out var topicId) || topicId == Guid.Empty)
+                throw new ArgumentException($"QuestionTopicId không hợp lệ ở dòng {rowNo}.");
 
-            var categoryKey = NormalizeLookupKey(importRow.QuestionCategoryName);
-            if (!categoryLookup.TryGetValue(categoryKey, out var categoryId))
-                throw new ArgumentException($"Không tìm thấy QuestionCategory theo tên: '{importRow.QuestionCategoryName}'.");
+            if (!Guid.TryParse(categoryIdRaw, out var categoryId) || categoryId == Guid.Empty)
+                throw new ArgumentException($"QuestionCategoryId không hợp lệ ở dòng {rowNo}.");
+
+            var answersRaw = GetRequired(row, "Answers", rowNo);
+            var type = GetRequired(row, "Type", rowNo);
 
             var dto = new QuestionCreateDTO
             {
                 QuestionLessonId = lessonId,
                 QuestionTopicId = topicId,
                 QuestionCategoryId = categoryId,
-                Index = importRow.Index,
-                Content = importRow.Content,
-                Image = importRow.Image,
-                Explanation = importRow.Explanation,
-                Type = importRow.Type,
-                Answers = ParseAnswers(importRow.Answers),
-                QuestionTags = ParseQuestionTags(importRow.QuestionTagNames, tagLookup)
+                Index = ParseIntOptional(row, "Index"),
+                Content = GetRequired(row, "Content", rowNo),
+                Image = GetOptional(row, "Image"),
+                Explanation = GetOptional(row, "Explanation"),
+                Type = type,
+                Answers = ParseAnswers(answersRaw),
+                QuestionTags = ParseQuestionTags(GetOptional(row, "QuestionTagIds"))
             };
 
             return dto;
@@ -543,7 +518,7 @@ namespace SDLS.Services.Services
             return result;
         }
 
-        private static List<QuestionTagCreateDTO> ParseQuestionTags(string? raw, IReadOnlyDictionary<string, Guid> tagLookup)
+        private static List<QuestionTagCreateDTO> ParseQuestionTags(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
                 return new List<QuestionTagCreateDTO>();
@@ -551,9 +526,8 @@ namespace SDLS.Services.Services
             var tags = new List<QuestionTagCreateDTO>();
             foreach (var part in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var key = NormalizeLookupKey(part);
-                if (!tagLookup.TryGetValue(key, out var tagId))
-                    throw new ArgumentException($"Không tìm thấy Tag theo tên: '{part}'.");
+                if (!Guid.TryParse(part, out var tagId) || tagId == Guid.Empty)
+                    throw new ArgumentException($"TagId không hợp lệ: '{part}'.");
 
                 tags.Add(new QuestionTagCreateDTO { TagId = tagId });
             }
@@ -602,10 +576,11 @@ namespace SDLS.Services.Services
 
             var requiredHeaders = new[]
             {
-                "QuestionLessonName",
-                "QuestionTopicName",
-                "QuestionCategoryName",
+                "QuestionLessonId",
+                "QuestionTopicId",
+                "QuestionCategoryId",
                 "Content",
+                "Type",
                 "Answers"
             };
 
