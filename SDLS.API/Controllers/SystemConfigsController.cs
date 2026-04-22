@@ -43,6 +43,30 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpGet("dashboard-summary")]
+        public async Task<ActionResult<SystemDashboardSummaryDTO>> GetDashboardSummary()
+        {
+            var result = await _service.GetDashboardSummaryAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("dashboard-summary/instructor")]
+        public async Task<ActionResult<InstructorDashboardSummaryDTO>> GetInstructorDashboardSummary()
+        {
+            var result = await _service.GetInstructorDashboardSummaryAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("dashboard-summary/export")]
+        public async Task<IActionResult> ExportDashboardSummary()
+        {
+            var file = await _service.ExportDashboardSummaryExcelAsync();
+            return File(file.Content, file.ContentType, file.FileName);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<SystemConfigDTO>> GetById(Guid id)
         {

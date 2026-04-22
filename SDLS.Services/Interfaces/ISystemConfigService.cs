@@ -21,6 +21,10 @@ namespace SDLS.Services.Interfaces
             int page = 1,
             int pageSize = 20);
 
+        Task<SystemDashboardSummaryDTO> GetDashboardSummaryAsync();
+        Task<InstructorDashboardSummaryDTO> GetInstructorDashboardSummaryAsync();
+        Task<(byte[] Content, string FileName, string ContentType)> ExportDashboardSummaryExcelAsync();
+
         Task<SystemConfigDTO> GetByIdAsync(Guid id);
         Task<SystemConfigDTO> CreateAsync(SystemConfigCreateDTO dto);
         Task<SystemConfigDTO> UpdateAsync(Guid id, SystemConfigUpdateDTO dto);

@@ -12,6 +12,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using SDLS.Services.ApiExceptions;
+
 
 namespace SDLS.Services.Services
 {
@@ -40,8 +42,22 @@ namespace SDLS.Services.Services
             // 1️⃣ check pending theo user
             var pending = await _paymentRepository.GetPendingByUserIdAsync(userId);
             if (pending != null)
-                throw new Exception("Bạn đang có thanh toán chưa hoàn thành");
+            {
+                pending.Status = -1; // Cancelled
 
+                pending.UpdateAt = DateTime.SpecifyKind(
+                    DateTime.UtcNow,
+                    DateTimeKind.Unspecified
+                );
+
+                await _paymentRepository.UpdateAsync(pending);
+
+
+
+                var newPending = await _paymentRepository.GetPendingByUserIdAsync(userId);
+                if (newPending != null)
+                    throw ApiException.Conflict("Có lỗi xảy ra, vui lòng thử lại");
+            }
             var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             // 2️⃣ lưu DB
@@ -53,6 +69,7 @@ namespace SDLS.Services.Services
                 Amount = model.Amount,
                 Method = "PayOS",
                 Status = 0,
+                Response = "not paid",
                 Note = $"Membership Payment - {orderCode}",
                 CreateAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             };
@@ -71,7 +88,7 @@ namespace SDLS.Services.Services
                 amount = model.Amount,
                 description = $"OC:{orderCode}", 
                 cancelUrl = "https://green-light-app.vercel.app/?message=Thanh%20toán%20thất%20bại",
-                returnUrl = "https://xnovaapi20251024123055.azurewebsites.net/api/Payment/webhook",
+                returnUrl = "https://green-light-app.vercel.app/?message=Thanh%20toán%20thành%20công",
                 items
             };
 
@@ -114,7 +131,10 @@ namespace SDLS.Services.Services
             var computed = CreateWebhookSignature(data, _client.ChecksumKey);
 
             if (computed != signature)
-                throw new Exception("Invalid signature");
+            {
+                Console.WriteLine("Invalid signature");
+                return; // ❌ KHÔNG throw
+            }
 
             bool success = payload.GetProperty("success").GetBoolean();
             if (!success) return;
@@ -139,16 +159,21 @@ namespace SDLS.Services.Services
         private async Task UpgradeUserRole(Guid userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null) return;
+            if (user == null)
+                throw ApiException.NotFound("User không tồn tại");
 
-            var roleUser = await _roleRepository.GetByNameAsync("User");
-            if (roleUser == null)
-                throw new Exception("Role User không tồn tại");
+            // 🔥 RoleId của bạn
+            var guestRoleId = Guid.Parse("67b62c82-e459-4b1a-b912-e1758a5c87c4");
+            var userRoleId = Guid.Parse("66efa899-db8f-4866-bfe9-6fe9d98eca7e");
 
-            if (user.RoleId == roleUser.Id) return;
+            // ✅ chỉ update nếu đang là Guest
+            if (user.RoleId != guestRoleId)
+                return;
 
-            user.RoleId = roleUser.Id;
+            // 🔥 update role
+            user.RoleId = userRoleId;
             user.UpdateAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
             await _userRepository.UpdateAsync(user);
         }
 

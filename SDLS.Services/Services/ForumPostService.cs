@@ -133,7 +133,7 @@ namespace SDLS.Services.Services
 
         public async Task<ForumPostDTO> CreateByInstructorAsync(ForumPostCreateDTO dto)
         {
-            return await CreateInternalAsync(dto, 1);
+            return await CreateInternalAsync(dto, 4);
         }
 
         private async Task<ForumPostDTO> CreateInternalAsync(ForumPostCreateDTO dto, int status)
@@ -179,8 +179,8 @@ namespace SDLS.Services.Services
                 {
                     var notification = new NotificationCreateDTO
                     {
-                        Title = "Bài vi?t m?i",
-                        Content = $"Có bài vi?t m?i c?n duy?t: '{forumPost.Title}'.",
+                        Title = "Bài viết mới",
+                        Content = $"Có bài viết mới cần duyệt: '{forumPost.Title}'.",
                         Status = 2,
                         UserNotifications = instructorUserIds
                             .Select(userId => new UserNotificationCreateDTO { UserId = userId })

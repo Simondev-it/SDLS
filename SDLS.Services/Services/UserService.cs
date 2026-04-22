@@ -75,6 +75,9 @@ namespace SDLS.Services.Services
             var users = await _userRepository.GetAllBasicAsync();
 
             users = ApplyFilters(users, id, roleId, email, name, status);
+            users = users
+                .OrderByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id);
 
             var mappedUsers = _mapper.Map<List<UserDTO>>(users);
 
@@ -225,10 +228,7 @@ namespace SDLS.Services.Services
             var existing = await _userRepository.GetByIdAsync(id);
             if (existing == null) return null;
 
-            if (existing.Status != 1 && existing.Status != 2)
-                throw ApiException.BadRequest("Chỉ hỗ trợ chuyển trạng thái giữa 1 và 2.");
-
-            existing.Status = existing.Status == 1 ? 2 : 1;
+            existing.Status = existing.Status == 2 ? 1 : 2;
             await _userRepository.UpdateAsync(existing);
             return _mapper.Map<UserDTO>(existing);
         }

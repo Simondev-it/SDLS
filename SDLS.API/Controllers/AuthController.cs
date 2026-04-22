@@ -74,7 +74,7 @@ namespace SDLS.API.Controllers
             try
             {
                 var otp = await _auth.SendOtpAsync(request.Email);
-                return Ok(new { otp }); // test
+                return Ok(new { otp }); 
             }
             catch (Exception ex)
             {

@@ -52,7 +52,7 @@ namespace SDLS.Services.Services
                 accessToken,
                 refreshToken,
 
-                // ✅ thêm info user
+                
                 user = new
                 {
                     id = user.Id,
@@ -75,10 +75,10 @@ namespace SDLS.Services.Services
             if (string.IsNullOrEmpty(userIdStr))
                 throw new Exception("Token không hợp lệ");
 
-            // ✅ Convert đúng kiểu Guid
+            
             var userId = Guid.Parse(userIdStr);
 
-            // ✅ Dùng repo mới (có include Role)
+         
             var user = await _userRepo.GetByIdAsync(userId);
 
             if (user == null)
@@ -131,7 +131,7 @@ namespace SDLS.Services.Services
         //////////
 
 
-        // ✅ STEP 1: Gửi OTP
+        // 
         public async Task<string> RegisterWithOtpAsync(UserRegisterRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email))
@@ -162,28 +162,28 @@ namespace SDLS.Services.Services
             return "Đã gửi OTP đến email";
         }
 
-        // ✅ STEP 2: Confirm OTP
+        // 
         public async Task<bool> ConfirmOtpAsync(ConfirmOtpModel model)
         {
-            // 🔒 1. Check cache OTP
+            
             if (!_cache.TryGetValue(model.Email, out TempUserRegisterModel temp))
                 throw new Exception("OTP đã hết hạn hoặc không tồn tại");
 
-            // 🔒 2. Check OTP đúng
+           
             if (temp.Otp != model.Otp)
                 throw new Exception("OTP không đúng");
 
-            // 🔒 3. Check email đã tồn tại chưa (tránh spam)
+            
             var existingUser = await _userRepo.GetByEmailAsync(temp.Email);
             if (existingUser != null)
                 throw new Exception("Email đã được sử dụng");
 
-            //// 🔥 4. Check Role tồn tại (FIX LỖI FK)
+            ////Check Role tồn tại (FIX LỖI FK)
             //var roleExists = await _context.Roles.AnyAsync(r => r.Id == temp.RoleId);
             //if (!roleExists)
             //    throw new Exception("Role không tồn tại");
 
-            // 🚀 5. Tạo user
+           
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -197,27 +197,26 @@ namespace SDLS.Services.Services
                 CreateAt = DateTime.UtcNow
             };
 
-            // 💾 6. Save DB
+            
             await _userRepo.AddAsync(user);
 
-            // 🧹 7. Xóa OTP
             _cache.Remove(model.Email);
 
-            // 📧 8. Gửi mail thành công (KHÔNG làm fail flow)
+            
             try
             {
                 await SendRegisterSuccessEmail(user.Email, user.Name);
             }
             catch (Exception ex)
             {
-                // 👉 chỉ log, không throw
+               
                 Console.WriteLine("Send mail failed: " + ex.Message);
             }
 
             return true;
         }
 
-        // ✅ STEP 3: gửi OTP riêng
+        
         public async Task<string> SendOtpAsync(string email)
         {
             var otp = new Random().Next(100000, 999999).ToString();
@@ -225,7 +224,7 @@ namespace SDLS.Services.Services
             return otp;
         }
 
-        // 📧 SEND MAIL
+        
         private async Task SendEmail(string to, string name, string otp)
         {
             var email = new MimeMessage();
@@ -411,16 +410,15 @@ namespace SDLS.Services.Services
             if (user == null)
                 throw new Exception("User không tồn tại");
 
-            // 🔐 Hash password
+            
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.UpdateAt = DateTime.UtcNow;
 
             await _userRepo.UpdateAsync(user);
 
-            // 🧹 Xóa cache
             _cache.Remove(request.Email + "_fp");
 
-            // 📧 gửi mail thông báo đổi pass
+            
             try
             {
                 await SendResetPasswordSuccessEmail(user.Email, user.Name);

@@ -37,7 +37,7 @@ namespace SDLS.Repositories.Repositories
             _memoryCache.Set(key, history, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-                SlidingExpiration = TimeSpan.FromMinutes(30) // 🔥 thêm để tối ưu
+                SlidingExpiration = TimeSpan.FromMinutes(30) //thêm để tối ưu
             });
         }
 

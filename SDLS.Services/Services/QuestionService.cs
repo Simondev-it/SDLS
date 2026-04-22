@@ -307,6 +307,9 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound($"Không tìm thấy câu hỏi với Id {id}");
 
+            if (existing.Status != 0 && existing.Status != 1)
+                throw ApiException.BadRequest("Chỉ hỗ trợ chuyển trạng thái giữa 0 và 1.");
+
             var now = DateTimeHelper.GetVietnamNow();
             var nextStatus = existing.Status == 0 ? 1 : 0;
 

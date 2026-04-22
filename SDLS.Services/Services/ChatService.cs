@@ -41,15 +41,13 @@ namespace SDLS.Services.Services
         public string GetGreeting()
             => "Xin chào! Mình là trợ lý học lái xe 🚗";
 
-        // =========================
-        // 🧠 CHAT THÔNG MINH
-        // =========================
+        
         public async Task<(string Reply, string SessionId)> AskAsync(string prompt, string? userId)
         {
             string sessionId = userId ?? Guid.NewGuid().ToString();
             string cleanedPrompt = prompt.Trim();
 
-            // 🔥 Lấy user + map sang AI profile
+            
             UserAIProfile? profile = null;
 
             if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out Guid uid))
@@ -69,7 +67,7 @@ namespace SDLS.Services.Services
 
             string systemPrompt = SystemPromptBuilder.Build(profile);
 
-            // ❌ KHÔNG dùng history cho lộ trình → tránh lạc đề
+            //  dùng history cho lộ trình → tránh lạc đề
             var history = IsLearningIntent(cleanedPrompt)
                 ? new List<(string, string)>()
                 : _chatRepository.GetHistory(sessionId);
@@ -83,9 +81,7 @@ namespace SDLS.Services.Services
             return (reply, sessionId);
         }
 
-        // =========================
-        // 📚 EXERCISE MODE
-        // =========================
+        
         public async Task<string> AskExerciseAsync(string question)
         {
             string prompt = $"""
@@ -107,9 +103,6 @@ namespace SDLS.Services.Services
             return await SendToGeminiAsync(prompt);
         }
 
-        // =========================
-        // 🧠 BUILD CONTEXT
-        // =========================
         private static string BuildContext(
             string systemPrompt,
             IEnumerable<(string Question, string Answer)> history,
@@ -132,9 +125,7 @@ namespace SDLS.Services.Services
             return sb.ToString();
         }
 
-        // =========================
-        // 🔥 INTENT DETECT
-        // =========================
+        
         private static bool IsLearningIntent(string prompt)
         {
             var p = prompt.ToLower();
@@ -146,15 +137,13 @@ namespace SDLS.Services.Services
                 || p.Contains("mất bao lâu");
         }
 
-        // =========================
-        // 🌐 CALL AI (ANTI 429)
-        // =========================
+        
         private async Task<string> SendToGeminiAsync(string prompt)
         {
             if (prompt.Length > 8000)
                 prompt = prompt[..8000];
 
-            // 🔥 chống spam
+            // chống spam
             if ((DateTime.Now - _lastCallTime).TotalMilliseconds < 1000)
                 return "⚠️ Bạn hỏi nhanh quá, chậm lại chút nhé!";
 
@@ -200,7 +189,7 @@ namespace SDLS.Services.Services
                         .GetString() ?? "AI không trả lời.";
                 }
 
-                // 🔥 FIX 429 + 503
+               
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
                     response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
@@ -215,9 +204,7 @@ namespace SDLS.Services.Services
             return "⚠️ AI quá tải, thử lại sau!";
         }
 
-        // =========================
-        // 🧹 CLEAR
-        // =========================
+        
         public void ClearSession(string sessionId)
         {
             _chatRepository.ClearHistory(sessionId);

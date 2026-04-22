@@ -31,9 +31,12 @@ namespace SDLS.Repositories.Repositories
             return await _context.PostImages.Include(p => p.ForumPost).FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<PostImage> GetByPostIdAsync(Guid id)
+        public async Task<IEnumerable<PostImage>> GetByPostIdAsync(Guid id)
         {
-            return await _context.PostImages.Include(l => l.ForumPost).FirstOrDefaultAsync(l => l.ForumPostId == id);
+            return await _context.PostImages
+                .Include(p => p.ForumPost)
+                .Where(p => p.ForumPostId == id)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<PostImage>> GetAllAsync()
