@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Answer;
@@ -198,6 +199,76 @@ namespace SDLS.Services.Services
             }
         }
 
+        public Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Questions");
+
+            var headers = new[]
+            {
+                "QuestionLessonId",
+                "QuestionTopicId",
+                "QuestionCategoryId",
+                "Index",
+                "Content",
+                "Image",
+                "Explanation",
+                "Type",
+                "Answers",
+                "QuestionTagIds"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            worksheet.Cell(2, 1).Value = "00000000-0000-0000-0000-000000000001";
+            worksheet.Cell(2, 2).Value = "00000000-0000-0000-0000-000000000002";
+            worksheet.Cell(2, 3).Value = "00000000-0000-0000-0000-000000000003";
+            worksheet.Cell(2, 4).Value = "1";
+            worksheet.Cell(2, 5).Value = "Nội dung câu hỏi mẫu";
+            worksheet.Cell(2, 6).Value = "https://example.com/question-image.png";
+            worksheet.Cell(2, 7).Value = "Giải thích mẫu";
+            worksheet.Cell(2, 8).Value = "single";
+            worksheet.Cell(2, 9).Value = "Đáp án A|true;Đáp án B|false";
+            worksheet.Cell(2, 10).Value = "00000000-0000-0000-0000-000000000010;00000000-0000-0000-0000-000000000011";
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return Task.FromResult((
+                stream.ToArray(),
+                "question-import-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        }
+
+        public async Task<List<QuestionDTO>> ImportAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw ApiException.BadRequest("File không hợp lệ hoặc rỗng.");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension != ".xlsx")
+                throw ApiException.BadRequest("Chỉ hỗ trợ file .xlsx");
+
+            var rows = await ParseQuestionRowsFromXlsxAsync(file);
+            if (!rows.Any())
+                throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
+
+            var dtos = new List<QuestionCreateDTO>();
+            foreach (var row in rows)
+            {
+                var dto = BuildQuestionCreateDto(row.Data, row.RowNo);
+                dtos.Add(dto);
+            }
+
+            return await CreateManyAsync(dtos);
+        }
+
         public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
             var existing = await _questionRepository.GetByIdForUpdateAsync(id);
@@ -389,50 +460,36 @@ namespace SDLS.Services.Services
 
         private static QuestionCreateDTO BuildQuestionCreateDto(
             Dictionary<string, string> row,
-            int rowNo,
-            IReadOnlyDictionary<string, Guid> lessonLookup,
-            IReadOnlyDictionary<string, Guid> topicLookup,
-            IReadOnlyDictionary<string, Guid> categoryLookup,
-            IReadOnlyDictionary<string, Guid> tagLookup)
+            int rowNo)
         {
-            var importRow = new QuestionImportRowDTO
-            {
-                QuestionLessonName = GetRequired(row, "QuestionLessonName", rowNo),
-                QuestionTopicName = GetRequired(row, "QuestionTopicName", rowNo),
-                QuestionCategoryName = GetRequired(row, "QuestionCategoryName", rowNo),
-                Index = ParseIntOptional(row, "Index"),
-                Content = GetRequired(row, "Content", rowNo),
-                Image = GetOptional(row, "Image"),
-                Explanation = GetOptional(row, "Explanation"),
-                Type = GetOptional(row, "Type"),
-                Answers = GetRequired(row, "Answers", rowNo),
-                QuestionTagNames = GetOptional(row, "QuestionTagNames")
-            };
+            var lessonIdRaw = GetRequired(row, "QuestionLessonId", rowNo);
+            var topicIdRaw = GetRequired(row, "QuestionTopicId", rowNo);
+            var categoryIdRaw = GetRequired(row, "QuestionCategoryId", rowNo);
 
-            var lessonKey = NormalizeLookupKey(importRow.QuestionLessonName);
-            if (!lessonLookup.TryGetValue(lessonKey, out var lessonId))
-                throw new ArgumentException($"Không tìm thấy QuestionLesson theo tên: '{importRow.QuestionLessonName}'.");
+            if (!Guid.TryParse(lessonIdRaw, out var lessonId) || lessonId == Guid.Empty)
+                throw new ArgumentException($"QuestionLessonId không hợp lệ ở dòng {rowNo}.");
 
-            var topicKey = NormalizeLookupKey(importRow.QuestionTopicName);
-            if (!topicLookup.TryGetValue(topicKey, out var topicId))
-                throw new ArgumentException($"Không tìm thấy QuestionTopic theo tên: '{importRow.QuestionTopicName}'.");
+            if (!Guid.TryParse(topicIdRaw, out var topicId) || topicId == Guid.Empty)
+                throw new ArgumentException($"QuestionTopicId không hợp lệ ở dòng {rowNo}.");
 
-            var categoryKey = NormalizeLookupKey(importRow.QuestionCategoryName);
-            if (!categoryLookup.TryGetValue(categoryKey, out var categoryId))
-                throw new ArgumentException($"Không tìm thấy QuestionCategory theo tên: '{importRow.QuestionCategoryName}'.");
+            if (!Guid.TryParse(categoryIdRaw, out var categoryId) || categoryId == Guid.Empty)
+                throw new ArgumentException($"QuestionCategoryId không hợp lệ ở dòng {rowNo}.");
+
+            var answersRaw = GetRequired(row, "Answers", rowNo);
+            var type = GetRequired(row, "Type", rowNo);
 
             var dto = new QuestionCreateDTO
             {
                 QuestionLessonId = lessonId,
                 QuestionTopicId = topicId,
                 QuestionCategoryId = categoryId,
-                Index = importRow.Index,
-                Content = importRow.Content,
-                Image = importRow.Image,
-                Explanation = importRow.Explanation,
-                Type = importRow.Type,
-                Answers = ParseAnswers(importRow.Answers),
-                QuestionTags = ParseQuestionTags(importRow.QuestionTagNames, tagLookup)
+                Index = ParseIntOptional(row, "Index"),
+                Content = GetRequired(row, "Content", rowNo),
+                Image = GetOptional(row, "Image"),
+                Explanation = GetOptional(row, "Explanation"),
+                Type = type,
+                Answers = ParseAnswers(answersRaw),
+                QuestionTags = ParseQuestionTags(GetOptional(row, "QuestionTagIds"))
             };
 
             return dto;
@@ -461,7 +518,7 @@ namespace SDLS.Services.Services
             return result;
         }
 
-        private static List<QuestionTagCreateDTO> ParseQuestionTags(string? raw, IReadOnlyDictionary<string, Guid> tagLookup)
+        private static List<QuestionTagCreateDTO> ParseQuestionTags(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
                 return new List<QuestionTagCreateDTO>();
@@ -469,9 +526,8 @@ namespace SDLS.Services.Services
             var tags = new List<QuestionTagCreateDTO>();
             foreach (var part in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var key = NormalizeLookupKey(part);
-                if (!tagLookup.TryGetValue(key, out var tagId))
-                    throw new ArgumentException($"Không tìm thấy Tag theo tên: '{part}'.");
+                if (!Guid.TryParse(part, out var tagId) || tagId == Guid.Empty)
+                    throw new ArgumentException($"TagId không hợp lệ: '{part}'.");
 
                 tags.Add(new QuestionTagCreateDTO { TagId = tagId });
             }
@@ -501,6 +557,60 @@ namespace SDLS.Services.Services
         private static string NormalizeLookupKey(string? value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static async Task<List<(Dictionary<string, string> Data, int RowNo)>> ParseQuestionRowsFromXlsxAsync(IFormFile file)
+        {
+            await using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault()
+                ?? throw ApiException.BadRequest("File Excel không có worksheet.");
+
+            var firstRow = worksheet.FirstRowUsed();
+            if (firstRow == null)
+                throw ApiException.BadRequest("File Excel không có header.");
+
+            var headers = firstRow.CellsUsed()
+                .Select(c => c.GetString()?.Trim() ?? string.Empty)
+                .ToList();
+
+            var requiredHeaders = new[]
+            {
+                "QuestionLessonId",
+                "QuestionTopicId",
+                "QuestionCategoryId",
+                "Content",
+                "Type",
+                "Answers"
+            };
+
+            foreach (var required in requiredHeaders)
+            {
+                if (!headers.Any(h => string.Equals(h, required, StringComparison.OrdinalIgnoreCase)))
+                    throw ApiException.BadRequest($"Thiếu cột bắt buộc: {required}.");
+            }
+
+            var result = new List<(Dictionary<string, string> Data, int RowNo)>();
+
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    continue;
+
+                var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < headers.Count; i++)
+                {
+                    var key = headers[i];
+                    if (string.IsNullOrWhiteSpace(key))
+                        continue;
+
+                    data[key] = row.Cell(i + 1).GetString();
+                }
+
+                result.Add((data, row.RowNumber()));
+            }
+
+            return result;
         }
     }
 }

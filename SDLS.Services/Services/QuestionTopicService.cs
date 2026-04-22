@@ -139,6 +139,48 @@ namespace SDLS.Services.Services
             return createdItems;
         }
 
+        public async Task<(byte[] Content, string FileName, string ContentType)> ExportToExcelAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null)
+        {
+            var items = await GetAllAsync(id, name, description, status);
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("QuestionTopics");
+
+            var headers = new[] { "Id", "Name", "Description", "Status", "CreateAt", "UpdateAt" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            for (int row = 0; row < items.Count; row++)
+            {
+                var item = items[row];
+                var r = row + 2;
+
+                worksheet.Cell(r, 1).Value = item.Id.ToString();
+                worksheet.Cell(r, 2).Value = item.Name;
+                worksheet.Cell(r, 3).Value = item.Description ?? string.Empty;
+                worksheet.Cell(r, 4).Value = item.Status;
+                worksheet.Cell(r, 5).Value = item.CreateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+                worksheet.Cell(r, 6).Value = item.UpdateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return (
+                stream.ToArray(),
+                "question-topics.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+
         public async Task<QuestionTopicDTO> UpdateAsync(Guid id, QuestionTopicUpdateDTO dto)
         {
             var existing = await _repository.GetByIdForUpdateAsync(id);

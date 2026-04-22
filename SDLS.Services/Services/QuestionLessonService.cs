@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 using SDLS.Model.DTOs;
 using SDLS.Model.Helpers;
@@ -124,6 +125,157 @@ namespace SDLS.Services.Services
             await _repository.UpdateAsync(lesson);
 
             return _mapper.Map<QuestionLessonDTO>(lesson);
+        }
+
+        public Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("QuestionLessons");
+
+            var headers = new[] { "QuestionChapterName", "Index", "Name", "Description", "Content" };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return Task.FromResult((
+                stream.ToArray(),
+                "question-lesson-import-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        }
+
+        public async Task<List<QuestionLessonDTO>> ImportAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw ApiException.BadRequest("File không hợp lệ hoặc rỗng.");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension != ".xlsx")
+                throw ApiException.BadRequest("Chỉ hỗ trợ file .xlsx");
+
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var chapters = await _questionChapterRepository.GetAllAsync(status: 1, role: role);
+            var chapterLookup = chapters
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => x.Name!.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
+
+            var items = await ParseXlsxAsync(file, chapterLookup);
+            if (items.Count == 0)
+                throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
+
+            var createdItems = new List<QuestionLessonDTO>();
+            foreach (var item in items)
+            {
+                var created = await CreateAsync(item);
+                createdItems.Add(created);
+            }
+
+            return createdItems;
+        }
+
+        public async Task<(byte[] Content, string FileName, string ContentType)> ExportToExcelAsync(
+            Guid? id = null,
+            Guid? questionChapterId = null,
+            string? name = null,
+            string? description = null,
+            string? content = null,
+            int? status = null)
+        {
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var items = await _repository.GetAllAsync(id, questionChapterId, name, description, content, status, role);
+            var ordered = items
+                .OrderByDescending(x => x.UpdateAt ?? x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.CreateAt ?? DateTime.MinValue)
+                .ThenByDescending(x => x.Id)
+                .ToList();
+
+            var lessonIds = ordered.Select(x => x.Id).ToList();
+            var lessonImages = await _repository.GetLessonImagesByLessonIdsAsync(lessonIds, role);
+            var imageLookup = lessonImages
+                .GroupBy(x => x.QuestionLessonId)
+                .ToDictionary(g => g.Key, g => _mapper.Map<List<QuestionLessonImageDTO>>(g.ToList()));
+
+            var dtos = _mapper.Map<List<QuestionLessonDTO>>(ordered);
+            foreach (var dto in dtos)
+            {
+                if (imageLookup.TryGetValue(dto.Id, out var images))
+                    dto.LessonImages = images;
+            }
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("QuestionLessons");
+
+            var headers = new[]
+            {
+                "Id",
+                "QuestionChapterId",
+                "QuestionChapterName",
+                "QuestionChapterIndex",
+                "QuestionChapterStatus",
+                "Index",
+                "Name",
+                "Description",
+                "Content",
+                "Status",
+                "CreateAt",
+                "UpdateAt",
+                "LessonImageCount",
+                "LessonImageIds",
+                "LessonImageNames",
+                "LessonImageUrls",
+                "LessonImageStatuses",
+                "LessonImageCreateAts",
+                "LessonImageUpdateAts"
+            };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            for (int row = 0; row < dtos.Count; row++)
+            {
+                var item = dtos[row];
+                var r = row + 2;
+
+                worksheet.Cell(r, 1).Value = item.Id.ToString();
+                worksheet.Cell(r, 2).Value = item.QuestionChapterId.ToString();
+                worksheet.Cell(r, 3).Value = item.QuestionChapter?.Name ?? string.Empty;
+                worksheet.Cell(r, 4).Value = item.QuestionChapter?.Index;
+                worksheet.Cell(r, 5).Value = item.QuestionChapter?.Status;
+                worksheet.Cell(r, 6).Value = item.Index;
+                worksheet.Cell(r, 7).Value = item.Name;
+                worksheet.Cell(r, 8).Value = item.Description ?? string.Empty;
+                worksheet.Cell(r, 9).Value = item.Content ?? string.Empty;
+                worksheet.Cell(r, 10).Value = item.Status;
+                worksheet.Cell(r, 11).Value = item.CreateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+                worksheet.Cell(r, 12).Value = item.UpdateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty;
+                worksheet.Cell(r, 13).Value = item.LessonImages.Count;
+                worksheet.Cell(r, 14).Value = string.Join(" | ", item.LessonImages.Select(x => x.Id));
+                worksheet.Cell(r, 15).Value = string.Join(" | ", item.LessonImages.Select(x => x.Name));
+                worksheet.Cell(r, 16).Value = string.Join(" | ", item.LessonImages.Select(x => x.Url));
+                worksheet.Cell(r, 17).Value = string.Join(" | ", item.LessonImages.Select(x => x.Status));
+                worksheet.Cell(r, 18).Value = string.Join(" | ", item.LessonImages.Select(x => x.CreateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty));
+                worksheet.Cell(r, 19).Value = string.Join(" | ", item.LessonImages.Select(x => x.UpdateAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty));
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return (
+                stream.ToArray(),
+                "question-lessons.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
 
         public async Task<QuestionLessonDTO> UpdateAsync(Guid id, QuestionLessonUpdateDTO dto)
@@ -289,6 +441,94 @@ namespace SDLS.Services.Services
             {
                 _repository.AddLessonImages(imagesToAdd);
             }
+        }
+
+        private static async Task<List<QuestionLessonCreateDTO>> ParseXlsxAsync(
+            IFormFile file,
+            Dictionary<string, Guid> chapterLookup)
+        {
+            await using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault()
+                ?? throw ApiException.BadRequest("File Excel không có worksheet.");
+
+            var firstRow = worksheet.FirstRowUsed();
+            if (firstRow == null)
+                throw ApiException.BadRequest("File Excel không có header.");
+
+            var headerMap = BuildHeaderMap(firstRow.CellsUsed().Select(c => c.GetString()).ToList());
+            var result = new List<QuestionLessonCreateDTO>();
+
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                if (row.CellsUsed().All(c => string.IsNullOrWhiteSpace(c.GetString())))
+                    continue;
+
+                var chapterName = GetCellValue(row, headerMap, "QuestionChapterName")?.Trim();
+                if (string.IsNullOrWhiteSpace(chapterName) || !chapterLookup.TryGetValue(chapterName, out var chapterId))
+                    throw ApiException.BadRequest($"Dòng {row.RowNumber()}: QuestionChapterName không tồn tại hoặc để trống.");
+
+                var name = GetCellValue(row, headerMap, "Name")?.Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                    throw ApiException.BadRequest($"Dòng {row.RowNumber()}: Name là bắt buộc.");
+
+                int? index = null;
+                var indexRaw = GetCellValue(row, headerMap, "Index")?.Trim();
+                if (!string.IsNullOrWhiteSpace(indexRaw) && int.TryParse(indexRaw, out var parsedIndex))
+                    index = parsedIndex;
+
+                result.Add(new QuestionLessonCreateDTO
+                {
+                    QuestionChapterId = chapterId,
+                    Index = index,
+                    Name = name,
+                    Description = GetCellValue(row, headerMap, "Description")?.Trim(),
+                    Content = GetCellValue(row, headerMap, "Content")
+                });
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, int> BuildHeaderMap(List<string> headers)
+        {
+            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var key = NormalizeHeader(headers[i]);
+                if (string.IsNullOrWhiteSpace(key))
+                    continue;
+
+                map[key] = i;
+            }
+
+            var required = new[] { "questionchaptername", "name" };
+            foreach (var key in required)
+            {
+                if (!map.ContainsKey(key))
+                    throw ApiException.BadRequest($"Thiếu cột bắt buộc: {key}");
+            }
+
+            return map;
+        }
+
+        private static string? GetCellValue(IXLRow row, Dictionary<string, int> headerMap, string key)
+        {
+            var normalizedKey = NormalizeHeader(key);
+            if (!headerMap.TryGetValue(normalizedKey, out var index))
+                return null;
+
+            return row.Cell(index + 1).GetString();
+        }
+
+        private static string NormalizeHeader(string? value)
+        {
+            return (value ?? string.Empty)
+                .Trim()
+                .Replace("_", string.Empty)
+                .Replace(" ", string.Empty)
+                .ToLowerInvariant();
         }
 
     }
