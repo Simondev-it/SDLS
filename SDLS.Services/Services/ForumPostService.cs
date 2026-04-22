@@ -261,11 +261,9 @@ namespace SDLS.Services.Services
                 changed = true;
             }
 
-            if (dto.Status.HasValue && forumPost.Status != dto.Status.Value)
-            {
                 forumPost.Status = dto.Status.Value;
                 changed = true;
-            }
+            
 
             if (!changed)
                 return _mapper.Map<ForumPostDTO>(forumPost);
