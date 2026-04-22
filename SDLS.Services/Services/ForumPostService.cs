@@ -63,13 +63,9 @@ namespace SDLS.Services.Services
                 id, forumTopicId, userId, name, title, content, status, role);
 
             filtered = filtered.Where(x =>
-                x.Status != 0 &&
-                (
-                    x.Status == 1 ||
-                    ((x.Status == 4 || x.Status == 5) && currentUserId.HasValue && x.UserId == currentUserId.Value) ||
-                    ((x.Status == -1 || x.Status == 2 || x.Status == 3) &&
-                        (isPrivileged || (currentUserId.HasValue && x.UserId == currentUserId.Value)))
-                ));
+                x.Status != 0 ||
+                isPrivileged ||
+                (currentUserId.HasValue && x.UserId == currentUserId.Value));
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
