@@ -20,7 +20,6 @@ namespace SDLS.Model.DTOs.ForumPost
         [Range(0, int.MaxValue, ErrorMessage = "Gia tri khong hop le.")]
         public int? ViewCount { get; set; }
 
-        [Range(0, 1, ErrorMessage = "Gia tri khong hop le.")]
         public int? Status { get; set; }
     }
 }
