@@ -24,6 +24,11 @@ namespace SDLS.Services.Interfaces
         Task<QuestionTopicDTO> CreateAsync(QuestionTopicCreateDTO dto);
         Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync();
         Task<List<QuestionTopicDTO>> ImportAsync(IFormFile file);
+        Task<(byte[] Content, string FileName, string ContentType)> ExportToExcelAsync(
+            Guid? id = null,
+            string? name = null,
+            string? description = null,
+            int? status = null);
         Task<QuestionTopicDTO> UpdateAsync(Guid id, QuestionTopicUpdateDTO dto);
         Task<QuestionTopicDTO> DeleteSoftAsync(Guid id);
         Task<QuestionTopicDTO> DeleteHardAsync(Guid id);
