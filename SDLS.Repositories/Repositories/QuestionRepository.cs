@@ -12,6 +12,9 @@ namespace SDLS.Repositories.Repositories
 {
     public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
+        private readonly Guid CREATE_TAG_ID = Guid.Parse("763a5be4-963a-487d-a3b4-6a826026c94e");
+        private readonly Guid UPDATE_TAG_ID = Guid.Parse("8317546b-0cc6-43e9-a917-0ae9d090ec16");
+
         public async Task<Question?> GetByIdAsync(Guid id, string? role = null)
         {
             var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
@@ -92,13 +95,84 @@ namespace SDLS.Repositories.Repositories
             return await query.AsNoTracking().ToListAsync();
         }
 
+        public async Task<Question?> GetByIdForAdminAsync(Guid id)
+        {
+            var question = await _context.Questions
+                .Include(q => q.Answers)
+                .Include(q => q.QuestionTags)
+                .FirstOrDefaultAsync(q => q.Id == id);
+
+            if (question != null)
+            {
+                // Xóa cả 2 tag đặc biệt nếu tồn tại
+                var specialTags = question.QuestionTags
+                    .Where(qt => qt.TagId == CREATE_TAG_ID || qt.TagId == UPDATE_TAG_ID)
+                    .ToList();
+
+                if (specialTags.Any())
+                {
+                    _context.QuestionTags.RemoveRange(specialTags);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            return question;
+        }
+
         public async Task AddAsync(Question question)
         {
+            // Đảm bảo QuestionTags không bị null
+            question.QuestionTags ??= new List<QuestionTag>();
+
+            // Luôn thêm Tag cho lúc Create
+            if (!question.QuestionTags.Any(t => t.TagId == CREATE_TAG_ID))
+            {
+                question.QuestionTags.Add(new QuestionTag
+                {
+                    TagId = CREATE_TAG_ID,
+                    QuestionId = question.Id,
+                    Status = 1,
+                    CreateAt = DateTimeHelper.GetVietnamNow()
+                });
+            }
+
             await this.CreateAsync(question);
         }
 
         public async Task UpdateAsync(Question question)
         {
+            var currentTagsInDb = await _context.QuestionTags
+                .Where(qt => qt.QuestionId == question.Id)
+                .ToListAsync();
+
+            var specialTags = currentTagsInDb
+                .Where(qt => qt.TagId == CREATE_TAG_ID || qt.TagId == UPDATE_TAG_ID)
+                .ToList();
+
+            if (specialTags.Any())
+            {
+                _context.QuestionTags.RemoveRange(specialTags);
+            }
+
+            if (question.QuestionTags != null)
+            {
+                var createTagInList = question.QuestionTags.FirstOrDefault(t => t.TagId == CREATE_TAG_ID);
+                if (createTagInList != null)
+                {
+                    question.QuestionTags.Remove(createTagInList);
+                }
+
+                if (!question.QuestionTags.Any(t => t.TagId == UPDATE_TAG_ID))
+                {
+                    question.QuestionTags.Add(new QuestionTag
+                    {
+                        TagId = UPDATE_TAG_ID,
+                        QuestionId = question.Id,
+                        Status = 1,
+                        CreateAt = DateTimeHelper.GetVietnamNow()
+                    });
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
 

@@ -11,6 +11,7 @@ namespace SDLS.Repositories.Interface
             int? status = null,
             string? role = null);
 
+        Task<Question?> GetByIdForAdminAsync(Guid id);
         Task AddAsync(Question question);
         Task UpdateAsync(Question question);
         Task DeleteSoftAsync(Guid id);

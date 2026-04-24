@@ -4,6 +4,7 @@ using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
 using SDLS.Services.Interfaces;
+using SDLS.Services.Services;
 
 namespace SDLS.API.Controllers
 {
@@ -41,6 +42,15 @@ namespace SDLS.API.Controllers
             var question = await _service.GetByIdAsync(id);
             if (question == null) return NotFound();
             return Ok(question);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/{id}")]
+        // [Authorize(Roles = RoleConst.ADMIN_ROLE_NAME)] // Thêm phân quyền nếu cần
+        public async Task<IActionResult> GetByIdForAdmin(Guid id)
+        {
+            var result = await _service.GetByIdForAdminAsync(id);
+            return Ok(result);
         }
 
         [Authorize(Roles = "Instructor,Admin")]

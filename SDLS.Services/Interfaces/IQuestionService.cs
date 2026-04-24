@@ -20,6 +20,7 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
+        Task<QuestionDTO> GetByIdForAdminAsync(Guid id);
         Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto);
         Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos);
         Task<(byte[] Content, string FileName, string ContentType)> GenerateImportTemplateAsync();
