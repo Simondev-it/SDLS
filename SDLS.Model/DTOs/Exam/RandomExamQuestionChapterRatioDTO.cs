@@ -1,4 +1,4 @@
-using SDLS.Model.Validations;
+﻿using SDLS.Model.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Exam
@@ -8,8 +8,8 @@ namespace SDLS.Model.DTOs.Exam
         [NotEmptyGuid]
         public Guid ChapterId { get; set; }
 
-        [Required(ErrorMessage = "Tr??ng n�y l� b?t bu?c.")]
-        [Range(0, 100, ErrorMessage = "Ph?n tr?m ph?i t? 0 ??n 100.")]
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
+        [Range(0, 100, ErrorMessage = "Phần trăm phải từ 0 đến 100.")]
         public int? Percentage { get; set; }
     }
 }
