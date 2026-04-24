@@ -66,6 +66,15 @@ namespace SDLS.API.Controllers
             return Ok(user);
         }
 
+        // GET: api/user/statistics
+        [Authorize]
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetMyStatistics()
+        {
+            var stats = await _userService.GetCurrentUserStatisticsAsync();
+            return Ok(stats);
+        }
+
         // POST: api/user
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserCreateDTO user)

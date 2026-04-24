@@ -50,6 +50,23 @@ namespace SDLS.Repositories.Repositories
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public async Task<User> GetStatisticByIdAsync(Guid id)
+        {
+            return await _context.Users
+                .Include(x => x.ExamSessions)
+                    .ThenInclude(es => es.ExamDetails)
+                        .ThenInclude(ed => ed.Answer)
+                            .ThenInclude(a => a.Question)
+                                .ThenInclude(q => q.QuestionCategory)
+                .Include(x => x.SimulationSessions)
+                    .ThenInclude(ss => ss.SimulationSessionDetails)
+                        .ThenInclude(ssd => ssd.SimulationExam)
+                            .ThenInclude(se => se.Simulation)
+                                .ThenInclude(s => s.SimulationCategory)
+                .AsSplitQuery() // Rất quan trọng vì Include quá nhiều cấp
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
         // ✅ IMPLEMENT CREATE
         public async Task CreateAsync(User user)
         {
