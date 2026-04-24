@@ -11,4 +11,6 @@ public interface IMediaImageService
         string imageTarget);
 
     Task<bool> DeleteAsync(string fileUrl, string imageTarget);
+    Task<string> UploadVideoAsync(IFormFile file);
+    Task<bool> DeleteVideoAsync(string fileUrl);
 }
