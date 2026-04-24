@@ -12,5 +12,7 @@ namespace SDLS.Services.Interfaces
     {
         Task<string> UploadImageAsync(IFormFile file, ImageTarget target, Guid entityId);
         Task<bool> DeleteImageAsync(string fileUrl, ImageTarget target);
+        Task<string> UploadVideoAsync(IFormFile file);
+        Task<bool> DeleteVideoAsync(string fileUrl);
     }
 }

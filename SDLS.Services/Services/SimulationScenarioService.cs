@@ -19,6 +19,7 @@ namespace SDLS.Services.Services
         private readonly ISimulationChapterRepository _simulationChapterRepository;
         private readonly ISimulationCategoryRepository _simulationCategoryRepository;
         private readonly ISimulationDifficultyLevelRepository _simulationDifficultyLevelRepository;
+        private readonly IMediaImageService _mediaImageService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
 
@@ -27,6 +28,7 @@ namespace SDLS.Services.Services
             ISimulationChapterRepository simulationChapterRepository,
             ISimulationCategoryRepository simulationCategoryRepository,
             ISimulationDifficultyLevelRepository simulationDifficultyLevelRepository,
+            IMediaImageService mediaImageService,
             IHttpContextAccessor httpContextAccessor,
             IMapper mapper)
         {
@@ -34,6 +36,7 @@ namespace SDLS.Services.Services
             _simulationChapterRepository = simulationChapterRepository;
             _simulationCategoryRepository = simulationCategoryRepository;
             _simulationDifficultyLevelRepository = simulationDifficultyLevelRepository;
+            _mediaImageService = mediaImageService;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
         }
@@ -196,6 +199,8 @@ namespace SDLS.Services.Services
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy simulation scenario");
 
+            var oldVideo = existing.Video;
+
             var chapter = await _simulationChapterRepository.GetByIdAsync(dto.SimulationChapterId);
             if (chapter == null)
                 throw ApiException.BadRequest("Simulation chapter không tồn tại.");
@@ -222,6 +227,13 @@ namespace SDLS.Services.Services
             existing.UpdateAt = DateTimeHelper.GetVietnamNow();
 
             await _repository.UpdateAsync(existing);
+
+            if (!string.IsNullOrWhiteSpace(oldVideo) &&
+                !string.Equals(oldVideo, dto.Video, StringComparison.OrdinalIgnoreCase))
+            {
+                await _mediaImageService.DeleteVideoAsync(oldVideo);
+            }
+
             return _mapper.Map<SimulationScenarioDTO>(existing);
         }
 
@@ -248,6 +260,10 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound($"Not found with ID {id}");
 
             var result = _mapper.Map<SimulationScenarioDTO>(entity);
+
+            if (!string.IsNullOrWhiteSpace(entity.Video))
+                await _mediaImageService.DeleteVideoAsync(entity.Video);
+
             await _repository.DeleteHardAsync(id);
             return result;
         }

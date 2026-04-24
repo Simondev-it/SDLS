@@ -12,6 +12,7 @@ public class MediaImageService : IMediaImageService
 
     private const long MaxFileSizeBytes = 3 * 1024 * 1024;   // 3MB
     private const long MaxTotalSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const long MaxVideoSizeBytes = 13 * 1024 * 1024; // 13MB
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -21,6 +22,16 @@ public class MediaImageService : IMediaImageService
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg", "image/png", "image/gif", "image/webp"
+    };
+
+    private static readonly HashSet<string> AllowedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"
+    };
+
+    private static readonly HashSet<string> AllowedVideoContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "video/x-msvideo"
     };
 
     public MediaImageService(
@@ -82,6 +93,25 @@ public class MediaImageService : IMediaImageService
         return true;
     }
 
+    public async Task<string> UploadVideoAsync(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            throw ApiException.BadRequest("Video không hợp lệ hoặc rỗng.");
+
+        ValidateVideo(file);
+
+        return await _storageService.UploadVideoAsync(file);
+    }
+
+    public async Task<bool> DeleteVideoAsync(string fileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(fileUrl))
+            throw ApiException.BadRequest("fileUrl là bắt buộc.");
+
+        await _storageService.DeleteVideoAsync(fileUrl);
+        return true;
+    }
+
     private static string ExtractStorageKey(string url, ImageTarget target)
     {
         var folder = target switch
@@ -134,5 +164,18 @@ public class MediaImageService : IMediaImageService
             if (!string.IsNullOrWhiteSpace(file.ContentType) && !AllowedContentTypes.Contains(file.ContentType))
                 throw ApiException.BadRequest($"Content-Type '{file.ContentType}' không hợp lệ.");
         }
+    }
+
+    private static void ValidateVideo(IFormFile file)
+    {
+        if (file.Length > MaxVideoSizeBytes)
+            throw ApiException.BadRequest($"Dung lượng video '{file.FileName}' vượt quá 200MB.");
+
+        var ext = Path.GetExtension(file.FileName);
+        if (string.IsNullOrWhiteSpace(ext) || !AllowedVideoExtensions.Contains(ext))
+            throw ApiException.BadRequest($"Định dạng video '{file.FileName}' không được hỗ trợ.");
+
+        if (!string.IsNullOrWhiteSpace(file.ContentType) && !AllowedVideoContentTypes.Contains(file.ContentType))
+            throw ApiException.BadRequest($"Content-Type '{file.ContentType}' không hợp lệ.");
     }
 }

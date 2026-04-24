@@ -14,7 +14,8 @@ namespace SDLS.Model.Enumerations
         LessonImage,       // folder = "lessons"
         PostImage,         // folder = "posts"
         ReportImage,       // folder = "reports"
-        NotificationImage  // folder = "notifications"
+        NotificationImage, // folder = "notifications"
+        Video,              // folder = "videos"
     }
 
 }
