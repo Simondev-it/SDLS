@@ -1,14 +1,14 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SDLS.Model.DTOs.Exam
 {
     public class RandomExamQuestionConfigDTO
     {
-        [Required(ErrorMessage = "Tr??ng n�y l� b?t bu?c.")]
-        [Range(1, int.MaxValue, ErrorMessage = "T?ng s? c�u h?i ph?i l?n h?n 0.")]
+        [Required(ErrorMessage = "Trường này là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Tổng số câu hỏi phải lớn hơn 0.")]
         public int? TotalQuestions { get; set; }
 
-        [MinLength(1, ErrorMessage = "Ph?i c� �t nh?t 1 chapter.")]
+        [MinLength(1, ErrorMessage = "Phải có ít nhất 1 chapter.")]
         public List<RandomExamQuestionChapterRatioDTO>? ChapterRatios { get; set; }
     }
 }
