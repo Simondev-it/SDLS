@@ -24,6 +24,7 @@ namespace SDLS.Services.Interfaces
             int pageSize = 20);
         Task<UserDTO?> GetByIdAsync(Guid id);
         Task<UserDTO?> GetByEmailAsync(string email);
+        Task<UserExamStatisticsDTO> GetCurrentUserStatisticsAsync();
         Task<UserDTO> CreateAsync(UserCreateDTO user);
         Task<UserDTO?> UpdateAsync(Guid id, UserUpdateDTO user);
         Task<bool> ChangePasswordCurrentUserAsync(UserChangePasswordDTO dto);

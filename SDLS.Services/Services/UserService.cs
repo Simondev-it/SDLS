@@ -147,6 +147,44 @@ namespace SDLS.Services.Services
             return dto;
         }
 
+        public async Task<UserExamStatisticsDTO> GetCurrentUserStatisticsAsync()
+        {
+            // 1. Lấy ID người dùng hiện tại từ JWT
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            // 2. Lấy dữ liệu user kèm các Session thi
+            var user = await _userRepository.GetByIdAsync(currentUserId);
+            if (user == null) throw ApiException.NotFound("Người dùng không tồn tại.");
+
+            // 3. Tính toán thống kê Lý thuyết (ExamSessions)
+            var activeExamSessions = user.ExamSessions.Where(x => x.Status == 1).ToList();
+            var theoryStats = new ExamStats
+            {
+                TotalAttempts = activeExamSessions.Count,
+                PassedCount = activeExamSessions.Count(x => x.IsPassed),
+                FailedCount = activeExamSessions.Count(x => !x.IsPassed),
+                PassRate = CalculatePassRate(activeExamSessions.Count, activeExamSessions.Count(x => x.IsPassed))
+            };
+            theoryStats.FailRate = theoryStats.TotalAttempts > 0 ? Math.Round(100 - theoryStats.PassRate, 2) : 0;
+
+            // 4. Tính toán thống kê Mô phỏng (SimulationSessions)
+            var activeSimSessions = user.SimulationSessions.Where(x => x.Status == 1).ToList();
+            var simStats = new ExamStats
+            {
+                TotalAttempts = activeSimSessions.Count,
+                PassedCount = activeSimSessions.Count(x => x.IsPassed),
+                FailedCount = activeSimSessions.Count(x => !x.IsPassed),
+                PassRate = CalculatePassRate(activeSimSessions.Count, activeSimSessions.Count(x => x.IsPassed))
+            };
+            simStats.FailRate = simStats.TotalAttempts > 0 ? Math.Round(100 - simStats.PassRate, 2) : 0;
+
+            return new UserExamStatisticsDTO
+            {
+                TheoryStats = theoryStats,
+                SimulationStats = simStats
+            };
+        }
+
         public async Task<UserDTO> CreateAsync(UserCreateDTO user)
         {
             var existingByEmail = await _userRepository.GetByEmailAsync(user.Email);
