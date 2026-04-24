@@ -11,6 +11,7 @@ namespace SDLS.Repositories.Interface
     {
         Task<User> GetByEmailAsync(string email);
         Task<User> GetByIdAsync(Guid id);
+        Task<User> GetStatisticByIdAsync(Guid id);
         Task CreateAsync(User user);
         Task<int> SaveAsync();
 
