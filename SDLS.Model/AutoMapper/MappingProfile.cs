@@ -198,7 +198,9 @@ namespace SDLS.Model.AutoMapper
             CreateMap<SimulationScenarioUpdateDTO, SimulationScenario>().ReverseMap();
 
             CreateMap<ReportDTO, Report>().ReverseMap();
-            CreateMap<User, ReportUserBriefDTO>().ReverseMap();
+            CreateMap<User, ReportUserBriefDTO>()
+                .ForMember(dest => dest.RoleName,
+                opt => opt.MapFrom(src => src.Role.Name));
             CreateMap<ReportCreateDTO, Report>().ReverseMap();
             CreateMap<ReportUpdateDTO, Report>().ReverseMap();
 
