@@ -60,7 +60,8 @@ namespace SDLS.Services.Services
         public async Task<PagedResult<ReportDTO>> GetAllAsync(
             Guid? id = null,
             Guid? userId = null,
-            Guid? reportCategoryId = null,
+            List<Guid>? reportCategoryIds = null,
+            string? roleName = null,
             Guid? simulationId = null,
             Guid? forumPostId = null,
             Guid? forumCommentId = null,
@@ -77,7 +78,7 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             var filtered = await _repository.GetAllAsync(
-                id, userId, reportCategoryId, simulationId, forumPostId, forumCommentId, questionId, title, content, status, role);
+                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, title, content, status, role);
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;

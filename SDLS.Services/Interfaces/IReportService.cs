@@ -8,7 +8,8 @@ namespace SDLS.Services.Interfaces
         Task<PagedResult<ReportDTO>> GetAllAsync(
             Guid? id = null,
             Guid? userId = null,
-            Guid? reportCategoryId = null,
+            List<Guid>? reportCategoryIds = null,
+            string? roleName = null,
             Guid? simulationId = null,
             Guid? forumPostId = null,
             Guid? forumCommentId = null,
