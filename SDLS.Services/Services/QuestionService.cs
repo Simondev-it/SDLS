@@ -67,11 +67,11 @@ namespace SDLS.Services.Services
             string? searchContent = null,
             int? status = null,
             int page = 1,
-            int pageSize = 10)
+            int pageSize = 20,
+            string? sortBy = null)
         {
             page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 10 : pageSize;
-
+            pageSize = pageSize < 1 ? 20 : pageSize;
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             var filteredQuestions = await _questionRepository.GetFilteredForListAsync(
@@ -83,7 +83,31 @@ namespace SDLS.Services.Services
                 status,
                 role);
 
-            var orderedList = BuildOrderedLinkedList(filteredQuestions);
+            List<Question> orderedList;
+
+            // Logic Sort
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                switch (sortBy.ToLower())
+                {
+                    case "latest": // Mới nhất lên đầu
+                        orderedList = filteredQuestions.OrderByDescending(q => q.UpdateAt ?? q.CreateAt).ToList();
+                        break;
+                    case "oldest": // Cũ nhất lên đầu
+                        orderedList = filteredQuestions.OrderBy(q => q.UpdateAt ?? q.CreateAt).ToList();
+                        break;
+                    default:
+                        // Nếu truyền bậy hoặc không khớp thì quay lại logic mặc định
+                        orderedList = BuildOrderedLinkedList(filteredQuestions);
+                        break;
+                }
+            }
+            else
+            {
+                // Bình thường không nhập gì thì get như bình thường
+                orderedList = BuildOrderedLinkedList(filteredQuestions);
+            }
+
             var total = orderedList.Count;
 
             var pagedEntities = orderedList
