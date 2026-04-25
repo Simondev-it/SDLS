@@ -22,13 +22,13 @@ namespace SDLS.Repositories.Repositories
             IQueryable<Question> query = isPrivileged
                 ? _context.Questions
                     .Include(q => q.Answers)
-                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
                     .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                     .Include(q => q.QuestionTopic)
                     .Include(q => q.QuestionCategory)
                 : _context.Questions
                     .Include(q => q.Answers.Where(a => a.Status != 0))
-                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0))
+                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0)).ThenInclude(qt => qt.Tag)
                     .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                     .Include(q => q.QuestionTopic)
                     .Include(q => q.QuestionCategory);
@@ -66,7 +66,7 @@ namespace SDLS.Repositories.Repositories
             IQueryable<Question> query = isPrivileged
                 ? _context.Questions
                     .Include(q => q.Answers)
-                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
                     .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                     .Include(q => q.QuestionTopic)
                     .Include(q => q.QuestionCategory)
@@ -99,7 +99,10 @@ namespace SDLS.Repositories.Repositories
         {
             var question = await _context.Questions
                 .Include(q => q.Answers)
-                .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
             if (question != null)
@@ -329,7 +332,7 @@ namespace SDLS.Repositories.Repositories
             {
                 includeQuery = query
                     .Include(q => q.Answers)
-                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
                     .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                     .Include(q => q.QuestionTopic)
                     .Include(q => q.QuestionCategory);
@@ -338,7 +341,7 @@ namespace SDLS.Repositories.Repositories
             {
                 includeQuery = query
                     .Include(q => q.Answers.Where(a => a.Status != 0))
-                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0))
+                    .Include(q => q.QuestionTags.Where(qt => qt.Status != 0)).ThenInclude(qt => qt.Tag)
                     .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
                     .Include(q => q.QuestionTopic)
                     .Include(q => q.QuestionCategory);

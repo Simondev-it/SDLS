@@ -26,12 +26,13 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? QuestionCategoryId,
             [FromQuery] List<Guid>? tagIds,
             [FromQuery] string? searchContent,
+            [FromQuery] string? sortBy,
             [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize);
+                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize, sortBy);
 
             return Ok(result);
         }
@@ -46,7 +47,6 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("admin/{id}")]
-        // [Authorize(Roles = RoleConst.ADMIN_ROLE_NAME)] // Thêm phân quyền nếu cần
         public async Task<IActionResult> GetByIdForAdmin(Guid id)
         {
             var result = await _service.GetByIdForAdminAsync(id);

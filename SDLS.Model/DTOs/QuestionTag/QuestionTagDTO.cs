@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SDLS.Model.DTOs.QuestionLesson;
+using SDLS.Model.DTOs.Tag;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,5 +19,6 @@ namespace SDLS.Model.DTOs.QuestionTag
         public int? Status { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
+        public TagDTO? Tag { get; set; }
     }
 }

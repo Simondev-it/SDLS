@@ -17,7 +17,8 @@ namespace SDLS.Services.Interfaces
             string? searchContent = null,
             int? status = null,
             int page = 1,
-            int pageSize = 20);
+            int pageSize = 20,
+            string? sortBy = null);
 
         Task<QuestionDTO> GetByIdAsync(Guid id);
         Task<QuestionDTO> GetByIdForAdminAsync(Guid id);
