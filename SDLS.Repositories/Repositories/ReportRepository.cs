@@ -31,7 +31,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves)
                 : _context.Reports
                     .Include(x => x.ReportCategory)
@@ -39,7 +39,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves);
 
             if (id.HasValue)
@@ -104,7 +104,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves)
                 : _context.Reports
                     .Include(x => x.ReportCategory)
@@ -112,7 +112,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves.Where(r => r.Status != 0));
 
             query = query.Where(x => x.Id == id)
