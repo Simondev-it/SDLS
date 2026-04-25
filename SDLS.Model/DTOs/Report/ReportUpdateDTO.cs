@@ -23,7 +23,7 @@ namespace SDLS.Model.DTOs.Report
 
         public string? Image { get; set; }
 
-        [Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
+        //[Range(0, 1, ErrorMessage = "Giá trị không hợp lệ.")]
         public int? Status { get; set; }
     }
 }
