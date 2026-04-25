@@ -99,7 +99,10 @@ namespace SDLS.Repositories.Repositories
         {
             var question = await _context.Questions
                 .Include(q => q.Answers)
-                .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionTags)
+                    .Include(q => q.QuestionLesson).ThenInclude(ql => ql.QuestionChapter)
+                    .Include(q => q.QuestionTopic)
+                    .Include(q => q.QuestionCategory)
                 .FirstOrDefaultAsync(q => q.Id == id);
 
             if (question != null)
