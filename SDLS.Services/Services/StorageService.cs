@@ -11,6 +11,7 @@ namespace SDLS.Services.Services
         public const string Public = "sdls-public";
         public const string Content = "sdls-content";
         public const string Private = "sdls-private";
+        public const string Video = "video";
     }
 
     public class StorageService : IStorageService
@@ -88,7 +89,7 @@ namespace SDLS.Services.Services
             {
                 await storage.Upload(bytes, filePath, options);
             }
-            catch (SupabaseStorageException ex)
+            catch (SupabaseStorageException)
             {
                 throw ApiException.Internal(
                     $"Failed to upload image to Supabase storage bucket '{bucket}' at path '{filePath}'. " +
@@ -115,11 +116,76 @@ namespace SDLS.Services.Services
                     .From(bucket)
                     .Remove(new List<string> { path });
             }
-            catch (SupabaseStorageException ex)
+            catch (SupabaseStorageException)
             {
                 throw ApiException.Internal(
                     $"Failed to delete image from Supabase storage bucket '{bucket}' at path '{path}'. " +
                     "Check Storage RLS policies or service role key configuration.");
+            }
+
+            return true;
+        }
+
+        public async Task<string> UploadVideoAsync(IFormFile file)
+        {
+            if (file is null) throw ApiException.BadRequest("File is required.");
+            if (file.Length <= 0) throw ApiException.BadRequest("File is empty.");
+
+            var ext = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(ext))
+                ext = MimeTypeToVideoExtension(file.ContentType);
+
+            if (string.IsNullOrWhiteSpace(ext))
+                throw ApiException.BadRequest("Video file must have a supported extension or content type.");
+
+            var filePath = $"{Guid.NewGuid()}{ext}";
+
+            byte[] bytes;
+            await using (var stream = file.OpenReadStream())
+            {
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                bytes = ms.ToArray();
+            }
+
+            var options = new Supabase.Storage.FileOptions
+            {
+                Upsert = false,
+                CacheControl = "3600",
+                ContentType = file.ContentType
+            };
+
+            var storage = _supabaseClient.Storage.From(StorageBucket.Video);
+            try
+            {
+                await storage.Upload(bytes, filePath, options);
+            }
+            catch (SupabaseStorageException)
+            {
+                throw ApiException.Internal(
+                    $"Failed to upload video to Supabase storage bucket '{StorageBucket.Video}' at path '{filePath}'.");
+            }
+
+            return storage.GetPublicUrl(filePath);
+        }
+
+        public async Task<bool> DeleteVideoAsync(string fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl))
+                return true;
+
+            var path = ExtractPathFromUrl(fileUrl, StorageBucket.Video);
+
+            try
+            {
+                await _supabaseClient.Storage
+                    .From(StorageBucket.Video)
+                    .Remove(new List<string> { path });
+            }
+            catch (SupabaseStorageException)
+            {
+                throw ApiException.Internal(
+                    $"Failed to delete video from Supabase storage bucket '{StorageBucket.Video}' at path '{path}'.");
             }
 
             return true;
@@ -144,6 +210,19 @@ namespace SDLS.Services.Services
                 "image/png" => ".png",
                 "image/gif" => ".gif",
                 "image/webp" => ".webp",
+                _ => null
+            };
+        }
+
+        private static string? MimeTypeToVideoExtension(string? contentType)
+        {
+            return contentType?.ToLowerInvariant() switch
+            {
+                "video/mp4" => ".mp4",
+                "video/webm" => ".webm",
+                "video/quicktime" => ".mov",
+                "video/x-matroska" => ".mkv",
+                "video/x-msvideo" => ".avi",
                 _ => null
             };
         }
