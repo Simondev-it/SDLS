@@ -47,7 +47,6 @@ namespace SDLS.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpGet("admin/{id}")]
-        // [Authorize(Roles = RoleConst.ADMIN_ROLE_NAME)] // Thêm phân quyền nếu cần
         public async Task<IActionResult> GetByIdForAdmin(Guid id)
         {
             var result = await _service.GetByIdForAdminAsync(id);
