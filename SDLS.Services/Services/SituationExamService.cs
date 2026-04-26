@@ -83,7 +83,7 @@ namespace SDLS.Services.Services
             var now = DateTimeHelper.GetVietnamNow();
             var scenarioIds = dto.SimulationExams.Select(x => x.SimulationId).Distinct().ToList();
             var duration = await _simulationScenarioRepository.CalculateDurationAsync(scenarioIds);
-
+            
             foreach (var scenarioId in scenarioIds)
             {
                 var exists = await _simulationScenarioRepository.GetByIdAsync(scenarioId);
@@ -91,28 +91,39 @@ namespace SDLS.Services.Services
                     throw ApiException.NotFound($"Không tìm thấy SimulationScenario với ID {scenarioId}");
             }
 
-            var entity = new SituationExam
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            int? status = null;
+            if (role.Equals("Student"))
             {
-                Id = Guid.NewGuid(),
-                Title = dto.Title,
-                Description = dto.Description,
-                Duration = duration,
-                PassScore = dto.PassScore,
-                IsRandom = dto.IsRandom,
-                CreateAt = now,
-                UpdateAt = now,
-                Status = 1,
-                SimulationExams = dto.SimulationExams.Select(x => new SimulationExam
+                status = 2;
+            }
+            else
+            {
+                status = 1;
+            }
+
+                var entity = new SituationExam
                 {
                     Id = Guid.NewGuid(),
-                    SituationExamId = Guid.Empty, // EF set after attach parent
-                    SimulationId = x.SimulationId,
-                    BaseScore = x.BaseScore,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Duration = duration,
+                    PassScore = dto.PassScore,
+                    IsRandom = dto.IsRandom,
                     CreateAt = now,
                     UpdateAt = now,
-                    Status = 1
-                }).ToList()
-            };
+                    Status = status,
+                    SimulationExams = dto.SimulationExams.Select(x => new SimulationExam
+                    {
+                        Id = Guid.NewGuid(),
+                        SituationExamId = Guid.Empty,
+                        SimulationId = x.SimulationId,
+                        BaseScore = x.BaseScore,
+                        CreateAt = now,
+                        UpdateAt = now,
+                        Status = 1
+                    }).ToList()
+                };
 
             await _repository.AddAsync(entity);
             return _mapper.Map<SituationExamDTO>(entity);

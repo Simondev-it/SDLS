@@ -19,8 +19,10 @@ namespace SDLS.Repositories.Repositories
             IQueryable<Exam> query = isPrivileged
                 ? _context.Exams
                     .Include(e => e.ExamQuestions)
+                    .Where(e => e.Status != 2)
                 : _context.Exams
-                    .Include(e => e.ExamQuestions.Where(eq => eq.Status != 0));
+                    .Include(e => e.ExamQuestions.Where(eq => eq.Status != 0))
+                    .Where(e => e.Status != 0 && e.Status != 2);
 
             query = query.Where(e => e.IsRandom == false);
 
