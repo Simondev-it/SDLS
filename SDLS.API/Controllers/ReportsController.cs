@@ -18,7 +18,7 @@ namespace SDLS.API.Controllers
         }
 
         //[Authorize(Roles = "Instructor")]
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ReportDTO>>> GetAll(
             [FromQuery] Guid? id,

@@ -84,12 +84,23 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTimeHelper.GetVietnamNow();
 
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            int? status = null;
+            if (role.Equals("Student"))
+            {
+                status = 2;
+            }
+            else
+            {
+                status = 1;
+            }
+
             var newExam = _mapper.Map<Exam>(dto);
             newExam.Id = Guid.NewGuid();
             newExam.UserId = currentUserId;
             newExam.CreateAt = now;
             newExam.UpdateAt = now;
-            newExam.Status = 1;
+            newExam.Status = status;
 
             foreach (var examQuestion in newExam.ExamQuestions)
             {
