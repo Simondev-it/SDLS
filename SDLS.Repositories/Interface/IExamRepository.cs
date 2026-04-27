@@ -10,7 +10,8 @@ namespace SDLS.Repositories.Interface
         Task<IEnumerable<Exam>> GetAllAsync(
             Guid? userId = null,
             int? status = null,
-            string? role = null);
+            string? role = null,
+            Guid? currentUserId = null);
 
         Task<Exam?> GetByIdAsync(Guid id, string? role = null);
         Task<Exam?> GetByIdForUpdateAsync(Guid id);
