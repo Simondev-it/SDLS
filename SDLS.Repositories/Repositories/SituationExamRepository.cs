@@ -39,7 +39,7 @@ namespace SDLS.Repositories.Repositories
                             .ThenInclude(s => s.SimulationChapter)
                     .Include(x => x.SimulationExams.Where(se => se.Status != 0))
                         .ThenInclude(se => se.Simulation)
-                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 2 && sie.Status != 0);
+                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 0);
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);

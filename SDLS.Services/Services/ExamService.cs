@@ -45,7 +45,8 @@ namespace SDLS.Services.Services
             int pageSize = 20)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var allExams = await _examRepository.GetAllAsync(userId, status, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var allExams = await _examRepository.GetAllAsync(userId, status, role, currentUserId);
 
             var total = allExams.Count();
 

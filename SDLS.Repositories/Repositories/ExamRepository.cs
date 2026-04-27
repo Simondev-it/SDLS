@@ -12,7 +12,8 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<Exam>> GetAllAsync(
             Guid? userId = null,
             int? status = null,
-            string? role = null)
+            string? role = null,
+            Guid? currentUserId = null)
         {
             var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
@@ -22,9 +23,13 @@ namespace SDLS.Repositories.Repositories
                     .Where(e => e.Status != 2)
                 : _context.Exams
                     .Include(e => e.ExamQuestions.Where(eq => eq.Status != 0))
-                    .Where(e => e.Status != 0 && e.Status != 2);
+                    .Where(e => e.Status != 0);
 
-            query = query.Where(e => e.IsRandom == false);
+            //query = query.Where(e => e.IsRandom == false);
+
+            query = query.Where(e =>
+                e.Status != 2 ||
+                (currentUserId.HasValue && e.UserId == currentUserId.Value));
 
             if (userId.HasValue)
                 query = query.Where(e => e.UserId == userId.Value);
