@@ -81,6 +81,14 @@ namespace SDLS.API.Controllers
             return File(template.Content, template.ContentType, template.FileName);
         }
 
+        //[Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("export-license-chapter-lesson")]
+        public async Task<IActionResult> ExportLicenseChapterLesson()
+        {
+            var exportFile = await _service.ExportLicenseChapterLessonAsync();
+            return File(exportFile.Content, exportFile.ContentType, exportFile.FileName);
+        }
+
         [HttpPost("import")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<List<QuestionDTO>>> Import([FromForm] ImportQuestionRequest request)
