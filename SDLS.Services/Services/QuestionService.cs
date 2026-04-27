@@ -309,6 +309,61 @@ namespace SDLS.Services.Services
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         }
 
+        public async Task<(byte[] Content, string FileName, string ContentType)> ExportLicenseChapterLessonAsync()
+        {
+            var licenses = await _dbContext.DrivingLicenses
+                .AsNoTracking()
+                .Where(x => x.Status != 0)
+                .Include(x => x.QuestionChapters.Where(c => c.Status != 0))
+                    .ThenInclude(c => c.QuestionLessons.Where(l => l.Status != 0))
+                .OrderBy(x => x.Name)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("License-Chapter-Lesson");
+
+            var headers = new[]
+            {
+                "DrivingLicenseName",
+                "QuestionChapterName",
+                "QuestionLessonId",
+                "QuestionLessonName"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            var currentRow = 2;
+
+            foreach (var license in licenses)
+            {
+                foreach (var chapter in license.QuestionChapters.OrderBy(c => c.Index).ThenBy(c => c.Name))
+                {
+                    foreach (var lesson in chapter.QuestionLessons.OrderBy(l => l.Index).ThenBy(l => l.Name))
+                    {
+                        worksheet.Cell(currentRow, 1).Value = license.Name;
+                        worksheet.Cell(currentRow, 2).Value = chapter.Name;
+                        worksheet.Cell(currentRow, 3).Value = lesson.Id.ToString();
+                        worksheet.Cell(currentRow, 4).Value = lesson.Name;
+                        currentRow++;
+                    }
+                }
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return (
+                stream.ToArray(),
+                $"license-chapter-lesson-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+
         public async Task<List<QuestionDTO>> ImportAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
