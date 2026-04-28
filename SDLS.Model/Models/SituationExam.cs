@@ -23,7 +23,11 @@ public partial class SituationExam
 
     public int? Status { get; set; }
 
+    public Guid? UserId { get; set; }
+
     public virtual ICollection<SimulationExam> SimulationExams { get; set; } = new List<SimulationExam>();
 
     public virtual ICollection<SimulationSession> SimulationSessions { get; set; } = new List<SimulationSession>();
+
+    public virtual User? User { get; set; }
 }

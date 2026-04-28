@@ -137,12 +137,11 @@ namespace SDLS.API
             // CORS: allow frontend dev server
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("LocalFrontend", policy =>
+                options.AddPolicy("AllowAll", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173")
+                    policy.AllowAnyOrigin()
                           .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                          .AllowAnyMethod();
                 });
             });
             builder.Services.AddScoped<ISimulationChapterRepository, SimulationChapterRepository>();
@@ -357,16 +356,12 @@ namespace SDLS.API
 
             // Enable CORS for requests from local frontend
             //app.UseCors("LocalFrontend");
-
+            app.UseCors("AllowAll");
 
             app.UseAuthentication();
-            app.UseCors("LocalFrontend");
-
-
-            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseAuthorization();
-
+            app.UseMiddleware<ExceptionMiddleware>();
             app.MapControllers();
 
             app.Run();

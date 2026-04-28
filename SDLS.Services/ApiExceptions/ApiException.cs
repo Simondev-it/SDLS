@@ -48,5 +48,6 @@ namespace SDLS.Services.ApiExceptions
 
         public static ApiException Internal(string message = "Internal Server Error")
             => new ApiException(message, (int)HttpStatusCode.InternalServerError);
+
     }
 }
