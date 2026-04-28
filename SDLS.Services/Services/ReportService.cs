@@ -66,6 +66,10 @@ namespace SDLS.Services.Services
             Guid? forumPostId = null,
             Guid? forumCommentId = null,
             Guid? questionId = null,
+            bool? hasSimulation = null,
+            bool? hasForumPost = null,
+            bool? hasForumComment = null,
+            bool? hasQuestion = null,
             string? title = null,
             string? content = null,
             int? status = null,
@@ -78,7 +82,7 @@ namespace SDLS.Services.Services
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             var filtered = await _repository.GetAllAsync(
-                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, title, content, status, role);
+                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, hasSimulation, hasForumPost, hasForumComment, hasQuestion, title, content, status, role);
 
             var ordered = filtered.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
