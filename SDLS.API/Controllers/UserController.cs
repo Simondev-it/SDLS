@@ -18,7 +18,7 @@ namespace SDLS.API.Controllers
             _userService = userService;
         }
 
-        // GET: api/user
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] Guid? id,
@@ -31,7 +31,7 @@ namespace SDLS.API.Controllers
             return Ok(users);
         }
 
-        // GET: api/user/paged?page=1&pageSize=20
+        [Authorize]
         [HttpGet("paged")]
         public async Task<ActionResult<PagedResult<UserDTO>>> GetAllPaged(
             [FromQuery] Guid? id,
@@ -45,7 +45,7 @@ namespace SDLS.API.Controllers
             var users = await _userService.GetAllWithPagingAsync(id, roleId, email, name, status, page, pageSize);
             return Ok(users);
         }
-
+        [Authorize]
         // GET: api/user/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -56,7 +56,7 @@ namespace SDLS.API.Controllers
             return Ok(user);
         }
 
-        // GET: api/user/email?email=abc@gmail.com
+        [Authorize]
         [HttpGet("email")]
         public async Task<IActionResult> GetByEmail([FromQuery] string email)
         {
@@ -65,6 +65,8 @@ namespace SDLS.API.Controllers
 
             return Ok(user);
         }
+        [Authorize]
+
 
         // GET: api/user/statistics
         [Authorize]
@@ -76,6 +78,7 @@ namespace SDLS.API.Controllers
         }
 
         // POST: api/user
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserCreateDTO user)
         {
@@ -84,7 +87,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        // PUT: api/user/{id}
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UserUpdateDTO user)
         {
@@ -96,7 +99,7 @@ namespace SDLS.API.Controllers
         }
 
         // PATCH: api/user/change-password
-        [Authorize]
+        //[Authorize]
         [HttpPatch("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto)
         {
@@ -108,7 +111,7 @@ namespace SDLS.API.Controllers
             return Ok("Changed password successfully");
         }
 
-        // PATCH: api/user/{id}/toggle-active
+        
         [HttpPatch("{id}/toggle-active")]
         public async Task<IActionResult> ToggleActiveStatus(Guid id)
         {
@@ -118,7 +121,6 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        // PATCH: api/user/{id}/toggle-lock
         [HttpPatch("{id}/toggle-lock")]
         public async Task<IActionResult> ToggleLockStatus(Guid id)
         {

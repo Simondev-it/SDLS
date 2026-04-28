@@ -23,5 +23,8 @@ namespace SDLS.Repositories.Interface
         Task UpdateAsync(Payment payment);
 
         Task UpdateStatusByOrderCodeAsync(long orderCode, int status, string response);
+
+
+        Task<List<Payment>> GetAllPaymentsAsync();
     }
 }

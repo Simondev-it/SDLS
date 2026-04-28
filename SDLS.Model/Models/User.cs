@@ -63,6 +63,8 @@ public partial class User
 
     public virtual ICollection<SimulationSession> SimulationSessions { get; set; } = new List<SimulationSession>();
 
+    public virtual ICollection<SituationExam> SituationExams { get; set; } = new List<SituationExam>();
+
     public virtual ICollection<UserLicense> UserLicenses { get; set; } = new List<UserLicense>();
 
     public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();

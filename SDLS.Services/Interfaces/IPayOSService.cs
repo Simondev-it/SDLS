@@ -10,7 +10,8 @@ namespace SDLS.Services.Interfaces
 {
     public interface IPayOSService
     {
-        
+        Task<List<PaymentDTO>> GetAllPaymentsAsync();
+
         Task<object> CreatePayment(Guid userId, PayOSRequestModel model);
 
         Task HandleWebhook(JsonElement payload);

@@ -91,6 +91,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<SituationExam> SituationExams { get; set; }
 
+    public virtual DbSet<SystemConfig> SystemConfigs { get; set; }
+
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<TrafficSign> TrafficSigns { get; set; }
@@ -103,15 +105,15 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Vehicle> Vehicles { get; set; }
 
-    public virtual DbSet<SystemConfig> SystemConfigs { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseNpgsql("Host=ep-silent-recipe-ad74p7pa-pooler.c-2.us-east-1.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_iFezOVo38tPS;SSL Mode=Require;Trust Server Certificate=true");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresExtension("pgcrypto");
+        modelBuilder
+            .HasPostgresExtension("pgcrypto")
+            .HasPostgresExtension("uuid-ossp");
 
         modelBuilder.Entity<Answer>(entity =>
         {
@@ -122,9 +124,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
+            entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -713,16 +713,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasMaxLength(255)
-                .HasColumnName("content");
+            entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("createAt");
-            entity.Property(e => e.Explanation)
-                .HasMaxLength(255)
-                .HasColumnName("explanation");
+            entity.Property(e => e.Explanation).HasColumnName("explanation");
             entity.Property(e => e.Image)
                 .HasMaxLength(255)
                 .HasColumnName("image");
@@ -1447,6 +1443,34 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updateAt");
+            entity.Property(e => e.UserId).HasColumnName("userId");
+
+            entity.HasOne(d => d.User).WithMany(p => p.SituationExams)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("Situation_userId_fkey");
+        });
+
+        modelBuilder.Entity<SystemConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SystemConfig_pkey");
+
+            entity.ToTable("SystemConfig");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CreateAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createAt");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.UpdateAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updateAt");
+            entity.Property(e => e.Value).HasColumnName("value");
         });
 
         modelBuilder.Entity<Tag>(entity =>
@@ -1673,41 +1697,6 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.DrivingLicenseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Vehicle_drivingLicenseId_fkey");
-        });
-
-        modelBuilder.Entity<SystemConfig>(entity =>
-        {
-            entity.ToTable("SystemConfig");
-
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Id)
-                  .HasColumnName("id");
-
-            entity.Property(e => e.Name)
-                  .HasColumnName("name")
-                  .IsRequired();
-
-            entity.Property(e => e.Value)
-                  .HasColumnName("value")
-                  .IsRequired();
-
-            entity.Property(e => e.Description)
-                  .HasColumnName("description");
-
-            entity.Property(e => e.CreateAt)
-                  .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                  .HasColumnType("timestamp without time zone")
-                  .HasColumnName("createAt");
-
-            entity.Property(e => e.UpdateAt)
-                  .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                  .HasColumnType("timestamp without time zone")
-                  .HasColumnName("updateAt");
-
-            entity.Property(e => e.Status)
-                  .HasDefaultValue(1)
-                  .HasColumnName("status");
         });
 
         OnModelCreatingPartial(modelBuilder);

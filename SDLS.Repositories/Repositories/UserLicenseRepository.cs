@@ -1,4 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SDLS.Model.DTOs.DrivingLicense;
+using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
@@ -109,6 +111,28 @@ namespace SDLS.Repositories.Repositories
 
             _context.UserLicenses.Remove(entity);
             await _context.SaveChangesAsync();
+        }
+        public async Task<UserLicenseDTO?> GetByUserIdAsync(Guid userId)
+        {
+            return await _context.UserLicenses
+                .Where(x => x.UserId == userId)
+                .Include(x => x.DrivingLicense) // 🔥 bắt buộc
+                .Select(x => new UserLicenseDTO
+                {
+                    Id = x.Id,
+                    UserId = x.UserId,
+                    DrivingLicenseId = x.DrivingLicenseId,
+                    Status = x.Status,
+                    CreateAt = x.CreateAt,
+                    UpdateAt = x.UpdateAt,
+
+                    DrivingLicense = new DrivingLicenseDTO
+                    {
+                        Id = x.DrivingLicense.Id,
+                        Name = x.DrivingLicense.Name
+                    }
+                })
+                .FirstOrDefaultAsync();
         }
     }
 }
