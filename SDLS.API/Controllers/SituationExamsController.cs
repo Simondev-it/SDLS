@@ -24,10 +24,11 @@ namespace SDLS.API.Controllers
             [FromQuery] string? description,
             [FromQuery] bool? isRandom,
             [FromQuery] int? status = null,
+            [FromQuery] Guid? userId = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _service.GetAllAsync(id, title, description, isRandom, status, page, pageSize);
+            var result = await _service.GetAllAsync(id, title, description, isRandom, status, userId, page, pageSize);
             return Ok(result);
         }
 
