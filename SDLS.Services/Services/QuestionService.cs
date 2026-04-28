@@ -366,25 +366,34 @@ namespace SDLS.Services.Services
 
         public async Task<List<QuestionDTO>> ImportAsync(IFormFile file)
         {
-            if (file == null || file.Length == 0)
+            try
+            {
+                if (file == null || file.Length == 0)
                 throw ApiException.BadRequest("File không hợp lệ hoặc rỗng.");
 
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (extension != ".xlsx")
-                throw ApiException.BadRequest("Chỉ hỗ trợ file .xlsx");
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (extension != ".xlsx")
+                    throw ApiException.BadRequest("Chỉ hỗ trợ file .xlsx");
 
-            var rows = await ParseQuestionRowsFromXlsxAsync(file);
-            if (!rows.Any())
-                throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
+                var rows = await ParseQuestionRowsFromXlsxAsync(file);
+                if (!rows.Any())
+                    throw ApiException.BadRequest("Không có dữ liệu hợp lệ để import.");
 
-            var dtos = new List<QuestionCreateDTO>();
-            foreach (var row in rows)
-            {
-                var dto = BuildQuestionCreateDto(row.Data, row.RowNo);
-                dtos.Add(dto);
+                var dtos = new List<QuestionCreateDTO>();
+                foreach (var row in rows)
+                {
+                    var dto = BuildQuestionCreateDto(row.Data, row.RowNo);
+                    dtos.Add(dto);
+                }
+
+                return await CreateManyAsync(dtos);
             }
-
-            return await CreateManyAsync(dtos);
+            catch (Exception ex)
+            {
+                throw ApiException.BadRequest(
+                    ex.InnerException?.Message ?? ex.Message
+                );
+            }
         }
 
         public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
@@ -627,12 +636,15 @@ namespace SDLS.Services.Services
         private static List<AnswerCreateDTO> ParseAnswers(string raw)
         {
             var result = new List<AnswerCreateDTO>();
+            int counr = 0;
 
             foreach (var part in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 var pieces = part.Split('|', 2, StringSplitOptions.TrimEntries);
+                counr ++;
+
                 if (pieces.Length != 2)
-                    throw new ArgumentException("Cột Answers sai định dạng. Dùng: Content|true;Content|false");
+                    throw new ArgumentException($"Cột Answers sai định dạng. Dùng: Content|true;Content|false. Lỗi ở phần: '{part}'. hàng số {counr}");
 
                 if (!bool.TryParse(pieces[1], out var isCorrect))
                     throw new ArgumentException("IsCorrect trong cột Answers phải là true/false.");
