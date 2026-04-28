@@ -65,9 +65,8 @@ namespace SDLS.API.Controllers
 
             return Ok(user);
         }
-<<<<<<< HEAD
         [Authorize]
-=======
+
 
         // GET: api/user/statistics
         [Authorize]
@@ -79,7 +78,7 @@ namespace SDLS.API.Controllers
         }
 
         // POST: api/user
->>>>>>> 4303f97bb4322cf85f7b3e5282c92d1a3569deb3
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserCreateDTO user)
         {
