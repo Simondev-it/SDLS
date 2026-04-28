@@ -38,6 +38,7 @@ namespace SDLS.Services.Services
             string? description = null,
             bool? isRandom = null,
             int? status = null,
+            Guid? userId = null,
             int page = 1,
             int pageSize = 20)
         {
@@ -45,7 +46,8 @@ namespace SDLS.Services.Services
             pageSize = pageSize < 1 ? 20 : pageSize;
 
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var all = await _repository.GetAllAsync(id, title, description, isRandom, status, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var all = await _repository.GetAllAsync(id, title, description, isRandom, status, role, userId, currentUserId);
 
             var ordered = all.OrderByDescending(x => x.CreateAt).ThenByDescending(x => x.Id).ToList();
             var total = ordered.Count;
@@ -67,7 +69,8 @@ namespace SDLS.Services.Services
         public async Task<SituationExamDTO> GetByIdAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entity = await _repository.GetByIdAsync(id, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role, currentUserId);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
@@ -92,6 +95,7 @@ namespace SDLS.Services.Services
             }
 
             var role = UserContextHelper.GetRole(_httpContextAccessor);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
             int? status = null;
             if (role.Equals("Student"))
             {
@@ -105,6 +109,7 @@ namespace SDLS.Services.Services
                 var entity = new SituationExam
                 {
                     Id = Guid.NewGuid(),
+                    UserId = currentUserId,
                     Title = dto.Title,
                     Description = dto.Description,
                     Duration = duration,
@@ -144,6 +149,7 @@ namespace SDLS.Services.Services
             existing.PassScore = dto.PassScore;
             existing.IsRandom = dto.IsRandom;
             existing.Status = dto.Status ?? existing.Status ?? 1;
+            existing.UserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
             existing.UpdateAt = now;
 
             var incomingById = dto.SimulationExams
@@ -212,7 +218,8 @@ namespace SDLS.Services.Services
         public async Task<SituationExamDTO> DeleteSoftAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entity = await _repository.GetByIdAsync(id, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role, currentUserId);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 
@@ -225,7 +232,8 @@ namespace SDLS.Services.Services
         public async Task<SituationExamDTO> DeleteHardAsync(Guid id)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var entity = await _repository.GetByIdAsync(id, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var entity = await _repository.GetByIdAsync(id, role, currentUserId);
             if (entity == null)
                 throw ApiException.NotFound($"Not found with ID {id}");
 

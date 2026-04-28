@@ -1,3 +1,4 @@
+using SDLS.Model.DTOs.UserLicense;
 using SDLS.Model.Models;
 
 namespace SDLS.Repositories.Interface
@@ -18,5 +19,7 @@ namespace SDLS.Repositories.Interface
         Task UpdateAsync(UserLicense entity);
         Task DeleteSoftAsync(Guid id);
         Task DeleteHardAsync(Guid id);
+
+        Task<UserLicenseDTO?> GetByUserIdAsync(Guid userId);
     }
 }

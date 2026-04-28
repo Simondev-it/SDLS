@@ -18,6 +18,10 @@ namespace SDLS.Repositories.Repositories
             Guid? forumPostId = null,
             Guid? forumCommentId = null,
             Guid? questionId = null,
+            bool? hasSimulation = null,
+            bool? hasForumPost = null,
+            bool? hasForumComment = null,
+            bool? hasQuestion = null,
             string? title = null,
             string? content = null,
             int? status = null,
@@ -59,6 +63,16 @@ namespace SDLS.Repositories.Repositories
             if (forumPostId.HasValue) query = query.Where(x => x.ForumPostId == forumPostId.Value);
             if (forumCommentId.HasValue) query = query.Where(x => x.ForumCommentId == forumCommentId.Value);
             if (questionId.HasValue) query = query.Where(x => x.QuestionId == questionId.Value);
+
+            if (hasSimulation == true || hasForumPost == true || hasForumComment == true || hasQuestion == true)
+            {
+                query = query.Where(x => 
+                    (hasSimulation == true && x.SimulationId != null) ||
+                    (hasForumPost == true && x.ForumPostId != null) ||
+                    (hasForumComment == true && x.ForumCommentId != null) ||
+                    (hasQuestion == true && x.QuestionId != null)
+                );
+            }
 
             if (!string.IsNullOrWhiteSpace(title))
             {

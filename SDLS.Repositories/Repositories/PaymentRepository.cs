@@ -76,5 +76,11 @@ namespace SDLS.Repositories.Repositories
 
             await _context.SaveChangesAsync();
         }
+        public async Task<List<Payment>> GetAllPaymentsAsync()
+        {
+            return await _context.Payments
+                .OrderByDescending(p => p.CreateAt)
+                .ToListAsync();
+        }
     }
 }

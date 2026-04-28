@@ -15,7 +15,9 @@ namespace SDLS.Repositories.Repositories
             string? description = null,
             bool? isRandom = null,
             int? status = null,
-            string? role = null)
+            string? role = null,
+            Guid? userId = null,
+            Guid? currentUserId = null)
         {
             var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
@@ -29,7 +31,7 @@ namespace SDLS.Repositories.Repositories
                             .ThenInclude(s => s.SimulationChapter)
                     .Include(x => x.SimulationExams)
                         .ThenInclude(se => se.Simulation)
-                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 2)
+                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 2 || sie.UserId == currentUserId)
                 : _context.SituationExams
                     .Include(x => x.SimulationExams.Where(se => se.Status != 0))
                         .ThenInclude(se => se.Simulation)
@@ -39,10 +41,13 @@ namespace SDLS.Repositories.Repositories
                             .ThenInclude(s => s.SimulationChapter)
                     .Include(x => x.SimulationExams.Where(se => se.Status != 0))
                         .ThenInclude(se => se.Simulation)
-                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 0);
+                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 0 && (sie.Status != 2 || sie.UserId == currentUserId));
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
+
+            if (userId.HasValue)
+                query = query.Where(x => x.UserId == userId.Value);
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -73,7 +78,7 @@ namespace SDLS.Repositories.Repositories
             return await query.AsNoTracking().ToListAsync();
         }
 
-        public async Task<SituationExam?> GetByIdAsync(Guid id, string? role = null)
+        public async Task<SituationExam?> GetByIdAsync(Guid id, string? role = null, Guid? currentUserId = null)
         {
             var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
@@ -87,7 +92,7 @@ namespace SDLS.Repositories.Repositories
                             .ThenInclude(s => s.SimulationChapter)
                     .Include(x => x.SimulationExams)
                         .ThenInclude(se => se.Simulation)
-                            .ThenInclude(s => s.SimulationDifficultyLevel)
+                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 2 || sie.UserId == currentUserId)
                 : _context.SituationExams
                     .Include(x => x.SimulationExams.Where(se => se.Status != 0))
                         .ThenInclude(se => se.Simulation)
@@ -97,7 +102,7 @@ namespace SDLS.Repositories.Repositories
                             .ThenInclude(s => s.SimulationChapter)
                     .Include(x => x.SimulationExams.Where(se => se.Status != 0))
                         .ThenInclude(se => se.Simulation)
-                            .ThenInclude(s => s.SimulationDifficultyLevel);
+                            .ThenInclude(s => s.SimulationDifficultyLevel).Where(sie => sie.Status != 0 && (sie.Status != 2 || sie.UserId == currentUserId));
 
             query = query.Where(x => x.Id == id)
                          .ApplyRoleFilter(role);

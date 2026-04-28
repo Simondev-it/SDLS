@@ -29,6 +29,10 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? forumPostId,
             [FromQuery] Guid? forumCommentId,
             [FromQuery] Guid? questionId,
+            [FromQuery] bool? hasSimulation,
+            [FromQuery] bool? hasForumPost,
+            [FromQuery] bool? hasForumComment,
+            [FromQuery] bool? hasQuestion,
             [FromQuery] string? title,
             [FromQuery] string? content,
             [FromQuery] int? status,
@@ -36,7 +40,7 @@ namespace SDLS.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, title, content, status, page, pageSize);
+                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, hasSimulation, hasForumPost, hasForumComment, hasQuestion, title, content, status, page, pageSize);
 
             return Ok(result);
         }

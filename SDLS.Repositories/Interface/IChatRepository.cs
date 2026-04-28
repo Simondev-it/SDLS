@@ -10,5 +10,6 @@ namespace SDLS.Repositories.Interface
     {
         List<(string Question, string Answer)> GetHistory(string sessionId);
         void SaveToHistory(string sessionId, string question, string answer);
+        void ClearHistory(string sessionId);
     }
 }
