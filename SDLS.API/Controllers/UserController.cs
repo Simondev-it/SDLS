@@ -18,7 +18,7 @@ namespace SDLS.API.Controllers
             _userService = userService;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] Guid? id,
@@ -31,7 +31,7 @@ namespace SDLS.API.Controllers
             return Ok(users);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpGet("paged")]
         public async Task<ActionResult<PagedResult<UserDTO>>> GetAllPaged(
             [FromQuery] Guid? id,
@@ -45,7 +45,7 @@ namespace SDLS.API.Controllers
             var users = await _userService.GetAllWithPagingAsync(id, roleId, email, name, status, page, pageSize);
             return Ok(users);
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         // GET: api/user/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
@@ -56,7 +56,7 @@ namespace SDLS.API.Controllers
             return Ok(user);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpGet("email")]
         public async Task<IActionResult> GetByEmail([FromQuery] string email)
         {
@@ -65,7 +65,7 @@ namespace SDLS.API.Controllers
 
             return Ok(user);
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] UserCreateDTO user)
         {
@@ -74,7 +74,7 @@ namespace SDLS.API.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UserUpdateDTO user)
         {
@@ -86,7 +86,7 @@ namespace SDLS.API.Controllers
         }
 
         // PATCH: api/user/change-password
-        [Authorize]
+        //[Authorize]
         [HttpPatch("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] UserChangePasswordDTO dto)
         {

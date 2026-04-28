@@ -58,6 +58,34 @@ namespace SDLS.API.Controllers
             return Ok(created);
         }
 
+        [HttpGet("template")]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            var template = await _service.GenerateImportTemplateAsync();
+            return File(template.Content, template.ContentType, template.FileName);
+        }
+
+        [HttpPost("import")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<List<QuestionLessonDTO>>> Import([FromForm] ImportQuestionLessonRequest request)
+        {
+            var imported = await _service.ImportAsync(request.File);
+            return Ok(imported);
+        }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportToExcel(
+            [FromQuery] Guid? id,
+            [FromQuery] Guid? questionChapterId,
+            [FromQuery] string? name,
+            [FromQuery] string? description,
+            [FromQuery] string? content,
+            [FromQuery] int? status = null)
+        {
+            var file = await _service.ExportToExcelAsync(id, questionChapterId, name, description, content, status);
+            return File(file.Content, file.ContentType, file.FileName);
+        }
+
         [Authorize(Roles = "Instructor,Admin")]
         //[Authorize]
         [HttpPut("{id}")]
