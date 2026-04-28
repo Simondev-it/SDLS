@@ -4,6 +4,7 @@ using SDLS.Model.DTOs;
 using SDLS.Model.DTOs.Question;
 using SDLS.Model.Models;
 using SDLS.Services.Interfaces;
+using SDLS.Services.Services;
 
 namespace SDLS.API.Controllers
 {
@@ -25,12 +26,13 @@ namespace SDLS.API.Controllers
             [FromQuery] Guid? QuestionCategoryId,
             [FromQuery] List<Guid>? tagIds,
             [FromQuery] string? searchContent,
+            [FromQuery] string? sortBy,
             [FromQuery] int? status = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize);
+                lessonId, topicId, QuestionCategoryId, tagIds, searchContent, status, page, pageSize, sortBy);
 
             return Ok(result);
         }
@@ -41,6 +43,14 @@ namespace SDLS.API.Controllers
             var question = await _service.GetByIdAsync(id);
             if (question == null) return NotFound();
             return Ok(question);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/{id}")]
+        public async Task<IActionResult> GetByIdForAdmin(Guid id)
+        {
+            var result = await _service.GetByIdForAdminAsync(id);
+            return Ok(result);
         }
 
         [Authorize(Roles = "Instructor,Admin")]
@@ -69,6 +79,14 @@ namespace SDLS.API.Controllers
         {
             var template = await _service.GenerateImportTemplateAsync();
             return File(template.Content, template.ContentType, template.FileName);
+        }
+
+        //[Authorize(Roles = "Instructor,Admin")]
+        [HttpGet("export-license-chapter-lesson")]
+        public async Task<IActionResult> ExportLicenseChapterLesson()
+        {
+            var exportFile = await _service.ExportLicenseChapterLessonAsync();
+            return File(exportFile.Content, exportFile.ContentType, exportFile.FileName);
         }
 
         [HttpPost("import")]

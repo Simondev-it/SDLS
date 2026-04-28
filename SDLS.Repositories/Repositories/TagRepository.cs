@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
@@ -18,6 +18,8 @@ namespace SDLS.Repositories.Repositories
             string? role = null)
         {
             var query = _context.Tags.AsQueryable();
+
+            query = query.Where(x => x.Status != 2);
 
             if (id.HasValue)
                 query = query.Where(x => x.Id == id.Value);
@@ -40,6 +42,7 @@ namespace SDLS.Repositories.Repositories
                 query = query.Where(x => x.ColorCode != null && EF.Functions.ILike(x.ColorCode, $"%{keyword}%"));
             }
 
+            // Nếu người dùng truyền status cụ thể (ví dụ: status=0 hoặc status=1)
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
 

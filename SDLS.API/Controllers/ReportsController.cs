@@ -23,7 +23,8 @@ namespace SDLS.API.Controllers
         public async Task<ActionResult<PagedResult<ReportDTO>>> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] Guid? userId,
-            [FromQuery] Guid? reportCategoryId,
+            [FromQuery] List<Guid>? reportCategoryIds,
+            [FromQuery] string? roleName,
             [FromQuery] Guid? simulationId,
             [FromQuery] Guid? forumPostId,
             [FromQuery] Guid? forumCommentId,
@@ -35,7 +36,7 @@ namespace SDLS.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetAllAsync(
-                id, userId, reportCategoryId, simulationId, forumPostId, forumCommentId, questionId, title, content, status, page, pageSize);
+                id, userId, reportCategoryIds, roleName, simulationId, forumPostId, forumCommentId, questionId, title, content, status, page, pageSize);
 
             return Ok(result);
         }

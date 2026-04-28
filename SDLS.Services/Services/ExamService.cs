@@ -45,7 +45,8 @@ namespace SDLS.Services.Services
             int pageSize = 20)
         {
             var role = UserContextHelper.GetRole(_httpContextAccessor);
-            var allExams = await _examRepository.GetAllAsync(userId, status, role);
+            var currentUserId = UserContextHelper.GetCurrentUserId(_httpContextAccessor);
+            var allExams = await _examRepository.GetAllAsync(userId, status, role, currentUserId);
 
             var total = allExams.Count();
 
@@ -84,12 +85,23 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTimeHelper.GetVietnamNow();
 
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
+            int? status = null;
+            if (role.Equals("Student"))
+            {
+                status = 2;
+            }
+            else
+            {
+                status = 1;
+            }
+
             var newExam = _mapper.Map<Exam>(dto);
             newExam.Id = Guid.NewGuid();
             newExam.UserId = currentUserId;
             newExam.CreateAt = now;
             newExam.UpdateAt = now;
-            newExam.Status = 1;
+            newExam.Status = status;
 
             foreach (var examQuestion in newExam.ExamQuestions)
             {
@@ -113,7 +125,8 @@ namespace SDLS.Services.Services
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
             var now = DateTimeHelper.GetVietnamNow();
 
-            var randomQuestionIds = await BuildRandomExamQuestionIdsAsync(dto.RandomQuestionConfig);
+            // Truyền thêm CriticalPercentage vào hàm build
+            var randomQuestionIds = await BuildRandomExamQuestionIdsAsync(dto.RandomQuestionConfig, dto.CriticalPercentage);
 
             var newExam = new Exam
             {
@@ -126,7 +139,7 @@ namespace SDLS.Services.Services
                 IsRandom = true,
                 CreateAt = now,
                 UpdateAt = now,
-                Status = 1,
+                Status = dto.Status ?? 1, // Sử dụng status từ DTO
                 ExamQuestions = randomQuestionIds.Select(questionId => new ExamQuestion
                 {
                     ExamId = Guid.Empty,
@@ -146,122 +159,108 @@ namespace SDLS.Services.Services
             return _mapper.Map<ExamDTO>(newExam);
         }
 
-        private async Task<List<Guid>> BuildRandomExamQuestionIdsAsync(RandomExamQuestionConfigDTO? randomConfig)
+        private async Task<List<Guid>> BuildRandomExamQuestionIdsAsync(RandomExamQuestionConfigDTO? randomConfig, int criticalPercent)
         {
+            // 1. Lấy toàn bộ câu hỏi và Tag điểm liệt
             var allQuestions = (await _questionRepository.GetAllAsync(status: 1)).ToList();
-
-            if (!allQuestions.Any())
-                throw ApiException.BadRequest("Không có câu hỏi trong hệ thống.");
+            if (!allQuestions.Any()) throw ApiException.BadRequest("Không có câu hỏi trong hệ thống.");
 
             var criticalTag = (await _tagRepository.GetAllAsync(name: "Điểm liệt", status: 1))
                 .FirstOrDefault(x => string.Equals(x.Name?.Trim(), "Điểm liệt", StringComparison.OrdinalIgnoreCase));
+            if (criticalTag == null) throw ApiException.BadRequest("Không tìm thấy tag 'Điểm liệt'.");
 
-            if (criticalTag == null)
-                throw ApiException.BadRequest("Không tìm thấy tag 'Điểm liệt'.");
-
+            // HashSet để tra cứu câu điểm liệt nhanh hơn
             var criticalQuestionIds = allQuestions
                 .Where(q => q.QuestionTags.Any(qt => qt.Status != 0 && qt.TagId == criticalTag.Id))
-                .Select(q => q.Id)
-                .ToHashSet();
+                .Select(q => q.Id).ToHashSet();
 
-            if (criticalQuestionIds.Count == 0)
-                throw ApiException.BadRequest("Không có câu hỏi nào gắn tag 'Điểm liệt'.");
-
-            if (randomConfig == null)
-            {
-                const int defaultTotalQuestions = 30;
-                if (allQuestions.Count < defaultTotalQuestions)
-                    throw ApiException.BadRequest($"Không đủ {defaultTotalQuestions} câu hỏi để random.");
-
-                var selectedIds = PickRandomQuestionIds(allQuestions.Select(q => q.Id).ToList(), defaultTotalQuestions);
-                EnsureContainsCriticalQuestion(selectedIds, allQuestions.Select(q => q.Id).ToList(), criticalQuestionIds);
-                return selectedIds;
-            }
-
-            if (!randomConfig.TotalQuestions.HasValue || randomConfig.TotalQuestions.Value <= 0)
-                throw ApiException.BadRequest("Tổng số câu hỏi phải lớn hơn 0.");
-
-            if (randomConfig.ChapterRatios == null || !randomConfig.ChapterRatios.Any())
-                throw ApiException.BadRequest("Phải truyền danh sách chapter và phần trăm.");
-
-            var normalizedRatios = randomConfig.ChapterRatios
-                .GroupBy(x => x.ChapterId)
-                .Select(g => new RandomExamQuestionChapterRatioDTO
-                {
-                    ChapterId = g.Key,
-                    Percentage = g.Sum(x => x.Percentage ?? 0)
-                })
-                .ToList();
-
-            var totalPercentage = normalizedRatios.Sum(x => x.Percentage ?? 0);
-            if (totalPercentage != 100)
-                throw ApiException.BadRequest("Tổng phần trăm theo chapter phải bằng đúng 100%.");
+            // 2. Kiểm tra cấu hình
+            if (randomConfig == null || !randomConfig.TotalQuestions.HasValue)
+                throw ApiException.BadRequest("Cấu hình random không hợp lệ.");
 
             var totalQuestions = randomConfig.TotalQuestions.Value;
-            var chapterRequiredCounts = AllocateQuestionCounts(totalQuestions, normalizedRatios);
+            // Tính số lượng câu điểm liệt mục tiêu (làm tròn)
+            int targetCriticalCount = (int)Math.Round((double)totalQuestions * criticalPercent / 100);
 
-            var selectedByChapter = new Dictionary<Guid, List<Guid>>();
-            var chapterPools = new Dictionary<Guid, List<Guid>>();
+            // 3. Chuẩn hóa tỉ lệ Chapter
+            var normalizedRatios = randomConfig.ChapterRatios?
+                .GroupBy(x => x.ChapterId)
+                .Select(g => new { ChapterId = g.Key, Percentage = g.Sum(x => x.Percentage ?? 0) })
+                .ToList();
+
+            if (normalizedRatios == null || normalizedRatios.Sum(x => x.Percentage) != 100)
+                throw ApiException.BadRequest("Tổng phần trăm chapter phải bằng 100%.");
+
+            // 4. Phân bổ số lượng câu hỏi cần lấy cho mỗi Chapter
+            // (AllocateQuestionCounts là hàm bạn đã có để chia TotalQuestions theo Ratio)
+            var chapterRequiredCounts = AllocateQuestionCounts(totalQuestions, normalizedRatios.Select(r => new RandomExamQuestionChapterRatioDTO { ChapterId = r.ChapterId, Percentage = r.Percentage }).ToList());
+
+            var finalSelectedIds = new List<Guid>();
+            var random = new Random();
+
+            // 5. Logic bóc tách từng Chapter
+            int actualCriticalCount = 0;
+            var chapterData = new List<(Guid ChapterId, List<Guid> CriticalPool, List<Guid> NormalPool, int RequiredTotal)>();
 
             foreach (var ratio in normalizedRatios)
             {
-                var chapterId = ratio.ChapterId;
-                var requiredCount = chapterRequiredCounts[chapterId];
+                var pool = allQuestions.Where(q => q.QuestionLesson?.QuestionChapterId == ratio.ChapterId).ToList();
+                var criticalInChapter = pool.Where(q => criticalQuestionIds.Contains(q.Id)).Select(q => q.Id).ToList();
+                var normalInChapter = pool.Where(q => !criticalQuestionIds.Contains(q.Id)).Select(q => q.Id).ToList();
 
-                var chapterPool = allQuestions
-                    .Where(q => q.QuestionLesson?.QuestionChapterId == chapterId)
-                    .Select(q => q.Id)
-                    .Distinct()
-                    .ToList();
+                int requiredForThisChapter = chapterRequiredCounts[ratio.ChapterId];
+                if (pool.Count < requiredForThisChapter)
+                    throw ApiException.BadRequest($"Chapter {ratio.ChapterId} không đủ câu hỏi (Cần {requiredForThisChapter}, có {pool.Count}).");
 
-                if (chapterPool.Count < requiredCount)
-                    throw ApiException.BadRequest($"Chapter {chapterId} không đủ câu hỏi để lấy {requiredCount} câu.");
-
-                chapterPools[chapterId] = chapterPool;
-                selectedByChapter[chapterId] = PickRandomQuestionIds(chapterPool, requiredCount);
+                chapterData.Add((ratio.ChapterId, criticalInChapter, normalInChapter, requiredForThisChapter));
             }
 
-            var finalSelectedIds = selectedByChapter
-                .SelectMany(x => x.Value)
-                .ToList();
+            // 6. Bước 1: Lấy câu điểm liệt từ các Chapter (theo tỉ lệ công bằng hoặc random pool)
+            // Để đơn giản và chính xác, ta sẽ gom toàn bộ câu điểm liệt khả dụng trong các Chapter đã chọn
+            var availableCriticalInScope = chapterData.SelectMany(x => x.CriticalPool).ToList();
+            var selectedCriticalIds = availableCriticalInScope.OrderBy(x => random.Next()).Take(targetCriticalCount).ToList();
+            actualCriticalCount = selectedCriticalIds.Count;
 
-            if (finalSelectedIds.Count != totalQuestions)
-                throw ApiException.BadRequest("Không thể random đúng số lượng câu hỏi yêu cầu.");
-
-            if (!finalSelectedIds.Any(id => criticalQuestionIds.Contains(id)))
+            // 7. Bước 2: Điền vào danh sách cuối cùng và đảm bảo đúng số lượng mỗi Chapter
+            foreach (var chapter in chapterData)
             {
-                var replaced = false;
+                var selectedFromThisChapter = new List<Guid>();
 
-                foreach (var ratio in normalizedRatios)
+                // Lấy những câu điểm liệt đã chọn mà thuộc chapter này
+                var criticalForThisChapter = selectedCriticalIds.Where(id => chapter.CriticalPool.Contains(id)).ToList();
+                selectedFromThisChapter.AddRange(criticalForThisChapter);
+
+                // Nếu số câu điểm liệt đã lấy vượt quá số câu chapter yêu cầu (trường hợp hiếm khi ratio thấp)
+                // thì chỉ lấy tối đa bằng RequiredTotal
+                if (selectedFromThisChapter.Count > chapter.RequiredTotal)
                 {
-                    var chapterId = ratio.ChapterId;
-                    var selectedIds = selectedByChapter[chapterId];
-                    if (!selectedIds.Any())
-                        continue;
-
-                    var criticalCandidate = chapterPools[chapterId]
-                        .Where(id => criticalQuestionIds.Contains(id) && !selectedIds.Contains(id))
-                        .FirstOrDefault();
-
-                    if (criticalCandidate == Guid.Empty)
-                        continue;
-
-                    var nonCriticalSelectedIndex = selectedIds.FindIndex(id => !criticalQuestionIds.Contains(id));
-                    if (nonCriticalSelectedIndex < 0)
-                        continue;
-
-                    selectedIds[nonCriticalSelectedIndex] = criticalCandidate;
-                    replaced = true;
-                    break;
+                    selectedFromThisChapter = selectedFromThisChapter.Take(chapter.RequiredTotal).ToList();
                 }
 
-                if (!replaced)
-                    throw ApiException.BadRequest("Không thể đảm bảo có ít nhất 1 câu 'Điểm liệt' theo cấu hình chapter hiện tại.");
+                // Tính số câu còn thiếu cho Chapter này
+                int remainingNeeded = chapter.RequiredTotal - selectedFromThisChapter.Count;
 
-                finalSelectedIds = selectedByChapter.SelectMany(x => x.Value).ToList();
+                if (remainingNeeded > 0)
+                {
+                    // Lấy thêm từ NormalPool của chapter
+                    var additionalNormal = chapter.NormalPool.OrderBy(x => random.Next()).Take(remainingNeeded).ToList();
+                    selectedFromThisChapter.AddRange(additionalNormal);
+
+                    // Nếu vẫn thiếu (do NormalPool không đủ), lấy nốt từ CriticalPool còn lại của chapter đó
+                    if (selectedFromThisChapter.Count < chapter.RequiredTotal)
+                    {
+                        var remainingCriticalInChapter = chapter.CriticalPool
+                            .Where(id => !selectedFromThisChapter.Contains(id))
+                            .OrderBy(x => random.Next())
+                            .Take(chapter.RequiredTotal - selectedFromThisChapter.Count);
+                        selectedFromThisChapter.AddRange(remainingCriticalInChapter);
+                    }
+                }
+
+                finalSelectedIds.AddRange(selectedFromThisChapter);
             }
 
-            return finalSelectedIds;
+            return finalSelectedIds.OrderBy(x => random.Next()).ToList();
         }
 
         private static Dictionary<Guid, int> AllocateQuestionCounts(

@@ -12,6 +12,9 @@ using SDLS.Repositories.Interface;
 using SDLS.Services.ApiExceptions;
 using SDLS.Services.Interfaces;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore;
+using SDLS.Model.Constants;
+using SDLS.Model.DTOs.Notification;
 
 namespace SDLS.Services.Services
 {
@@ -24,6 +27,12 @@ namespace SDLS.Services.Services
         private readonly ITagRepository _tagRepository;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly INotificationService _notificationService;
+        private readonly IExecutionStrategyRepository _executionStrategy;
+        private readonly AppDbContext _dbContext;
+
+        private readonly Guid CREATE_TAG_ID = Guid.Parse("763a5be4-963a-487d-a3b4-6a826026c94e");
+        private readonly Guid UPDATE_TAG_ID = Guid.Parse("8317546b-0cc6-43e9-a917-0ae9d090ec16");
 
         public QuestionService(
             IQuestionRepository questionRepository,
@@ -32,7 +41,10 @@ namespace SDLS.Services.Services
             IQuestionCategoryRepository questionCategoryRepository,
             ITagRepository tagRepository,
             IHttpContextAccessor httpContextAccessor,
-            IMapper mapper)
+            IMapper mapper, 
+            INotificationService notificationService,
+            IExecutionStrategyRepository executionStrategy,
+            AppDbContext dbContext)
         {
             _questionRepository = questionRepository;
             _questionTopicRepository = questionTopicRepository;
@@ -41,6 +53,9 @@ namespace SDLS.Services.Services
             _tagRepository = tagRepository;
             _httpContextAccessor = httpContextAccessor;
             _mapper = mapper;
+            _notificationService = notificationService;
+            _executionStrategy = executionStrategy;
+            _dbContext = dbContext;
         }
 
 
@@ -52,11 +67,11 @@ namespace SDLS.Services.Services
             string? searchContent = null,
             int? status = null,
             int page = 1,
-            int pageSize = 10)
+            int pageSize = 20,
+            string? sortBy = null)
         {
             page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 10 : pageSize;
-
+            pageSize = pageSize < 1 ? 20 : pageSize;
             var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             var filteredQuestions = await _questionRepository.GetFilteredForListAsync(
@@ -68,7 +83,31 @@ namespace SDLS.Services.Services
                 status,
                 role);
 
-            var orderedList = BuildOrderedLinkedList(filteredQuestions);
+            List<Question> orderedList;
+
+            // Logic Sort
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                switch (sortBy.ToLower())
+                {
+                    case "latest": // Mới nhất lên đầu
+                        orderedList = filteredQuestions.OrderByDescending(q => q.UpdateAt ?? q.CreateAt).ToList();
+                        break;
+                    case "oldest": // Cũ nhất lên đầu
+                        orderedList = filteredQuestions.OrderBy(q => q.UpdateAt ?? q.CreateAt).ToList();
+                        break;
+                    default:
+                        // Nếu truyền bậy hoặc không khớp thì quay lại logic mặc định
+                        orderedList = BuildOrderedLinkedList(filteredQuestions);
+                        break;
+                }
+            }
+            else
+            {
+                // Bình thường không nhập gì thì get như bình thường
+                orderedList = BuildOrderedLinkedList(filteredQuestions);
+            }
+
             var total = orderedList.Count;
 
             var pagedEntities = orderedList
@@ -105,72 +144,96 @@ namespace SDLS.Services.Services
             return _mapper.Map<QuestionDTO>(question);
         }
 
+        public async Task<QuestionDTO> GetByIdForAdminAsync(Guid id)
+        {
+            var entity = await _questionRepository.GetByIdForAdminAsync(id);
+            if (entity == null) throw ApiException.NotFound("Không tìm thấy câu hỏi.");
+            return _mapper.Map<QuestionDTO>(entity);
+        }
+
 
         public async Task<QuestionDTO> CreateAsync(QuestionCreateDTO dto)
         {
-            if (dto.Answers == null || !dto.Answers.Any())
-                throw ApiException.BadRequest("Question must have at least 1 answer");
-
-            if (!dto.Answers.Any(a => a.IsCorrect))
-                throw ApiException.BadRequest("At least one answer must be correct");
-
-            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
-            if (lesson == null)
-                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
-
-            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
-            if (topic == null)
-                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
-
-            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
-            if (category == null)
-                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
-
-            var now = DateTimeHelper.GetVietnamNow();
-
-            var newQuestion = _mapper.Map<Question>(dto);
-            newQuestion.Id = Guid.NewGuid();
-            newQuestion.CreateAt = now;
-            newQuestion.UpdateAt = now;
-            newQuestion.Status = 1;
-            newQuestion.Image = dto.Image;
-
-            if (dto.Index.HasValue)
+            return await _executionStrategy.ExecuteAsync(async () =>
             {
-                newQuestion.Index = dto.Index.Value;
-            }
-            else
-            {
-                var allActive = await _questionRepository.GetAllAsync(status: 1);
-                var maxIndex = allActive.Max(q => q.Index ?? 0);
-                newQuestion.Index = maxIndex + 1;
-            }
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+                try
+                {
+                    // --- LOGIC CREATE CŨ CỦA BẠN ---
+                    if (dto.Answers == null || !dto.Answers.Any())
+                        throw ApiException.BadRequest("Question must have at least 1 answer");
+                    if (!dto.Answers.Any(a => a.IsCorrect))
+                        throw ApiException.BadRequest("At least one answer must be correct");
 
-            foreach (var ans in newQuestion.Answers)
-            {
-                ans.QuestionId = newQuestion.Id;
-                ans.CreateAt = now;
-                ans.UpdateAt = now;
-                ans.Status = 1;
-            }
+                    var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+                    if (lesson == null) throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
 
-            foreach (var questionTag in newQuestion.QuestionTags)
-            {
-                var tag = await _tagRepository.GetByIdAsync(questionTag.TagId);
-                if (tag == null)
-                    throw ApiException.BadRequest($"TagId {questionTag.TagId} không tồn tại.");
+                    var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+                    if (topic == null) throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
 
-                questionTag.QuestionId = newQuestion.Id;
-                questionTag.CreateAt = now;
-                questionTag.UpdateAt = now;
-                questionTag.Status = 1;
-            }
+                    var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+                    if (category == null) throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
 
-            newQuestion.ParentId = null;
+                    var now = DateTimeHelper.GetVietnamNow();
+                    var newQuestion = _mapper.Map<Question>(dto);
+                    newQuestion.Id = Guid.NewGuid();
+                    newQuestion.CreateAt = now;
+                    newQuestion.UpdateAt = now;
+                    newQuestion.Status = 1;
+                    newQuestion.Image = dto.Image;
 
-            await _questionRepository.AddAsync(newQuestion);
-            await RebuildGlobalParentLinksAsync(now);
-            return _mapper.Map<QuestionDTO>(newQuestion);
+                    if (dto.Index.HasValue) { newQuestion.Index = dto.Index.Value; }
+                    else
+                    {
+                        var allActive = await _questionRepository.GetAllAsync(status: 1);
+                        var maxIndex = allActive.Any() ? allActive.Max(q => q.Index ?? 0) : 0;
+                        newQuestion.Index = maxIndex + 1;
+                    }
+
+                    foreach (var ans in newQuestion.Answers)
+                    {
+                        ans.QuestionId = newQuestion.Id;
+                        ans.CreateAt = now; ans.UpdateAt = now; ans.Status = 1;
+                    }
+
+                    foreach (var questionTag in newQuestion.QuestionTags)
+                    {
+                        var tag = await _tagRepository.GetByIdAsync(questionTag.TagId);
+                        if (tag == null) throw ApiException.BadRequest($"TagId {questionTag.TagId} không tồn tại.");
+                        questionTag.QuestionId = newQuestion.Id;
+                        questionTag.CreateAt = now; questionTag.UpdateAt = now; questionTag.Status = 1;
+                    }
+                    newQuestion.ParentId = null;
+
+                    await _questionRepository.AddAsync(newQuestion);
+                    await RebuildGlobalParentLinksAsync(now);
+
+                    // --- LOGIC NOTIFICATION ---
+                    var adminIds = await _dbContext.Users
+                        .AsNoTracking()
+                        .Where(x => x.RoleId == RoleConst.ADMIN_ROLE_ID && x.Status != 0)
+                        .Select(x => x.Id).ToListAsync();
+
+                    if (adminIds.Any())
+                    {
+                        await _notificationService.CreateAsync(new NotificationCreateDTO
+                        {
+                            Title = "Câu hỏi mới",
+                            Content = $"Có câu hỏi mới vừa được tạo cần duyệt.",
+                            Status = 2,
+                            UserNotifications = adminIds.Select(userId => new UserNotificationCreateDTO { UserId = userId }).ToList()
+                        });
+                    }
+
+                    await transaction.CommitAsync();
+                    return _mapper.Map<QuestionDTO>(newQuestion);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<List<QuestionDTO>> CreateManyAsync(List<QuestionCreateDTO> dtos)
@@ -246,6 +309,61 @@ namespace SDLS.Services.Services
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         }
 
+        public async Task<(byte[] Content, string FileName, string ContentType)> ExportLicenseChapterLessonAsync()
+        {
+            var licenses = await _dbContext.DrivingLicenses
+                .AsNoTracking()
+                .Where(x => x.Status != 0)
+                .Include(x => x.QuestionChapters.Where(c => c.Status != 0))
+                    .ThenInclude(c => c.QuestionLessons.Where(l => l.Status != 0))
+                .OrderBy(x => x.Name)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("License-Chapter-Lesson");
+
+            var headers = new[]
+            {
+                "DrivingLicenseName",
+                "QuestionChapterName",
+                "QuestionLessonId",
+                "QuestionLessonName"
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(1, i + 1).Value = headers[i];
+                worksheet.Cell(1, i + 1).Style.Font.Bold = true;
+            }
+
+            var currentRow = 2;
+
+            foreach (var license in licenses)
+            {
+                foreach (var chapter in license.QuestionChapters.OrderBy(c => c.Index).ThenBy(c => c.Name))
+                {
+                    foreach (var lesson in chapter.QuestionLessons.OrderBy(l => l.Index).ThenBy(l => l.Name))
+                    {
+                        worksheet.Cell(currentRow, 1).Value = license.Name;
+                        worksheet.Cell(currentRow, 2).Value = chapter.Name;
+                        worksheet.Cell(currentRow, 3).Value = lesson.Id.ToString();
+                        worksheet.Cell(currentRow, 4).Value = lesson.Name;
+                        currentRow++;
+                    }
+                }
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+
+            return (
+                stream.ToArray(),
+                $"license-chapter-lesson-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+
         public async Task<List<QuestionDTO>> ImportAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -271,105 +389,116 @@ namespace SDLS.Services.Services
 
         public async Task<QuestionDTO> UpdateAsync(Guid id, QuestionUpdateDTO dto)
         {
-            var existing = await _questionRepository.GetByIdForUpdateAsync(id);
-            if (existing == null)
-                throw ApiException.NotFound("Không tìm thấy câu hỏi");
-
-            var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
-            if (lesson == null)
-                throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
-
-            var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
-            if (topic == null)
-                throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
-
-            var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
-            if (category == null)
-                throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
-
-            var now = DateTimeHelper.GetVietnamNow();
-
-            existing.QuestionLessonId = dto.QuestionLessonId;
-            existing.QuestionTopicId = dto.QuestionTopicId;
-            existing.QuestionCategoryId = dto.QuestionCategoryId;
-            existing.Index = dto.Index ?? existing.Index;
-            existing.Content = dto.Content;
-            existing.Image = dto.Image;
-            existing.Explanation = dto.Explanation;
-            existing.Type = dto.Type;
-            existing.Status = dto.Status ?? existing.Status;
-            existing.UpdateAt = now;
-
-            if (dto.Answers != null)
+            return await _executionStrategy.ExecuteAsync(async () =>
             {
-                var existingAnswersById = existing.Answers.ToDictionary(a => a.Id, a => a);
-
-                foreach (var answerDto in dto.Answers)
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+                try
                 {
-                    if (answerDto.QuestionId != id)
-                        throw ApiException.BadRequest($"Answer.QuestionId ({answerDto.QuestionId}) không khớp Question Id ({id}).");
+                    var existing = await _questionRepository.GetByIdForUpdateAsync(id);
+                    if (existing == null) throw ApiException.NotFound("Không tìm thấy câu hỏi");
 
-                    if (answerDto.Id.HasValue)
-                    {
-                        if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
-                            throw ApiException.NotFound($"Không tìm thấy Answer với Id {answerDto.Id.Value}");
+                    var lesson = await _questionLessonRepository.GetByIdAsync(dto.QuestionLessonId);
+                    if (lesson == null) throw ApiException.BadRequest($"QuestionLessonId {dto.QuestionLessonId} không tồn tại.");
 
-                        answer.Content = answerDto.Content;
-                        answer.IsCorrect = answerDto.IsCorrect;
-                        answer.UpdateAt = now;
-                        answer.Status = answerDto.Status ?? answer.Status ?? 1;
-                    }
-                    else
+                    var topic = await _questionTopicRepository.GetByIdAsync(dto.QuestionTopicId);
+                    if (topic == null) throw ApiException.BadRequest($"QuestionTopicId {dto.QuestionTopicId} không tồn tại.");
+
+                    var category = await _questionCategoryRepository.GetByIdAsync(dto.QuestionCategoryId);
+                    if (category == null) throw ApiException.BadRequest($"QuestionCategoryId {dto.QuestionCategoryId} không tồn tại.");
+
+                    var now = DateTimeHelper.GetVietnamNow();
+                    existing.QuestionLessonId = dto.QuestionLessonId;
+                    existing.QuestionTopicId = dto.QuestionTopicId;
+                    existing.QuestionCategoryId = dto.QuestionCategoryId;
+                    existing.Index = dto.Index ?? existing.Index;
+                    existing.Content = dto.Content;
+                    existing.Image = dto.Image;
+                    existing.Explanation = dto.Explanation;
+                    existing.Type = dto.Type;
+                    existing.Status = dto.Status ?? existing.Status;
+                    existing.UpdateAt = now;
+
+                    // Xử lý Answers
+                    if (dto.Answers != null)
                     {
-                        var newAnswer = new Answer
+                        var existingAnswersById = existing.Answers.ToDictionary(a => a.Id, a => a);
+                        foreach (var answerDto in dto.Answers)
                         {
-                            QuestionId = id,
-                            Content = answerDto.Content,
-                            IsCorrect = answerDto.IsCorrect,
-                            CreateAt = now,
-                            UpdateAt = now,
-                            Status = answerDto.Status ?? 1
-                        };
-
-                        existing.Answers.Add(newAnswer);
+                            if (answerDto.QuestionId != id) throw ApiException.BadRequest("Answer.QuestionId không khớp.");
+                            if (answerDto.Id.HasValue)
+                            {
+                                if (!existingAnswersById.TryGetValue(answerDto.Id.Value, out var answer))
+                                    throw ApiException.NotFound($"Không tìm thấy Answer {answerDto.Id.Value}");
+                                answer.Content = answerDto.Content;
+                                answer.IsCorrect = answerDto.IsCorrect;
+                                answer.UpdateAt = now;
+                                answer.Status = answerDto.Status ?? answer.Status ?? 1;
+                            }
+                            else
+                            {
+                                existing.Answers.Add(new Answer { QuestionId = id, Content = answerDto.Content, IsCorrect = answerDto.IsCorrect, CreateAt = now, UpdateAt = now, Status = answerDto.Status ?? 1 });
+                            }
+                        }
                     }
-                }
-            }
 
-            if (dto.QuestionTags != null)
-            {
-                // 1) Hard delete toàn bộ tag cũ của question
-                _questionRepository.RemoveQuestionTags(existing.QuestionTags.ToList());
-
-                // 2) Thêm lại tag mới (distinct để tránh trùng unique questionId + tagId)
-                var newTagIds = dto.QuestionTags
-                    .Select(qt => qt.TagId)
-                    .Where(tagId => tagId != Guid.Empty)
-                    .Distinct()
-                    .ToList();
-
-                foreach (var tagId in newTagIds)
-                {
-                    var tag = await _tagRepository.GetByIdAsync(tagId);
-                    if (tag == null)
-                        throw ApiException.BadRequest($"TagId {tagId} không tồn tại.");
-
-                    var newQuestionTag = new QuestionTag
+                    // Xử lý Tags
+                    if (dto.QuestionTags != null)
                     {
-                        QuestionId = id,
-                        TagId = tagId,
-                        CreateAt = now,
-                        UpdateAt = now,
-                        Status = 1
-                    };
+                        // Lọc danh sách Tag từ DTO: Loại bỏ CREATE_TAG_ID và UPDATE_TAG_ID 
+                        // vì chúng ta muốn Repository tự quản lý 2 tag này.
+                        var newTagIds = dto.QuestionTags
+                            .Select(qt => qt.TagId)
+                            .Where(tagId => tagId != Guid.Empty && tagId != CREATE_TAG_ID && tagId != UPDATE_TAG_ID)
+                            .Distinct()
+                            .ToList();
 
-                    existing.QuestionTags.Add(newQuestionTag);
+                        // Xóa sạch các tag cũ (Nên gán lại list mới thay vì RemoveRange thủ công nếu dùng EF Core Tracking)
+                        existing.QuestionTags.Clear();
+
+                        foreach (var tagId in newTagIds)
+                        {
+                            var tag = await _tagRepository.GetByIdAsync(tagId);
+                            if (tag == null) throw ApiException.BadRequest($"TagId {tagId} không tồn tại.");
+
+                            existing.QuestionTags.Add(new QuestionTag
+                            {
+                                QuestionId = id,
+                                TagId = tagId,
+                                CreateAt = now,
+                                UpdateAt = now,
+                                Status = 1
+                            });
+                        }
+                    }
+
+                    await _questionRepository.UpdateAsync(existing);
+                    await RebuildGlobalParentLinksAsync(now);
+
+                    var adminIds = await _dbContext.Users
+                        .AsNoTracking()
+                        .Where(x => x.RoleId == RoleConst.ADMIN_ROLE_ID && x.Status != 0)
+                        .Select(x => x.Id).ToListAsync();
+
+                    if (adminIds.Any())
+                    {
+                        await _notificationService.CreateAsync(new NotificationCreateDTO
+                        {
+                            Title = "Câu hỏi cập nhật",
+                            Content = $"Câu hỏi '{existing.Content.Substring(0, Math.Min(20, existing.Content.Length))}...' vừa được cập nhật.",
+                            Status = 2,
+                            UserNotifications = adminIds.Select(userId => new UserNotificationCreateDTO { UserId = userId }).ToList()
+                        });
+                    }
+
+                    await transaction.CommitAsync();
+                    return _mapper.Map<QuestionDTO>(existing);
                 }
-            }
-
-            await _questionRepository.UpdateAsync(existing);
-            await RebuildGlobalParentLinksAsync(now);
-            return _mapper.Map<QuestionDTO>(existing);
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<QuestionDTO> DeleteSoftAsync(Guid id)

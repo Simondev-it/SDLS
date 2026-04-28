@@ -147,6 +147,79 @@ namespace SDLS.Services.Services
             return dto;
         }
 
+        public async Task<UserExamStatisticsDTO> GetCurrentUserStatisticsAsync()
+        {
+            var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+
+            // Lấy User kèm theo tất cả các cấp độ dữ liệu liên quan
+            var user = await _userRepository.GetStatisticByIdAsync(currentUserId);
+            if (user == null) throw ApiException.NotFound("User không tồn tại.");
+
+            // --- 1. PHÂN TÍCH LÝ THUYẾT (Theory) ---
+            var activeExamSessions = user.ExamSessions.Where(x => x.Status == 1).ToList();
+
+            // Gom tất cả các câu hỏi đã làm trong các bài thi
+            var allExamDetails = activeExamSessions
+                .SelectMany(s => s.ExamDetails)
+                .Where(d => d.Answer != null && d.Answer.Question != null)
+                .ToList();
+
+            var theoryCategoryAnalysis = allExamDetails
+                .GroupBy(d => d.Answer.Question.QuestionCategory.Name)
+                .Select(g => new CategoryAnalysisDTO
+                {
+                    CategoryName = g.Key,
+                    TotalQuestions = g.Count(),
+                    CorrectAnswers = g.Count(x => x.Answer.IsCorrect),
+                    CorrectRate = Math.Round(g.Count(x => x.Answer.IsCorrect) * 100d / g.Count(), 2),
+                    WrongRate = Math.Round(g.Count(x => !x.Answer.IsCorrect) * 100d / g.Count(), 2)
+                }).ToList();
+
+            // --- 2. PHÂN TÍCH MÔ PHỎNG (Simulation) ---
+            var activeSimSessions = user.SimulationSessions.Where(x => x.Status == 1).ToList();
+
+            // Gom tất cả chi tiết bài thi mô phỏng
+            var allSimDetails = activeSimSessions
+                .SelectMany(s => s.SimulationSessionDetails)
+                .Where(d => d.SimulationExam?.Simulation?.SimulationCategory != null)
+                .ToList();
+
+            var simCategoryAnalysis = allSimDetails
+                .GroupBy(d => d.SimulationExam.Simulation.SimulationCategory.Name)
+                .Select(g => {
+                    var total = g.Count();
+                    // Trong mô phỏng, thường tính là "Đúng" nếu đạt điểm (Score > 0) 
+                    // hoặc bạn có thể logic theo điểm tối đa (ví dụ Score >= 3)
+                    var correct = g.Count(x => x.Score > 0);
+                    return new CategoryAnalysisDTO
+                    {
+                        CategoryName = g.Key,
+                        TotalQuestions = total,
+                        CorrectAnswers = correct,
+                        CorrectRate = Math.Round(correct * 100d / total, 2),
+                        WrongRate = Math.Round((total - correct) * 100d / total, 2)
+                    };
+                }).ToList();
+
+            return new UserExamStatisticsDTO
+            {
+                TheoryStats = new ExamStats
+                {
+                    TotalAttempts = activeExamSessions.Count,
+                    PassedCount = activeExamSessions.Count(x => x.IsPassed),
+                    PassRate = CalculatePassRate(activeExamSessions.Count, activeExamSessions.Count(x => x.IsPassed)),
+                    CategoryAnalysis = theoryCategoryAnalysis
+                },
+                SimulationStats = new ExamStats
+                {
+                    TotalAttempts = activeSimSessions.Count,
+                    PassedCount = activeSimSessions.Count(x => x.IsPassed),
+                    PassRate = CalculatePassRate(activeSimSessions.Count, activeSimSessions.Count(x => x.IsPassed)),
+                    CategoryAnalysis = simCategoryAnalysis
+                }
+            };
+        }
+
         public async Task<UserDTO> CreateAsync(UserCreateDTO user)
         {
             var existingByEmail = await _userRepository.GetByEmailAsync(user.Email);

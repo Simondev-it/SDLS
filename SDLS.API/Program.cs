@@ -283,7 +283,7 @@ namespace SDLS.API
 
             builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
-            //builder.Services.AddAuthorization();
+            builder.Services.AddAuthorization();
 
             // ================= SWAGGER =================
             builder.Services.AddEndpointsApiExplorer();

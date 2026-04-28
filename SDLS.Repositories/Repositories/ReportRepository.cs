@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SDLS.Model.Helpers;
 using SDLS.Model.Models;
 using SDLS.Repositories.Base;
@@ -12,7 +12,8 @@ namespace SDLS.Repositories.Repositories
         public async Task<IEnumerable<Report>> GetAllAsync(
             Guid? id = null,
             Guid? userId = null,
-            Guid? reportCategoryId = null,
+            List<Guid>? reportCategoryIds = null,
+            string? roleName = null,
             Guid? simulationId = null,
             Guid? forumPostId = null,
             Guid? forumCommentId = null,
@@ -25,41 +26,39 @@ namespace SDLS.Repositories.Repositories
             var isPrivileged = QueryableRoleFilterExtensions.IsPrivilegedRole(role);
 
             IQueryable<Report> query = isPrivileged
-                ? _context.Reports
+                    ? _context.Reports
+                        .Include(x => x.ReportCategory)
+                        .Include(x => x.ForumComment)
+                        .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                        .Include(x => x.Question)
+                        .Include(x => x.Simulation)
+                        .Include(x => x.User).ThenInclude(x => x.Role)
+                        .Include(x => x.Resolves)
+                    : _context.Reports
                     .Include(x => x.ReportCategory)
                     .Include(x => x.ForumComment)
-                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
+                    .Include(x => x.ForumPost).ThenInclude(x => isPrivileged ? x.PostImages : x.PostImages.Where(pi => pi.Status != 0))
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
-                : _context.Reports
-                    .Include(x => x.ReportCategory)
-                    .Include(x => x.ForumComment)
-                    .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
-                    .Include(x => x.Question)
-                    .Include(x => x.Simulation)
-                    .Include(x => x.User);
+                    .Include(x => x.User).ThenInclude(x => x.Role)
+                    .Include(x => x.Resolves);
 
-            if (id.HasValue)
-                query = query.Where(x => x.Id == id.Value);
+            if (reportCategoryIds != null && reportCategoryIds.Any())
+            {
+                query = query.Where(x => reportCategoryIds.Contains(x.ReportCategoryId));
+            }
 
-            if (userId.HasValue)
-                query = query.Where(x => x.UserId == userId.Value);
+            if (!string.IsNullOrWhiteSpace(roleName))
+            {
+                query = query.Where(x => x.User != null && x.User.Role != null && x.User.Role.Name == roleName);
+            }
 
-            if (reportCategoryId.HasValue)
-                query = query.Where(x => x.ReportCategoryId == reportCategoryId.Value);
-
-            if (simulationId.HasValue)
-                query = query.Where(x => x.SimulationId == simulationId.Value);
-
-            if (forumPostId.HasValue)
-                query = query.Where(x => x.ForumPostId == forumPostId.Value);
-
-            if (forumCommentId.HasValue)
-                query = query.Where(x => x.ForumCommentId == forumCommentId.Value);
-
-            if (questionId.HasValue)
-                query = query.Where(x => x.QuestionId == questionId.Value);
+            if (id.HasValue) query = query.Where(x => x.Id == id.Value);
+            if (userId.HasValue) query = query.Where(x => x.UserId == userId.Value);
+            if (simulationId.HasValue) query = query.Where(x => x.SimulationId == simulationId.Value);
+            if (forumPostId.HasValue) query = query.Where(x => x.ForumPostId == forumPostId.Value);
+            if (forumCommentId.HasValue) query = query.Where(x => x.ForumCommentId == forumCommentId.Value);
+            if (questionId.HasValue) query = query.Where(x => x.QuestionId == questionId.Value);
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -102,7 +101,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages)
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves)
                 : _context.Reports
                     .Include(x => x.ReportCategory)
@@ -110,7 +109,7 @@ namespace SDLS.Repositories.Repositories
                     .Include(x => x.ForumPost).ThenInclude(x => x.PostImages.Where(pi => pi.Status != 0))
                     .Include(x => x.Question)
                     .Include(x => x.Simulation)
-                    .Include(x => x.User)
+                    .Include(x => x.User).ThenInclude(x => x.Role)
                     .Include(x => x.Resolves.Where(r => r.Status != 0));
 
             query = query.Where(x => x.Id == id)
