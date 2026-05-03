@@ -107,9 +107,11 @@ public partial class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    //=> optionsBuilder.UseNpgsql("Host=ep-silent-recipe-ad74p7pa-pooler.c-2.us-east-1.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_iFezOVo38tPS;SSL Mode=Require;Trust Server Certificate=true");
-    //=> optionsBuilder.UseNpgsql("Host=shinkansen.proxy.rlwy.net;Port=37243;Database=railway;Username=postgres;Password=yKpZCUGgcTyYSpTFNbJemnXiTspUFVQO;SSL Mode=Require;Trust Server Certificate=true");
-    => optionsBuilder.UseNpgsql("Host=switchyard.proxy.rlwy.net;Port=53164;Database=railway;Username=postgres;Password=aBttHEsMGqhfaTHmAFMJUqSgAkPjOsgp;SSL Mode=Require");
+
+                 //=> optionsBuilder.UseNpgsql("Host=ep-silent-recipe-ad74p7pa-pooler.c-2.us-east-1.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_iFezOVo38tPS;SSL Mode=Require;Trust Server Certificate=true");
+                 //=> optionsBuilder.UseNpgsql("Host=shinkansen.proxy.rlwy.net;Port=37243;Database=railway;Username=postgres;Password=yKpZCUGgcTyYSpTFNbJemnXiTspUFVQO;SSL Mode=Require;Trust Server Certificate=true");
+                 => optionsBuilder.UseNpgsql("Host=switchyard.proxy.rlwy.net;Port=53164;Database=railway;Username=postgres;Password=aBttHEsMGqhfaTHmAFMJUqSgAkPjOsgp;SSL Mode=Require");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
