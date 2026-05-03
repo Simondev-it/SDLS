@@ -85,11 +85,12 @@ namespace SDLS.Services.Services
         public async Task<SimulationSessionDTO> CreateAsync(SimulationSessionCreateDTO dto)
         {
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             if (dto.SituationExamId == Guid.Empty)
                 throw ApiException.BadRequest("SituationExamId không được rỗng.");
 
-            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId);
+            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId, role, currentUserId);
             if (situationExamExists == null)
                 throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
@@ -145,11 +146,12 @@ namespace SDLS.Services.Services
                 throw ApiException.NotFound("Không tìm thấy SimulationSession");
 
             var currentUserId = UserContextHelper.GetRequiredCurrentUserId(_httpContextAccessor);
+            var role = UserContextHelper.GetRole(_httpContextAccessor);
 
             if (dto.SituationExamId == Guid.Empty)
                 throw ApiException.BadRequest("SituationExamId không được rỗng.");
 
-            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId);
+            var situationExamExists = await _situationExamRepository.GetByIdAsync(dto.SituationExamId, role, currentUserId);
             if (situationExamExists == null)
                 throw ApiException.BadRequest("SituationExamId không hợp lệ.");
 
