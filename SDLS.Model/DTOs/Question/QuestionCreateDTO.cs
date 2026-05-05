@@ -20,12 +20,10 @@ namespace SDLS.Model.DTOs.Question
         public int? Index { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
         public string? Image { get; set; }
 
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Explanation { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]

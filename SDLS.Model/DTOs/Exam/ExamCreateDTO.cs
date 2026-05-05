@@ -7,10 +7,8 @@ namespace SDLS.Model.DTOs.Exam
     public class ExamCreateDTO
     {
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Title { get; set; } = null!;
 
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
