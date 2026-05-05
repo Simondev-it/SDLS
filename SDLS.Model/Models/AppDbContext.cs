@@ -207,6 +207,8 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updateAt");
+            entity.Property(e => e.Binding)
+                .HasColumnName("binding");
         });
 
         modelBuilder.Entity<Exam>(entity =>
