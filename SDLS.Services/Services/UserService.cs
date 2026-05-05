@@ -278,7 +278,7 @@ namespace SDLS.Services.Services
 
                     if (!hasBinding)
                     {
-                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {dl.Binding} trước khi học.");
+                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có 1 trong các bằng lái sau trước khi học: {dl.Binding}.");
                     }
                 }
             }
