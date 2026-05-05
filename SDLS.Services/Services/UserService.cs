@@ -222,6 +222,18 @@ namespace SDLS.Services.Services
 
         public async Task<UserDTO> CreateAsync(UserCreateDTO user)
         {
+            if (!string.IsNullOrWhiteSpace(user.LicenseType))
+            {
+                var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
+                var dl = drivingLicenses.FirstOrDefault();
+                if (dl != null && dl.Binding.HasValue)
+                {
+                    var requiredDl = await _drivingLicenseRepository.GetByIdAsync(dl.Binding.Value);
+                    var requiredName = requiredDl?.Name ?? "";
+                    throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {requiredName} trước khi học.");
+                }
+            }
+
             var existingByEmail = await _userRepository.GetByEmailAsync(user.Email);
             if (existingByEmail != null)
                 throw ApiException.Conflict("Email đã tồn tại.");
@@ -235,6 +247,35 @@ namespace SDLS.Services.Services
 
         public async Task<UserDTO?> UpdateAsync(Guid id, UserUpdateDTO user)
         {
+            if (!string.IsNullOrWhiteSpace(user.LicenseType))
+            {
+                var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
+                var dl = drivingLicenses.FirstOrDefault();
+                if (dl != null && dl.Binding.HasValue)
+                {
+                    bool hasBinding = false;
+                    if (user.DrivingLicenseIds != null && user.DrivingLicenseIds.Contains(dl.Binding.Value))
+                    {
+                        hasBinding = true;
+                    }
+                    else
+                    {
+                        var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(id, null);
+                        if (existingUserLicenses.Any(x => x.DrivingLicenseId == dl.Binding.Value))
+                        {
+                            hasBinding = true;
+                        }
+                    }
+
+                    if (!hasBinding)
+                    {
+                        var requiredDl = await _drivingLicenseRepository.GetByIdAsync(dl.Binding.Value);
+                        var requiredName = requiredDl?.Name ?? "";
+                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {requiredName} trước khi học.");
+                    }
+                }
+            }
+
             var existing = await _userRepository.GetByIdAsync(id);
             if (existing == null) return null;
             var oldAvatar = existing.Avatar;
