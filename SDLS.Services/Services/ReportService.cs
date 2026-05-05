@@ -262,6 +262,25 @@ namespace SDLS.Services.Services
             };
 
             await _resolveRepository.AddAsync(resolve);
+
+            if (report.UserId != Guid.Empty)
+            {
+                var notificationDto = new NotificationCreateDTO
+                {
+                    Title = "Báo cáo đã được xử lý",
+                    Content = "Báo cáo '" + report.Title + "' của bạn đã được xử lý.",
+                    Status = 2,
+                    UserNotifications = new List<UserNotificationCreateDTO>
+                    {
+                        new UserNotificationCreateDTO
+                        {
+                            UserId = report.UserId
+                        }
+                    }
+                };
+                await _notificationService.CreateAsync(notificationDto);
+            }
+
             return _mapper.Map<ReportDTO>(report);
         }
 
@@ -292,6 +311,25 @@ namespace SDLS.Services.Services
             };
 
             await _resolveRepository.AddAsync(resolve);
+
+            if (report.UserId != Guid.Empty)
+            {
+                var notificationDto = new NotificationCreateDTO
+                {
+                    Title = "Báo cáo của bạn không được chấp thuận",
+                    Content = "Báo cáo '" + report.Title + "' của bạn đã bị từ chối.",
+                    Status = 2,
+                    UserNotifications = new List<UserNotificationCreateDTO>
+                    {
+                        new UserNotificationCreateDTO
+                        {
+                            UserId = report.UserId
+                        }
+                    }
+                };
+                await _notificationService.CreateAsync(notificationDto);
+            }
+
             return _mapper.Map<ReportDTO>(report);
         }
 
