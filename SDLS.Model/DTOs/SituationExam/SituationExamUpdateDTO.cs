@@ -5,10 +5,10 @@ namespace SDLS.Model.DTOs.SituationExam
     public class SituationExamUpdateDTO
     {
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
+        
         public string Title { get; set; } = null!;
 
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
+        
         public string? Description { get; set; }
 
         [Range(0, 100, ErrorMessage = "Giá trị không hợp lệ.")]

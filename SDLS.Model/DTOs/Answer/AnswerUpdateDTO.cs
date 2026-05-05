@@ -11,7 +11,6 @@ namespace SDLS.Model.DTOs.Answer
         public Guid QuestionId { get; set; }
 
         [Required(ErrorMessage = "Trường này là bắt buộc.")]
-        [StringLength(255, ErrorMessage = "Vượt quá độ dài tối đa 255 ký tự.")]
         public string Content { get; set; } = null!;
 
         public bool IsCorrect { get; set; }
