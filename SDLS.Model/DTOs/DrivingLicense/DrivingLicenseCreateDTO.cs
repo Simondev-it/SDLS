@@ -6,9 +6,8 @@ namespace SDLS.Model.DTOs.DrivingLicense
     {
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
-        public Guid? Binding { get; set; }
+        public string? Binding { get; set; }
 
-        // Có thể null theo yêu cầu
         public List<VehicleCreateDTO>? Vehicles { get; set; }
     }
 }

@@ -90,13 +90,6 @@ namespace SDLS.Services.Services
         {
             var now = DateTimeHelper.GetVietnamNow();
 
-            if (dto.Binding.HasValue)
-            {
-                var boundLicense = await _repository.GetByIdAsync(dto.Binding.Value);
-                if (boundLicense == null)
-                    throw ApiException.BadRequest($"Không tìm thấy Bằng lái (Binding) với ID {dto.Binding.Value}");
-            }
-
             var entity = _mapper.Map<DrivingLicense>(dto);
             entity.Id = Guid.NewGuid();
             entity.CreateAt = now;
@@ -124,16 +117,6 @@ namespace SDLS.Services.Services
             var existing = await _repository.GetByIdForUpdateAsync(id);
             if (existing == null)
                 throw ApiException.NotFound("Không tìm thấy DrivingLicense");
-
-            if (dto.Binding.HasValue)
-            {
-                if (dto.Binding.Value == id)
-                    throw ApiException.BadRequest("Không thể gán Binding cho chính nó.");
-
-                var boundLicense = await _repository.GetByIdAsync(dto.Binding.Value);
-                if (boundLicense == null)
-                    throw ApiException.BadRequest($"Không tìm thấy Bằng lái (Binding) với ID {dto.Binding.Value}");
-            }
 
             var now = DateTimeHelper.GetVietnamNow();
 
