@@ -95,6 +95,7 @@ namespace SDLS.Services.Services
             entity.CreateAt = now;
             entity.UpdateAt = now;
             entity.Status = 1;
+            entity.Binding = dto.Binding;
 
             if (dto.Vehicles != null)
             {
@@ -122,6 +123,7 @@ namespace SDLS.Services.Services
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Status = dto.Status ?? existing.Status ?? 1;
+            existing.Binding = dto.Binding;
             existing.UpdateAt = now;
 
             if (dto.Vehicles != null)

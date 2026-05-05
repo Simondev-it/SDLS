@@ -222,6 +222,16 @@ namespace SDLS.Services.Services
 
         public async Task<UserDTO> CreateAsync(UserCreateDTO user)
         {
+            if (!string.IsNullOrWhiteSpace(user.LicenseType))
+            {
+                var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
+                var dl = drivingLicenses.FirstOrDefault();
+                if (dl != null && !string.IsNullOrWhiteSpace(dl.Binding))
+                {
+                    throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {dl.Binding} trước khi học.");
+                }
+            }
+
             var existingByEmail = await _userRepository.GetByEmailAsync(user.Email);
             if (existingByEmail != null)
                 throw ApiException.Conflict("Email đã tồn tại.");
@@ -235,6 +245,44 @@ namespace SDLS.Services.Services
 
         public async Task<UserDTO?> UpdateAsync(Guid id, UserUpdateDTO user)
         {
+            if (!string.IsNullOrWhiteSpace(user.LicenseType))
+            {
+                var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
+                var dl = drivingLicenses.FirstOrDefault();
+                if (dl != null && !string.IsNullOrWhiteSpace(dl.Binding))
+                {
+                    var requiredNames = dl.Binding.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                                  .Select(x => x.Trim().ToUpper())
+                                                  .ToList();
+                    bool hasBinding = false;
+
+                    var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(id, null);
+                    var existingLicenseIds = existingUserLicenses.Select(x => x.DrivingLicenseId).ToList();
+
+                    var combinedIds = new HashSet<Guid>(existingLicenseIds);
+                    if (user.DrivingLicenseIds != null)
+                    {
+                         foreach (var uId in user.DrivingLicenseIds) combinedIds.Add(uId);
+                    }
+
+                    foreach (var cId in combinedIds)
+                    {
+                         if (cId == Guid.Empty) continue;
+                         var cDl = await _drivingLicenseRepository.GetByIdAsync(cId);
+                         if (cDl != null && !string.IsNullOrWhiteSpace(cDl.Name) && requiredNames.Contains(cDl.Name.Trim().ToUpper()))
+                         {
+                              hasBinding = true;
+                              break;
+                         }
+                    }
+
+                    if (!hasBinding)
+                    {
+                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có 1 trong các bằng lái sau trước khi học: {dl.Binding}.");
+                    }
+                }
+            }
+
             var existing = await _userRepository.GetByIdAsync(id);
             if (existing == null) return null;
             var oldAvatar = existing.Avatar;
