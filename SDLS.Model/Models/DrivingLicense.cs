@@ -17,7 +17,7 @@ public partial class DrivingLicense
 
     public int? Status { get; set; }
 
-    public Guid? Binding { get; set; }
+    public string? Binding { get; set; }
 
     public virtual ICollection<QuestionChapter> QuestionChapters { get; set; } = new List<QuestionChapter>();
 

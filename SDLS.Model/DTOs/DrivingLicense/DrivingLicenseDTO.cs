@@ -10,7 +10,7 @@ namespace SDLS.Model.DTOs.DrivingLicense
         public int? Status { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? UpdateAt { get; set; }
-        public Guid? Binding { get; set; }
+        public string? Binding { get; set; }
         public List<VehicleDTO> Vehicles { get; set; } = new();
     }
 }

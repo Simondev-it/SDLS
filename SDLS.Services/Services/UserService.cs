@@ -226,11 +226,9 @@ namespace SDLS.Services.Services
             {
                 var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
                 var dl = drivingLicenses.FirstOrDefault();
-                if (dl != null && dl.Binding.HasValue)
+                if (dl != null && !string.IsNullOrWhiteSpace(dl.Binding))
                 {
-                    var requiredDl = await _drivingLicenseRepository.GetByIdAsync(dl.Binding.Value);
-                    var requiredName = requiredDl?.Name ?? "";
-                    throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {requiredName} trước khi học.");
+                    throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {dl.Binding} trước khi học.");
                 }
             }
 
@@ -251,27 +249,36 @@ namespace SDLS.Services.Services
             {
                 var drivingLicenses = await _drivingLicenseRepository.GetAllAsync(name: user.LicenseType);
                 var dl = drivingLicenses.FirstOrDefault();
-                if (dl != null && dl.Binding.HasValue)
+                if (dl != null && !string.IsNullOrWhiteSpace(dl.Binding))
                 {
+                    var requiredNames = dl.Binding.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                                  .Select(x => x.Trim().ToUpper())
+                                                  .ToList();
                     bool hasBinding = false;
-                    if (user.DrivingLicenseIds != null && user.DrivingLicenseIds.Contains(dl.Binding.Value))
+
+                    var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(id, null);
+                    var existingLicenseIds = existingUserLicenses.Select(x => x.DrivingLicenseId).ToList();
+
+                    var combinedIds = new HashSet<Guid>(existingLicenseIds);
+                    if (user.DrivingLicenseIds != null)
                     {
-                        hasBinding = true;
+                         foreach (var uId in user.DrivingLicenseIds) combinedIds.Add(uId);
                     }
-                    else
+
+                    foreach (var cId in combinedIds)
                     {
-                        var existingUserLicenses = await _userLicenseRepository.GetByUserAndDrivingLicenseAsync(id, null);
-                        if (existingUserLicenses.Any(x => x.DrivingLicenseId == dl.Binding.Value))
-                        {
-                            hasBinding = true;
-                        }
+                         if (cId == Guid.Empty) continue;
+                         var cDl = await _drivingLicenseRepository.GetByIdAsync(cId);
+                         if (cDl != null && !string.IsNullOrWhiteSpace(cDl.Name) && requiredNames.Contains(cDl.Name.Trim().ToUpper()))
+                         {
+                              hasBinding = true;
+                              break;
+                         }
                     }
 
                     if (!hasBinding)
                     {
-                        var requiredDl = await _drivingLicenseRepository.GetByIdAsync(dl.Binding.Value);
-                        var requiredName = requiredDl?.Name ?? "";
-                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {requiredName} trước khi học.");
+                        throw ApiException.BadRequest($"Trước khi học bằng lái {dl.Name} thì phải có bằng lái {dl.Binding} trước khi học.");
                     }
                 }
             }
