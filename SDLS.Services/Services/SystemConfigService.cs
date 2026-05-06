@@ -215,7 +215,7 @@ namespace SDLS.Services.Services
 
             var contentChangeRequestCount = await _dbContext.Reports
                 .AsNoTracking()
-                .CountAsync(x => x.ReportCategoryId == contentChangeCategoryId && x.Status == -1);
+                .CountAsync(x => x.User != null && x.User.RoleId == RoleConst.ADMIN_ROLE_ID && x.Status == -1);
 
             var contentChangeReports = await _dbContext.Reports
                 .AsNoTracking()
@@ -225,7 +225,7 @@ namespace SDLS.Services.Services
                 .Include(x => x.ForumPost)
                 .Include(x => x.Question)
                 .Include(x => x.Simulation)
-                .Where(x => x.ReportCategoryId == contentChangeCategoryId && x.Status == -1)
+                .Where(x => x.User != null && x.User.RoleId == RoleConst.ADMIN_ROLE_ID && x.Status == -1)
                 .OrderByDescending(x => x.CreateAt ?? DateTime.MinValue)
                 .ThenByDescending(x => x.Id)
                 .Take(4)
